@@ -5,6 +5,8 @@ A JavaScript library for rendering Gregorian Chant in square note notation
 
 exsurge allows developers to create SVG images of square note notation from gabc notation. These SVGs can then be inserted in the DOM or used for presentation purposes.
 
+[ ![Codeship Status for frmatthew/exsurge](https://codeship.com/projects/6effe330-d6d1-0133-da7f-2e034c4f2b94/status?branch=master)](https://codeship.com/projects/142799)
+
 ## Live Browser Example
 
 Want to see gabc code rendered to chant on the fly? [Try going here](http://frmatthew.github.io/exsurge/chant.html).
@@ -44,9 +46,15 @@ score.performLayout(ctxt, function() {
 
 Very few good chant layout software exist for developers. exsurge allows web developers to insert beautiful chant into their workflow with the simplicity of a little JavaScript.
 
-## Installation
+## Developer Installation
 
-Under construction...
+After grabbing the repo from github, it's a simple matter of using `npm` to build exsurge:
+
+```npm install
+npm run build
+```
+
+Alternatively, you can run `npm run dev` which will watch and compile the library after saved each change.
 
 ## API Reference
 

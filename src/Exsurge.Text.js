@@ -65,25 +65,32 @@ export class Latin extends Language {
   constructor() {
     super("Latin");
 
-    // fixme: should we include 'diphthongs' with accented vowels, e.g., áe?
     // fixme: ui is only diphthong in the exceptional cases below (according to Wheelock's Latin)
-    this.diphthongs = ["ae", "au", "oe"];
+    this.diphthongs = ["ae", "au", "oe", "aé", "áu", "oé"];
+    // for centering over the vowel, we will need to know any combinations that might be diphthongs:
+    this.possibleDiphthongs = this.diphthongs.concat(["ei", "eu", "ui", "éi", "éu", "úi"]);
 
     // some words that are simply exceptions to standard syllabification rules!
     var wordExceptions = new Object();
 
-    // ui combos pronounced as dipthongs
+    // ui combos pronounced as diphthongs
     wordExceptions["huius"] = ["hui", "us"];
     wordExceptions["cuius"] = ["cui", "us"];
     wordExceptions["huic"] = ["huic"];
     wordExceptions["cui"] = ["cui"];
     wordExceptions["hui"] = ["hui"];
+    
+    // eu combos pronounced as diphthongs
+    wordExceptions["euge"] = ["eu", "ge"];
+    wordExceptions["seu"] = ["seu"];
 
     this.vowels = ['a', 'e', 'i', 'o', 'u',
                    'á', 'é', 'í', 'ó', 'ú',
                    'æ', 'œ',
                    'ǽ',  // no accented œ in unicode?
                    'y']; // y is treated as a vowel; not native to Latin but useful for words borrowed from Greek
+
+    this.vowelsThatMightBeConsonants = ['i','u'];
 
     this.muteConsonantsAndF = ['b', 'c', 'd', 'g', 'p', 't', 'f'];
 
@@ -97,6 +104,19 @@ export class Latin extends Language {
         return true;
 
     return false;
+  }
+
+  isVowelThatMightBeConsonant(c) {
+    for (var i = 0, end = this.vowelsThatMightBeConsonants.length; i < end; i++)
+      if (this.vowelsThatMightBeConsonants[i] === c)
+        return true;
+
+    return false;
+  }
+  
+  // substring should be a vowel and the character following
+  isVowelActingAsConsonant(substring) {
+    return this.isVowelThatMightBeConsonant(substring[0]) && this.isVowel(substring[1]);
   }
 
   /**
@@ -135,6 +155,19 @@ export class Latin extends Language {
   isDiphthong(s) {
     for (var i = 0, end = this.diphthongs.length; i < end; i++)
       if (this.diphthongs[i] === s)
+        return true;
+
+    return false;
+  }
+
+  /**
+   *
+   * @param {String} s The string to test; must be lowercase
+   * @return {boolean} true if s is a diphthong
+   */
+  isPossibleDiphthong(s) {
+    for (var i = 0, end = this.possibleDiphthongs.length; i < end; i++)
+      if (this.possibleDiphthongs[i] === s)
         return true;
 
     return false;
@@ -267,9 +300,9 @@ export class Latin extends Language {
     var i, end, index;
     var workingString = s.toLowerCase();
 
-    // do we have a diphthongs?
-    for (i = 0, end = this.diphthongs.length; i < end; i++) {
-      var d = this.diphthongs[i];
+    // do we have a diphthong?
+    for (i = 0, end = this.possibleDiphthongs.length; i < end; i++) {
+      var d = this.possibleDiphthongs[i];
       index = workingString.indexOf(d, startIndex);
 
       if (index >= 0)
@@ -280,8 +313,14 @@ export class Latin extends Language {
     for (i = 0, end = this.vowels.length; i < end; i++) {
       index = workingString.indexOf(this.vowels[i], startIndex);
 
-      if (index >= 0)
+      if (index >= 0) {
+        // if the first vowel found might also be a consonant (U or I), and it is immediately followed by another vowel, (e.g., sanguis, quis), the first u counts as a consonant:
+        // (in practice, this only affects words such as equus that contain a uu, since the alphabetically earlier vowel would be found before the U)
+        if(this.isVowelActingAsConsonant(workingString.substr(index, 2))) {
+          ++index;
+        }
         return { found: true, startIndex: index, length: 1 };
+      }
     }
 
     // no vowels sets found after startIndex!
@@ -306,11 +345,11 @@ export class Spanish extends Language {
     this.strongVowels = ['a', 'e', 'o', 'á', 'é', 'í', 'ó', 'ú'];
 
 
-    this.dipthongs = ["ai", "ei", "oi", "ui", "ia", "ie", "io", "iu", "au", "eu", "ou", "ua", "ue", "uo",
+    this.diphthongs = ["ai", "ei", "oi", "ui", "ia", "ie", "io", "iu", "au", "eu", "ou", "ua", "ue", "uo",
                        "ái", "éi", "ói", "úi", "iá", "ié", "ió", "iú", "áu", "éu", "óu", "uá", "ué", "uó",
                        "üe", "üi"];
 
-    this.uDipthongExpections = ["gue", "gui", "qua", "que", "qui", "quo"];
+    this.uDiphthongExceptions = ["gue", "gui", "qua", "que", "qui", "quo"];
   }
 
   // c must be lowercase!
@@ -522,8 +561,8 @@ export class Spanish extends Language {
         if (d[0] === 'u' && index > 0) {
           var tripthong = s.substr(index - 1, 3).toLowerCase();
 
-          for (j = 0, endj = this.uDipthongExpections.length; i < endj; j++) {
-            if (tripthong === this.uDipthongExpections[j]) {
+          for (j = 0, endj = this.uDiphthongExceptions.length; i < endj; j++) {
+            if (tripthong === this.uDiphthongExceptions[j]) {
               // search from after the u...
               return this.findVowelSegment(s, index + 1);
             }

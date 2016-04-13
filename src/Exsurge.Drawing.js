@@ -23,7 +23,7 @@
 // THE SOFTWARE.
 //
 
-import { Units, Pitch, Point, Rect, Margins, Size, Step, MarkingPositionHint } from 'Exsurge.Core'
+import { Units, Pitch, Point, Rect, Margins, Size, Step } from 'Exsurge.Core'
 import { Glyphs } from 'Exsurge.Glyphs'
 import { Latin } from 'Exsurge.Text'
 
@@ -31,21 +31,22 @@ import { Latin } from 'Exsurge.Text'
 // load in the web font for special chant characters here:
 var __exsurgeCharactersFont = require("url?limit=30000!../assets/fonts/ExsurgeChar.otf");
 
+
 export let GlyphCode = {
 
   None: "None",
 
   AcuteAccent: "AcuteAccent",
-  Apostropha: "Apostropha",
-  //  ApostrophaLiquescent: "ApostrophaLiquescent",
+  Stropha: "Stropha",
+  //  StrophaLiquescent: "StrophaLiquescent",
 
   BeginningAscLiquescent: "BeginningAscLiquescent",
   BeginningDesLiquescent: "BeginningDesLiquescent",
 
-  CustodDescLong: "CustodDescLong",
-  CustodDescShort: "CustodDescShort",
-  CustodLong: "CustodLong",
-  CustodShort: "CustodShort",
+  CustosDescLong: "CustosDescLong",
+  CustosDescShort: "CustosDescShort",
+  CustosLong: "CustosLong",
+  CustosShort: "CustosShort",
 
   // clefs and other markings
   DoClef: "DoClef",
@@ -55,6 +56,7 @@ export let GlyphCode = {
   Natural: "Natural",
   OriscusAsc: "OriscusAsc",
   OriscusDes: "OriscusDes",
+  OriscusLiquescent: "OriscusLiquescent",
 
   PodatusLower: "PodatusLower",
   PodatusUpper: "PodatusUpper",
@@ -65,9 +67,9 @@ export let GlyphCode = {
   Porrectus4: "Porrectus4",
 
   PunctumCavum: "PunctumCavum",
-  PunctumCuadratum: "PunctumCuadratum",
-  PunctumCuadratumAscLiquescent: "PunctumCuadratumAscLiquescent",
-  PunctumCuadratumDesLiquescent: "PunctumCuadratumDesLiquescent",
+  PunctumQuadratum: "PunctumQuadratum",
+  PunctumQuadratumAscLiquescent: "PunctumQuadratumAscLiquescent",
+  PunctumQuadratumDesLiquescent: "PunctumQuadratumDesLiquescent",
   PunctumInclinatum: "PunctumInclinatum",
   PunctumInclinatumLiquescent: "PunctumInclinatumLiquescent",
   Quilisma: "Quilisma",
@@ -241,8 +243,8 @@ export class ChantContext {
     this.annotationTextColor = this.lyricTextColor;
 
     // everything depends on the scale of the punctum
-    this.glyphPunctumWidth = Glyphs.PunctumCuadratum.bounds.width;
-    this.glyphPunctumHeight = Glyphs.PunctumCuadratum.bounds.height;
+    this.glyphPunctumWidth = Glyphs.PunctumQuadratum.bounds.width;
+    this.glyphPunctumHeight = Glyphs.PunctumQuadratum.bounds.height;
 
     // fixme: for now, we just set these using the glyph scales as noted above, presuming a
     // staff line size of 0.5 in. Really what we should do is scale the punctum size based
@@ -280,6 +282,13 @@ export class ChantContext {
 
     this.drawGuides = false;
     this.drawDebuggingBounds = true;
+
+    // we keep track of where we are in processing notations, so that
+    // we can maintain the context for notations to know about.
+    //
+    // these are only gauranteed to be valid during the performLayout phase!
+    this.activeNotations = null;
+    this.currNotationIndex = -1;
 
     // chant notation elements are normally separated by a minimum fixed amount of space
     // on the staff line. It can happen, however, that two text elements are almost close
@@ -321,6 +330,23 @@ export class ChantContext {
 
       document.head.appendChild(styleElement);
     }
+  }
+
+  // returns the next neume starting at this.currNotationIndex, or null
+  // if there isn't a neume after this one...
+  findNextNeume() {
+
+    if (typeof this.currNotationIndex === 'undefined')
+      throw "findNextNeume() called without a valid currNotationIndex set";
+
+    for (var i = this.currNotationIndex + 1; i < this.notations.length; i++) {
+      var notation = this.notations[i];
+
+      if (notation.isNeume)
+        return notation;
+    }
+
+    return null;
   }
 }
 
@@ -392,17 +418,70 @@ export class NeumeLineVisualizer extends ChantLayoutElement {
   constructor(ctxt, note0, note1, hanging) {
     super();
 
-    var y0 = ctxt.calculateHeightFromStaffPosition(note0.staffPosition);
-    var y1 = ctxt.calculateHeightFromStaffPosition(note1.staffPosition);
+    var staffPosition0 = note0.staffPosition;
+    var staffPosition1 = note1.staffPosition;
 
-    if (y0 > y1) {
-      var temp = y0;
-      y0 = y1;
-      y1 = temp;
+    // note0 should be the upper one for our calculations here
+    if (staffPosition0 < staffPosition1) {
+      var temp = staffPosition0;
+      staffPosition0 = staffPosition1;
+      staffPosition1 = temp;
     }
 
-    if (hanging)
+    var y0 = ctxt.calculateHeightFromStaffPosition(staffPosition0);
+    var y1 = 0;
+
+    if (hanging) {
+
+      // if the difference between the notes is only one, and the upper
+      // note is on a line, and the lower note is within the four staff lines,
+      // then our hanging line goes past the lower note by a whole
+      // staff interval
+      if (staffPosition0 - staffPosition1 === 1 && Math.abs(staffPosition0) % 2 === 1 &&
+          staffPosition1 > -3)
+        staffPosition1--;
+
       y1 += ctxt.glyphPunctumHeight * ctxt.glyphScaling / 2.2;
+    }
+
+    y1 += ctxt.calculateHeightFromStaffPosition(staffPosition1);
+
+    this.bounds.x = 0;
+    this.bounds.y = y0;
+    this.bounds.width = ctxt.neumeLineWeight;
+    this.bounds.height = y1 - y0;
+
+    this.origin.x = 0;
+    this.origin.y = 0;
+  }
+
+  createDrawable(ctxt) {
+
+    return QuickSvg.createFragment('rect', {
+      'x': this.bounds.x,
+      'y': this.bounds.y,
+      'width': ctxt.neumeLineWeight,
+      'height': this.bounds.height,
+      'fill': ctxt.neumeLineColor,
+      'class': 'neumeLine'
+    });
+  }
+}
+
+export class VirgaLineVisualizer extends ChantLayoutElement {
+
+  constructor(ctxt, note) {
+    super();
+
+    var staffPosition = note.staffPosition;
+
+    var y0 = ctxt.calculateHeightFromStaffPosition(staffPosition);
+    var y1;
+
+    if (Math.abs(staffPosition % 2) === 0)
+      y1 = y0 + ctxt.staffInterval * 1.8;
+    else
+      y1 = y0 + ctxt.staffInterval * 2.7;
 
     this.bounds.x = 0;
     this.bounds.y = y0;
@@ -461,10 +540,10 @@ export class GlyphVisualizer extends ChantLayoutElement {
 
     this.glyph = null;
 
-    this.setGlyphShape(ctxt, glyphCode);
+    this.setGlyph(ctxt, glyphCode);
   }
 
-  setGlyphShape(ctxt, glyphCode) {
+  setGlyph(ctxt, glyphCode) {
 
     if (this.glyphCode === glyphCode)
       return;
@@ -488,6 +567,7 @@ export class GlyphVisualizer extends ChantLayoutElement {
       }, glyphSrc);
     }
 
+    this.align = this.glyph.align;
 
     this.origin.x = this.glyph.origin.x * ctxt.glyphScaling;
     this.origin.y = this.glyph.origin.y * ctxt.glyphScaling;
@@ -546,13 +626,21 @@ MarkupStackFrame.createStackFrame = function(symbol, startIndex) {
       properties = 'fill:#f00;'; // SVG text color is set by the fill property
       break;
     case smallCapsMarkup:
-      properties = "font-feature-settings:'smcp';-webkit-font-feature-settings:'smcp';";
+      properties = "font-variant:small-caps;font-feature-settings:'smcp';-webkit-font-feature-settings:'smcp';";
       break;
   }
 
   return new MarkupStackFrame(symbol, startIndex, properties);
 };
 
+
+// for escaping html strings before they go into the svgs
+// adapted from http://stackoverflow.com/a/12034334/5720160
+var __subsForTspans = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;"
+};
 
 export class TextElement extends ChantLayoutElement {
 
@@ -579,13 +667,12 @@ export class TextElement extends ChantLayoutElement {
 
   generateSpansFromText(ctxt, text) {
 
-    this.unsanitizedText = text;
     this.text = "";
     this.spans = [];
 
     // save ourselves a lot of grief for a very common text:
     if (text === "*" || text === "†") {
-      this.spans.push(new TextSpan(text, ""));
+      this.spans.push(new TextSpan(text));
       return;
     }
 
@@ -667,10 +754,11 @@ export class TextElement extends ChantLayoutElement {
 
     var xml = '<svg xmlns="http://www.w3.org/2000/svg">' + this.createDrawable(ctxt) + '</svg>';
     var doc = new DOMParser().parseFromString(xml, 'application/xml');
-    while(ctxt.svgTextMeasurer.firstChild) {
+    
+    while(ctxt.svgTextMeasurer.firstChild)
       ctxt.svgTextMeasurer.firstChild.remove();
-    }
-    ctxt.svgTextMeasurer.appendChild( ctxt.svgTextMeasurer.ownerDocument.importNode(doc.documentElement, true).firstChild );
+
+    ctxt.svgTextMeasurer.appendChild(ctxt.svgTextMeasurer.ownerDocument.importNode(doc.documentElement, true).firstChild);
 
     var bbox = ctxt.svgTextMeasurer.firstChild.getBBox();
 
@@ -679,7 +767,7 @@ export class TextElement extends ChantLayoutElement {
     this.bounds.width = bbox.width;
     this.bounds.height = bbox.height;
     this.origin.x = 0;
-    this.origin.y = 0; // baseline?
+    this.origin.y = -bbox.y; // offset to baseline from top
   }
 
   getCssClasses() {
@@ -688,6 +776,12 @@ export class TextElement extends ChantLayoutElement {
 
   getExtraStyleProperties(ctxt) {
     return "";
+  }
+
+  static escapeForTspan(string) {
+    return String(string).replace(/[&<>]/g, function (s) {
+      return __subsForTspans[s];
+    });
   }
 
   createDrawable(ctxt) {
@@ -700,7 +794,7 @@ export class TextElement extends ChantLayoutElement {
       if (this.spans[i].properties)
         options['style'] = this.spans[i].properties;
 
-      spans += QuickSvg.createFragment('tspan', options, this.spans[i].text);
+      spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(this.spans[i].text));
     }
 
     var styleProperties = "font-family:" + this.fontFamily +
@@ -732,14 +826,27 @@ export class Lyric extends TextElement {
   constructor(ctxt, text, lyricType) {
     super(ctxt, text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start');
 
-    this.cssClasses += " Lyric";
+    // save the original text in case we need to later use the lyric
+    // in a dropcap...
+    this.originalText = text;
 
     if (typeof lyricType === 'undefined' || lyricType === null || lyricType === "")
       this.lyricType = LyricType.SingleSyllable;
     else
       this.lyricType = lyricType;
 
+    // Lyrics keep track of how to center them on notation elements.
+    // centerTextIndex is the index in this.text where the centering starts,
+    // centerLength is how many characters comprise the center point.
+    // performLayout will do the processing
+    this.centerStartIndex = -1;
+    this.centerLength = text.length;
+
     this.needsConnector = false;
+
+    // Lyrics can have their own language defined, which affects the alignment
+    // of the text with the notation element
+    this.language = null;
   }
 
   allowsConnector() {
@@ -783,35 +890,45 @@ export class Lyric extends TextElement {
 
     this.widthWithConnector = this.bounds.width + ctxt.hyphenWidth;
 
-    var activeLanguage = ctxt.defaultLanguage;
+    var activeLanguage = this.language || ctxt.defaultLanguage;
 
     // calculate the point where the text lines up to the staff notation
-    // and offset the rect that much
-    var offset = 0;
+    // and offset the rect that much. By default we just center the text,
+    // but the logic below allows for smarter lyric alignment based
+    // on manual override or language control.
+    var offset = this.widthWithoutConnector / 2, x1, x2;
 
-    if (this.lyricType !== LyricType.Directive) {
+    // some simple checks for sanity, and disable manual centering if the numbers are bad
+    if (this.centerStartIndex >= 0 && (this.centerStartIndex >= this.text.length ||
+      this.centerLength < 0 ||
+      this.centerStartIndex + this.centerLength > this.text.length))
+      this.centerStartIndex = -1;
 
-      // Non-directive elements are lined up to the chant notation based on vowel segments.
-      // First we determine the vowel segment of the text, then we calculate the center point
-      // of that vowel segment.
-      var result = activeLanguage.findVowelSegment(this.text, 0);
-      if (result.found === true) {
-
-        // svgTextMeasurer still has the current lyric in it...
-        
-
-        var x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex);
-        var x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex + result.length);
-
-        offset = x1 + (x2 - x1) / 2;
-      } else {
-        // no vowels found according the text's language. for now we just center the text
-        offset = this.widthWithoutConnector / 2;
-      }
-
+    if (this.text.length === 0) {
+      // if we have no text to work with, then there's nothing to do!
+    } else if (this.centerStartIndex >= 0) {
+      // if we have manually overriden the centering logic for this lyric,
+      // then always use that.
+      // svgTextMeasurer still has the current lyric in it...
+      x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, this.centerStartIndex);
+      x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, this.centerStartIndex + this.centerLength);
+      offset = x1 + (x2 - x1) / 2;
     } else {
-      // directives are always centered on the chant notation
-      offset = this.widthWithoutConnector / 2;
+
+      // if it's a directive with no manual centering override, then
+      // just center the text.
+      if (this.lyricType !== LyricType.Directive) {
+
+        // Non-directive elements are lined up to the chant notation based on vowel segments,
+        var result = activeLanguage.findVowelSegment(this.text, 0);
+      
+        if (result.found === true) {
+          // svgTextMeasurer still has the current lyric in it...
+          x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex);
+          x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex + result.length);
+          offset = x1 + (x2 - x1) / 2;
+        }
+      }
     }
 
     this.bounds.x = -offset;
@@ -821,6 +938,25 @@ export class Lyric extends TextElement {
 
     this.bounds.width = this.widthWithoutConnector;
     this.bounds.height = ctxt.lyricTextSize;
+  }
+
+  generateDropCap(ctxt) {
+
+     var dropCap = new DropCap(ctxt, this.originalText.substring(0, 1));
+
+    // if the dropcap is a single character syllable (vowel) that is the
+    // beginning of the word, then we use a hyphen in place of the lyric text
+    // and treat it as a single syllable.
+    if (this.originalText.length === 1) {
+      this.generateSpansFromText(ctxt, ctxt.syllableConnector);
+      this.centerStartIndex = -1;
+      this.lyricType = LyricType.SingleSyllable;
+    } else {
+      this.generateSpansFromText(ctxt, this.originalText.substring(1));
+      this.centerStartIndex--; // lost a letter, so adjust centering accordingly
+    }
+
+    return dropCap;
   }
 
   getCssClasses() {
@@ -897,8 +1033,9 @@ export class ChantNotationElement extends ChantLayoutElement {
     this.leadingSpace = 0.0;
     this.trailingSpace = -1; // if less than zero, this is automatically calculated at layout time
     this.keepWithNext = false;
+    this.needsLayout = true;
 
-    this.lyric = null;
+    this.lyrics = [];
 
     this.score = null; // the ChantScore
     this.line = null; // the ChantLine
@@ -906,19 +1043,19 @@ export class ChantNotationElement extends ChantLayoutElement {
     this.visualizers = [];
   }
 
-  hasLyric() {
-    if (this.lyric !== null)
+  hasLyrics() {
+    if (this.lyrics.length !== 0)
       return true;
     else
       return false;
   }
 
-  getLyricLeft() {
-    return this.bounds.x + this.lyric.bounds.x;
+  getLyricLeft(index) {
+    return this.bounds.x + this.lyrics[index].bounds.x;
   }
 
-  getLyricRight() {
-    return this.bounds.x + this.lyric.bounds.x + this.lyric.bounds.width;
+  getLyricRight(index) {
+    return this.bounds.x + this.lyrics[index].bounds.x + this.lyrics[index].bounds.width;
   }
 
   // used by subclasses while building up the chant notations.
@@ -933,7 +1070,7 @@ export class ChantNotationElement extends ChantLayoutElement {
 
   // same as addVisualizer, except the element is unshifted to the front
   // of the visualizer array rather than the end. This way, some
-  // visualizers can be placed behind the others...ledge lines for example.
+  // visualizers can be placed behind the others...ledger lines for example.
   prependVisualizer(chantLayoutElement) {
     if (this.bounds.isEmpty())
       this.bounds = chantLayoutElement.bounds.clone();
@@ -956,18 +1093,28 @@ export class ChantNotationElement extends ChantLayoutElement {
     this.visualizers = [];
     this.bounds = new Rect(Infinity, Infinity, -Infinity, -Infinity);
 
-    if (this.hasLyric())
-      this.lyric.recalculateMetrics(ctxt);
+    for (var i = 0; i < this.lyrics.length; i++)
+      this.lyrics[i].recalculateMetrics(ctxt);
+  }
+
+  // some subclasses have internal dependencies on other notations (for example,
+  // a custos can depend on a later neume which it uses to set its height).
+  // subclasses can override this function so that when the notations are 
+  // altered, the subclass can correctly invalidate (and later restore) its own
+  // depedencies
+  resetDependencies() {
+
   }
 
   // a helper function for subclasses to call after they are done performing layout...
   finishLayout(ctxt) {
-    //this.origin.x -= -this.bounds.x;
+
     this.bounds.x = 0;
 
-    // add the lyric and line it up
-    if (this.hasLyric())
-      this.lyric.bounds.x = this.origin.x - this.lyric.origin.x;
+    for (var i = 0; i < this.lyrics.length; i++)
+      this.lyrics[i].bounds.x = this.origin.x - this.lyrics[i].origin.x;
+
+    this.needsLayout = false;
   }
 
   createDrawable(ctxt) {
@@ -976,8 +1123,8 @@ export class ChantNotationElement extends ChantLayoutElement {
     for (var i = 0; i < this.visualizers.length; i++)
       inner += this.visualizers[i].createDrawable(ctxt);
 
-    if (this.lyric)
-      inner += this.lyric.createDrawable(ctxt);
+    for (i = 0; i < this.lyrics.length; i++)
+      inner += this.lyrics[i].createDrawable(ctxt);
 
     return QuickSvg.createFragment('g', {
       'class': 'ChantNotationElement ' + this.constructor.name,

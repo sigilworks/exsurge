@@ -29,94 +29,98 @@ import { Annotation, ChantContext } from 'Exsurge.Drawing'
 import { Gabc } from 'Exsurge.Gabc'
 
 // client side support
-var ChantVisualElementPrototype = Object.create(HTMLElement.prototype);
 
-ChantVisualElementPrototype.createdCallback = function() {
-  var ctxt = new ChantContext();
-  var _element = this;
-  
-  ctxt.lyricTextFont = "'Crimson Text', serif";
-  ctxt.lyricTextSize *= 1.2;
-  ctxt.dropCapTextFont = ctxt.lyricTextFont;
-  ctxt.annotationTextFont = ctxt.lyricTextFont;
+if (typeof document !== 'undefined') {
+  var ChantVisualElementPrototype = Object.create(HTMLElement.prototype);
 
-  var useDropCap = true;
-  var useDropCapAttr = this.getAttribute("use-drop-cap");
-  if (useDropCapAttr === 'false')
-    useDropCap = false;
+  ChantVisualElementPrototype.createdCallback = function() {
+    var ctxt = new ChantContext();
+    
+    ctxt.lyricTextFont = "'Crimson Text', serif";
+    ctxt.lyricTextSize *= 1.2;
+    ctxt.dropCapTextFont = ctxt.lyricTextFont;
+    ctxt.annotationTextFont = ctxt.lyricTextFont;
 
-  var score;
-  var srcAttr = this.getAttribute("src");
-  if(srcAttr) {
-    var request = new XMLHttpRequest();
-    request.onreadystatechange = function() { 
-      if (request.readyState === 4 && request.status === 200) {
-        var gabc = request.responseText;
-        var gabcHeader = '';
-        var headerEndIndex = gabc.indexOf('\n%%\n');
-        if(headerEndIndex >= 0) {
-          gabcHeader = gabc.slice(0,headerEndIndex).split(/\r?\n/);
-          gabc = gabc.slice(headerEndIndex + 4);
-        }
-        score = Gabc.loadChantScore(ctxt, gabc, useDropCap);
-        if(gabcHeader) {
-          gabcHeader = gabcHeader.reduce(function(result,line){
-            var match = line.match(/^([\w-_]+):\s*([^;\r\n]*)(?:;|$)/i);
-            if(match) result[match[1]] = match[2];
-            return result;
-          }, {});
-          if(gabcHeader.annotation) {
-            score.annotation = new Annotation(ctxt, gabcHeader.annotation);
+    var useDropCap = true;
+    var useDropCapAttr = this.getAttribute("use-drop-cap");
+    if (useDropCapAttr === 'false')
+      useDropCap = false;
+
+    var score, mappings;
+    var srcAttr = this.getAttribute("src");
+    if(srcAttr) {
+      var request = new XMLHttpRequest();
+      request.onreadystatechange = function() { 
+        if (request.readyState === 4 && request.status === 200) {
+          var gabc = request.responseText;
+          var gabcHeader = '';
+          var headerEndIndex = gabc.indexOf('\n%%\n');
+          if(headerEndIndex >= 0) {
+            gabcHeader = gabc.slice(0,headerEndIndex).split(/\r?\n/);
+            gabc = gabc.slice(headerEndIndex + 4);
           }
+          mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabc);
+          score = new exsurge.ChantScore(ctxt, mappings, useDropCap);
+          if(gabcHeader) {
+            gabcHeader = gabcHeader.reduce(function(result,line){
+              var match = line.match(/^([\w-_]+):\s*([^;\r\n]*)(?:;|$)/i);
+              if(match) result[match[1]] = match[2];
+              return result;
+            }, {});
+            if(gabcHeader.annotation) {
+              score.annotation = new Annotation(ctxt, gabcHeader.annotation);
+            }
+          }
+          init();
         }
-        init();
       }
+      request.open("GET", srcAttr, true); // true for asynchronous 
+      request.send(null);
+    } else {
+      mappings = exsurge.Gabc.createMappingsFromSource(ctxt, this.innerText);
+      score = new exsurge.ChantScore(ctxt, mappings, useDropCap);
+          
+      var annotationAttr = this.getAttribute("annotation");
+      if (annotationAttr) {
+        // add an annotation
+        score.annotation = new Annotation(ctxt, annotationAttr);
+      }
+      init();
     }
-    request.open("GET", srcAttr, true); // true for asynchronous 
-    request.send(null);
-  } else {
-    score = Gabc.loadChantScore(ctxt, this.innerText, useDropCap);
+    var _element = this;
 
-    var annotationAttr = this.getAttribute("annotation");
-    if (annotationAttr) {
-      // add an annotation
-      score.annotation = new Annotation(ctxt, annotationAttr);
-    }
-    init();
-  }
-
-  var width = 0;
-  var doLayout = function() {
-    var newWidth = _element.parentElement.clientWidth;
-    if(width === newWidth) return;
-    width = newWidth;
-    // perform layout on the chant
-    score.performLayout(ctxt, function() {
-      score.layoutChantLines(ctxt, width, function() {
-        // render the score to svg code
-        _element.innerHTML = score.createDrawable(ctxt);
+    var width = 0;
+    var doLayout = function() {
+      var newWidth = _element.parentElement.clientWidth;
+      if(width === newWidth) return;
+      width = newWidth;
+      // perform layout on the chant
+      score.performLayoutAsync(ctxt, function() {
+        score.layoutChantLines(ctxt, width, function() {
+          // render the score to svg code
+          _element.innerHTML = score.createDrawable(ctxt);
+        });
       });
-    });
+    }
+    var init = function() {
+      doLayout();
+      if (window.addEventListener)
+        window.addEventListener('resize',doLayout,false);
+      else if (window.attachEvent)
+        window.attachEvent('onresize',doLayout);
+    }
   }
-  var init = function() {
-    doLayout();
-    if (window.addEventListener)
-      window.addEventListener('resize',doLayout,false);
-    else if (window.attachEvent)
-      window.attachEvent('onresize',doLayout);
+
+  ChantVisualElementPrototype.attachedCallback = function() {
+    
   }
+
+  document.registerElement = document.registerElement || function() {};
+  // register the custom element
+  var ChantVisualElement = document.registerElement('chant-visual', {
+    prototype: ChantVisualElementPrototype
+  });
 }
-
-ChantVisualElementPrototype.attachedCallback = function() {
-  
-}
-
-document.registerElement = document.registerElement || function() {};
-// register the custom element
-export var ChantVisualElement = document.registerElement('chant-visual', {
-  prototype: ChantVisualElementPrototype
-});
-
 
 export * from 'Exsurge.Core'
 export * from 'Exsurge.Text'

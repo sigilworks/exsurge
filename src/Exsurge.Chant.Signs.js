@@ -29,33 +29,42 @@ import { ctxt, GlyphCode, GlyphVisualizer, DividerLineVisualizer, ChantNotationE
 /*
  *
  */
-export class Custod extends ChantNotationElement {
+export class Custos extends ChantNotationElement {
 
-  constructor() {
+  // if auto is true, then the custos will automatically try to determine it's height based on
+  // subsequent notations
+  constructor(auto = false) {
     super();
-    this.referringNeume = null;
-    this.note = null;
+    this.auto = auto;
+    this.staffPosition = 0; // default sane value
   }
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
 
-    var staffPosition = 0; // a default value just to make sure we don't fail rebuilding
     var glyphCode;
 
-    if (this.referringNeume !== null) {
-      if (this.referringNeume.notes.length > 0)
-        staffPosition = this.referringNeume.notes[0].staffPosition;
-    } else if (note !== null)
-      staffPosition = this.note.staffPosition;
+    if (this.auto) {
 
-    glyphCode = Custod.getGlyphCode(staffPosition);
+      var neume = ctxt.findNextNeume();
 
-    var glyph = new GlyphVisualizer(ctxt, glyphCode);
-    glyph.setStaffPosition(ctxt, staffPosition);
+      if (neume)
+        this.staffPosition = ctxt.activeClef.pitchToStaffPosition(neume.notes[0].pitch);
+    }
+
+    var glyph = new GlyphVisualizer(ctxt, Custos.getGlyphCode(this.staffPosition));
+    glyph.setStaffPosition(ctxt, this.staffPosition);
     this.addVisualizer(glyph);
 
     this.finishLayout(ctxt);
+  }
+
+  // called when layout has changed and our dependencies are no longer good
+  resetDependencies() {
+
+    // we only need to resolve new dependencies if we're an automatic custos
+    if (this.auto)
+      this.needsLayout = true;
   }
 
   static getGlyphCode(staffPosition) {
@@ -64,28 +73,29 @@ export class Custod extends ChantNotationElement {
 
       // ascending custodes
       if (Math.abs(staffPosition) % 2 === 1)
-        return GlyphCode.CustodLong;
+        return GlyphCode.CustosLong;
       else
-        return GlyphCode.CustodShort;
+        return GlyphCode.CustosShort;
     } else {
 
       // descending custodes
       if (Math.abs(staffPosition) % 2 === 1)
-        return GlyphCode.CustodDescLong;
+        return GlyphCode.CustosDescLong;
       else
-        return GlyphCode.CustodDescShort;
+        return GlyphCode.CustosDescShort;
     }
   }
 }
 
 /*
- * DividingLine
+ * Divider
  */
-export class DividingLine extends ChantNotationElement {
+export class Divider extends ChantNotationElement {
 
   constructor() {
     super();
 
+    this.isDivider = true;
     this.resetsAccidentals = true;
   }
 }
@@ -93,7 +103,7 @@ export class DividingLine extends ChantNotationElement {
 /*
  * QuarterBar
  */
-export class QuarterBar extends DividingLine {
+export class QuarterBar extends Divider {
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
@@ -108,7 +118,7 @@ export class QuarterBar extends DividingLine {
 /*
  * HalfBar
  */
-export class HalfBar extends DividingLine {
+export class HalfBar extends Divider {
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
@@ -124,7 +134,7 @@ export class HalfBar extends DividingLine {
 /*
  * FullBar
  */
-export class FullBar extends DividingLine {
+export class FullBar extends Divider {
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
@@ -140,7 +150,7 @@ export class FullBar extends DividingLine {
 /*
  * DoubleBar
  */
-export class DoubleBar extends DividingLine {
+export class DoubleBar extends Divider {
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
@@ -248,12 +258,15 @@ export class Accidental extends ChantNotationElement {
 /*
  * Virgula
  */
-export class Virgula extends ChantNotationElement {
+export class Virgula extends Divider {
 
   constructor() {
     super();
 
-    // fixme: the staff position of the virgula is customizable, so that it
+    // unlike other dividers a virgula does not reset accidentals
+    this.resetsAccidentals = false;
+
+    // the staff position of the virgula is customizable, so that it
     // can be placed on different lines (top or bottom) depending on the
     // notation tradition of what is being notated (e.g., Benedictine has it
     //  on top line, Norbertine at the bottom)

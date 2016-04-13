@@ -20,10 +20,10 @@
 
   <p><em>This is the simplest of test pages, just to start testing out exsurge. For more information, please visit <a href="https://github.com/frmatthew/exsurge/">the exsurge GitHub pages</a>.</em></p>
 
-  <chant-visual use-drop-cap="false" annotation="IV" src="test.gabc"></chant-visual>
+  <chant-visual annotation="IV" src="test.gabc"></chant-visual>
 
   <label>Enter your GABC code here:</label><br/>
-  <textarea rows="10" cols="80" id="gabcSource" oninput="updateChant()" onchange="updateChant()">(c3) PU(ei)ER(i) *() na(iji)tus(h) est(hhh) no(ih/ji)bis,(i) (;) et(ei~) fí(iji)li(hg)us(f) da(hhi)tus(h) est(h) no(hihh)bis:(efe) (:) cu(e)jus(f) im(h)pé(gi!jk)ri(ih)um(h) (,) su(h)per(h) hú(ih/ji)me(hg)rum(hhh) e(hf//hghvGF)jus:(gf) (:) et(hg) vo(h)cá(hji)bi(h)tur(hhh) no(h)men(hhh) e(highvGF)jus,(gf) (;) ma(hj)gni(i) con(eh~)sí(h)li(hhhf)i(f) An(fhf!gwh)ge(efe)lus.(e) Ps.(::) Can(ehg)tá(hi)te(i) Dó(i)mi(i)no(i) cán(ik)ti(j)cum(j) no(ji)vum:(ij) *(:) qui(ig)a(hi) mi(i)ra(i)bí(i!jwk)li(i)a(h) fe(hhh)cit.(fe) (::) Gló(ehg)ri(hi)a(i) Pa(i)tri.(i) (::) E(i) u(i!jwk) o(i) u(h) a(hhh) e.(fe) (::)</textarea>
+  <textarea rows="10" cols="80" id="gabcSource" oninput="updateChant()" onchange="updateChant()">(c4) CHris(ffg)tus(f.) *(,) fac(fg)tus(f) est(f') pro(f) no(ghF'ED.g_e/fg)bis(f.) (;) o(f)bé(hf/gh!jj/kjk)di(jij)ens(h_g) (,) us(h!jjh)que(f.) ad(ixfiH'Gh) mor(fgf___)tem,(f.) (:) mor(ixf!hhi)tem(g) au(ixgjj//)tem(j.h!iw!jvIG'hw!ivHG) cru(fv.ff)cis.(f_c) (,) (fg!hvGF.e!g'h//fhg/hggf.) V/.(z0::c3)  Prop(d)ter(d) quod(d) et(fe~) De(eh)us(h.) (,) e(h)xal(h)tá(h)vit(h) il(h)lum,(ihhe.//hih___/ihhe.) (,) (hi!kv//lvKI'jvHF.) (,) (h_g/ijh'___ jvIH'jvIH'//hvGF.) (:) et(f) de(f!h'i)dit(i) il(i)li(ih/jki/hhf.) (,) no(hf/hhh)men,(h.f!gwh!iv.hi/jhh/iih.) (;) quod(d) est(d) su(d)per(d) o(dfE'D)mne(ef) *() no(fhG'Fhhh)men.(hhf.) (,) (gxg_fgvED.fgED.fehv.hhhff//dfe/feed.) (::)</textarea>
   <div id="chant-container">
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/document-register-element/0.5.3/document-register-element.js">/* W3C Custom Elements */</script>
@@ -41,16 +41,21 @@
     var gabcSource = document.getElementById('gabcSource');
     var chantContainer = document.getElementById('chant-container');
     var updateChant = function() {
-      score = exsurge.Gabc.loadChantScore(ctxt, gabcSource.value, true);
-    
-      // add an annotation
-      //score.annotation = new exsurge.Annotation(ctxt, "Ant. X");
+      if (score) {
+        exsurge.Gabc.updateMappingsFromSource(ctxt, score.mappings, gabcSource.value);
+        score.updateNotations(ctxt);
+      } else {
+        mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabcSource.value);
+        score = new exsurge.ChantScore(ctxt, mappings, true);
+        score.annotation = new exsurge.Annotation(ctxt, "%V%");
+      }
 
       layoutChant();
     }
+
     var layoutChant = function() {
       // perform layout on the chant
-      score.performLayout(ctxt, function() {
+      score.performLayoutAsync(ctxt, function() {
         score.layoutChantLines(ctxt, chantContainer.clientWidth, function() {
           // render the score to svg code
           chantContainer.innerHTML = score.createDrawable(ctxt);
