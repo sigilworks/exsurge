@@ -33,7 +33,16 @@ import * as Neumes from 'Exsurge.Chant.Neumes'
 
 // reusable reg exps
 var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
-var __notationsRegex = /z0|z|Z|::|:|;|,|`|c1|c2|c3|c4|f3|f4|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*/g;
+var __notationsRegex = /z0|z|Z|::|:|;|,|`|c1|c2|c3|c4|f3|f4|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
+
+// for the brace string inside of [ and ] in notation data
+// the capturing groups are:
+//  1. o or u, to indicate over or under
+//  2. b, cb, or cba, to indicate the brace type
+//  3. 0 or 1 to indicate the attachment point
+//  4. {}( or ) to indicate opening/closing (this group will be null if the metric version is used)
+//  5. a float indicating the millimeter length of the brace (not supported yet)
+var __braceSpecRegex = /([ou])(b|cb|cba):([01])(?:([{}])|;(\d*(?:\.\d+)?)mm)/;
 
 export class Gabc {
 
@@ -49,6 +58,10 @@ export class Gabc {
     ctxt.activeClef = Clef.default();
     
     var mappings = this.createMappingsFromWords(ctxt, words, (clef) => ctxt.activeClef = clef);
+
+    // always set the last notation to have a trailingSpace of 0. This makes layout for the last chant line simpler
+    if (mappings.length > 0 && mappings[mappings.length - 1].notations.length > 0)
+      mappings[mappings.length - 1].notations[mappings[mappings.length - 1].notations.length - 1].trailingSpace = 0;
 
     return mappings;
   }
@@ -129,6 +142,9 @@ export class Gabc {
   // new source
   static updateMappingsFromSource(ctxt, mappings, newGabcSource) {
 
+    // always remove the last old mapping since it's spacing/trailingSpace is handled specially
+    mappings.pop();
+
     var newWords = this.splitWords(newGabcSource);
 
     var results = this.diffDescriptorsAndNewWords(mappings, newWords);
@@ -173,6 +189,10 @@ export class Gabc {
         }
       }
     }
+
+    // always set the last notation to have a trailingSpace of 0. This makes layout for the last chant line simpler
+    if (mappings.length > 0 && mappings[mappings.length - 1].notations.length > 0)
+      mappings[mappings.length - 1].notations[mappings[mappings.length - 1].notations.length - 1].trailingSpace = 0;
   }
 
   // takes an array of gabc words (like that returned by splitWords below)
@@ -558,7 +578,7 @@ export class Gabc {
         return;
 
       while (firstNoteIndex <= lastNoteIndex)
-        neume.notes.push(notes[firstNoteIndex++]);
+        neume.addNote(notes[firstNoteIndex++]);
 
       neumes.push(neume);
 
@@ -959,7 +979,7 @@ export class Gabc {
               lookahead = '0';
           }
 
-          mark = new Markings.Mora(note, ctxt.staffInterval / 4.0);
+          mark = new Markings.Mora(ctxt, note);
           if (haveLookahead && lookahead === '1')
             mark.positionHint = Markings.MarkingPositionHint.Above;
           else if (haveLookahead && lookahead === '0')
@@ -1023,19 +1043,19 @@ export class Gabc {
           break;
 
         case '\'':
-          mark = new Markings.Ictus(note);
+          mark = new Markings.Ictus(ctxt, note);
           if (haveLookahead && lookahead === '1')
             mark.positionHint = Markings.MarkingPositionHint.Above;
           else if (haveLookahead && lookahead === '0')
             mark.positionHint = Markings.MarkingPositionHint.Below;
 
-          note.extraMarkings.push(mark);
+          note.ictus = mark;
           break;
 
         //note shapes
         case 'r':
           if (haveLookahead && lookahead === '1') {
-            note.extraMarkings.push(new Markings.AcuteAccent(note));
+            note.acuteAccent = new Markings.AcuteAccent(ctxt, note);
             i++;
           } else
             note.shapeModifiers |= NoteShapeModifiers.Cavum;
@@ -1133,10 +1153,59 @@ export class Gabc {
           else if (note.pitch.step === Step.Fa)
             note.pitch.step = Step.Fu;
           break;
+
+        // gabc special item groups
+        case '[':
+          // read in the whole group and parse it
+          var startIndex = ++i;
+          while (i < data.length && data[i] !== ']')
+            i++;
+
+          this.processInstructionForNote(ctxt, note, data.substring(startIndex, i));
+          break;
       }
     }
 
     notes.push(note);
+  }
+
+  // an instruction in this context is referring to a special gabc coding found after
+  // notes between ['s and ]'s. choral signs and braces fall into this
+  // category.
+  //
+  // currently only brace instructions are supported here!
+  static processInstructionForNote(ctxt, note, instruction) {
+
+    var results = instruction.match(__braceSpecRegex);
+
+    if (results === null)
+      return;
+
+    // see the comments at the definition of __braceSpecRegex for the
+    // capturing groups
+    var above = results[1] === 'o';
+    var shape = Markings.BraceShape.CurlyBrace; // default
+
+    switch(results[2]) {
+      case 'b':
+        shape = Markings.BraceShape.RoundBrace;
+        break;
+      case 'cb':
+        shape = Markings.BraceShape.CurlyBrace;
+        break;
+      case 'cba':
+        shape = Markings.BraceShape.AccentedCurlyBrace;
+        break;
+    }
+
+    var attachmentPoint = results[3] === '0' ? Markings.BraceAttachment.Left : Markings.BraceAttachment.Right;
+    var brace = null;
+    var type;
+
+    if (results[4] === '{')
+      note.braceStart = new Markings.BracePoint(note, above, shape, attachmentPoint);
+    else
+      note.braceEnd = new Markings.BracePoint(note, above, shape, attachmentPoint);
   }
 
   // takes raw gabc text source and parses it into words. For example, passing

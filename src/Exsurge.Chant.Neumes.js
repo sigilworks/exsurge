@@ -25,7 +25,7 @@
 
 import * as Exsurge from 'Exsurge.Core'
 import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
-import { ctxt, QuickSvg, ChantLayoutElement, ChantNotationElement, GlyphCode, GlyphVisualizer, NeumeLineVisualizer, VirgaLineVisualizer, HorizontalEpisemaLineVisualizer } from 'Exsurge.Drawing'
+import { QuickSvg, ChantLayoutElement, ChantNotationElement, GlyphCode, GlyphVisualizer, NeumeLineVisualizer, VirgaLineVisualizer, HorizontalEpisemaLineVisualizer, CurlyBraceVisualizer } from 'Exsurge.Drawing'
 import { Note, LiquescentType, NoteShape, NoteShapeModifiers } from 'Exsurge.Chant'
 import { MarkingPositionHint, HorizontalEpisema, Mora } from 'Exsurge.Chant.Markings'
 import { Glyphs } from 'Exsurge.Glyphs'
@@ -323,11 +323,15 @@ export class Neume extends ChantNotationElement {
     super();
 
     this.isNeume = true;  // poor man's reflection
-
     this.notes = notes;
 
-    // neumes keep track of listeners so that we can notify them when we are changed
-    this.changeListeners = [];
+    for (var i = 0; i < notes.length; i++)
+      notes[i].neume = this;
+  }
+
+  addNote(note) {
+    note.neume = this;
+    this.notes.push(note);
   }
 
   performLayout(ctxt) {
@@ -346,24 +350,39 @@ export class Neume extends ChantNotationElement {
 
       for (j = 0; j < note.epismata.length; j++) {
         note.epismata[j].performLayout(ctxt);
-        this.addVisualizer(note.epismata[j].visualizer);
+        this.addVisualizer(note.epismata[j]);
       }
 
       for (j = 0; j < note.morae.length; j++) {
         note.morae[j].performLayout(ctxt);
-        this.addVisualizer(note.morae[j].visualizer);
+        this.addVisualizer(note.morae[j]);
       }
 
-      for (j = 0; j < note.extraMarkings.length; j++) {
-        note.extraMarkings[j].performLayout(ctxt);
-        this.addVisualizer(note.extraMarkings[j].visualizer);
+      // if the note has an ictus, then add it here
+      if (note.ictus) {
+        note.ictus.performLayout(ctxt);
+        this.addVisualizer(note.ictus);
       }
+
+      if (note.acuteAccent) {
+        note.acuteAccent.performLayout(ctxt);
+        this.addVisualizer(note.acuteAccent);
+      }
+
+      // braces are handled by the chant line, so we don't mess with them here
+      // this is because brace size depends on chant line logic (neume spacing,
+      // justification, etc.) so they are considered chant line level
+      // markings rather than note level markings
     }
 
     this.origin.x = this.notes[0].origin.x;
     this.origin.y = this.notes[0].origin.y;
 
     super.finishLayout(ctxt);
+  }
+
+  resetDependencies() {
+
   }
 
   build(ctxt) {
@@ -399,6 +418,8 @@ export class Apostropha extends Neume {
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
+
+    var y = ctxt.calculateHeightFromStaffPosition(4);
 
     this.build(ctxt).noteAt(this.notes[0], Apostropha.getNoteGlyphCode(this.notes[0]));
 
@@ -686,6 +707,7 @@ export class Oriscus extends Neume {
   }
 
   resetDependencies() {
+
     // a single oriscus tries to automatically use the right direction
     // based on the following neumes. if we don't have a manually designated
     // direction, then we reset our layout so that we can try to guess it
