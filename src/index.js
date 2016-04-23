@@ -53,6 +53,15 @@ if (typeof document !== 'undefined') {
       request.onreadystatechange = function() { 
         if (request.readyState === 4 && request.status === 200) {
           var gabc = request.responseText;
+          gabc = gabc.replace(/<v>\\([VRA])bar<\/v>/g,function(match,barType) {
+              return barType + '/.';
+            }).replace(/<sp>([VRA])\/<\/sp>/g,function(match,barType) {
+              return barType + '/.';
+            }).replace(/<\/?sc>/g,'%')
+            .replace(/<\/?b>/g,'*')
+            .replace(/<\/?i>/g,'_')
+            .replace(/<sp>'(?:ae|æ)<\/sp>/g,'ǽ')
+            .replace(/<v>\\greheightstar<\/v>/g,'*');
           var gabcHeader = '';
           var headerEndIndex = gabc.indexOf('\n%%\n');
           if(headerEndIndex >= 0) {
@@ -64,7 +73,7 @@ if (typeof document !== 'undefined') {
           if(gabcHeader) {
             gabcHeader = gabcHeader.reduce(function(result,line){
               var match = line.match(/^([\w-_]+):\s*([^;\r\n]*)(?:;|$)/i);
-              if(match) result[match[1]] = match[2];
+              if(match && !result[match[1]]) result[match[1]] = match[2];
               return result;
             }, {});
             if(gabcHeader.annotation) {
