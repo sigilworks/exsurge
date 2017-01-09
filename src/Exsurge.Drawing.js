@@ -1385,10 +1385,12 @@ export class ChantNotationElement extends ChantLayoutElement {
 
   // used by subclasses while building up the chant notations.
   addVisualizer(chantLayoutElement) {
-    if (this.bounds.isEmpty())
-      this.bounds = chantLayoutElement.bounds.clone();
-    else
-      this.bounds.union(chantLayoutElement.bounds);
+    if(!chantLayoutElement.ignoreBounds) {
+      if (this.bounds.isEmpty())
+        this.bounds = chantLayoutElement.bounds.clone();
+      else
+        this.bounds.union(chantLayoutElement.bounds);
+    }
 
     this.visualizers.push(chantLayoutElement);
   }

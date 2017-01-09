@@ -805,6 +805,12 @@ export class Podatus extends Neume {
             Math.abs(this.notes[0].staffPosition % 2) === 1)
           marking.positionHint = MarkingPositionHint.Below;
       }
+      // if there is a mora on the first note but not on the second, and the neume
+      // continues with a punctum higher than the second note, we need to adjust
+      // the space after the neume so that it follows immediately with no gap
+      if (this.notes[0].morae.length > 0 && this.notes[1].morae.length === 0) {
+        this.notes[0].morae[0].ignoreBounds = true;
+      }
     }
 
     for (i = 0; i < this.notes[1].epismata.length; i++)
