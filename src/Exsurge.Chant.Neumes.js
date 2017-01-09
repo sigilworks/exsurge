@@ -567,20 +567,12 @@ export class Clivis extends Neume {
     // 1. morae need to be lined up if both notes have morae
     // 2. like the podatus, mora on lower note needs to below
     //    under certain circumstances
-    for (i = 0; i < this.notes[1].morae.length; i++) {
-      mark = this.notes[1].morae[i];
-
-      if (this.notes[0].staffPosition - this.notes[1].staffPosition === 1 &&
-          Math.abs(this.notes[1].staffPosition % 2) === 1)
-        mark.positionHint = MarkingPositionHint.Below;
-    }
-
-    for (i = 0; i < this.notes[0].morae.length; i++) {
-
-      if (hasLowerMora) {
-        mark = this.notes[0].morae[i];
-        mark.positionHint = MarkingPositionHint.Above;
-        mark.horizontalOffset += this.notes[1].bounds.right() - this.notes[0].bounds.right();
+    if (this.notes[1].morae.length) {
+      var morae = this.notes[1].morae;
+      if(morae.length > 1) morae[0].horizontalOffset += this.notes[1].bounds.right() - this.notes[0].bounds.right();
+      if(this.notes[0].staffPosition - this.notes[1].staffPosition === 1 &&
+          Math.abs(this.notes[1].staffPosition % 2) === 1) {
+        morae.slice(-1)[0].positionHint = MarkingPositionHint.Below;
       }
     }
 
@@ -805,6 +797,13 @@ export class Podatus extends Neume {
         marking = this.notes[1].morae[0];
       }
       if(marking) marking.positionHint = MarkingPositionHint.Below;
+    }
+
+    // if there is a mora on the first note but not on the second, and the neume
+    // continues with a punctum higher than the second note, we need to adjust
+    // the space after the neume so that it follows immediately with no gap
+    if (this.notes[0].morae.length > 0 && this.notes[1].morae.length === 0) {
+      this.notes[0].morae[0].ignoreBounds = true;
     }
 
     for (i = 0; i < this.notes[1].epismata.length; i++)
