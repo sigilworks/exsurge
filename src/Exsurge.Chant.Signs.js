@@ -50,6 +50,14 @@ export class Custos extends ChantNotationElement {
 
       if (neume)
         this.staffPosition = ctxt.activeClef.pitchToStaffPosition(neume.notes[0].pitch);
+
+      // in case there was a weird fa/do clef change, let's sanitize the staffPosition by making sure it is
+      // within reasonable bounds
+      while (this.staffPosition < -6)
+        this.staffPosition += 7;
+
+      while (this.staffPosition > 6)
+        this.staffPosition -= 7;
     }
 
     var glyph = new GlyphVisualizer(ctxt, Custos.getGlyphCode(this.staffPosition));
