@@ -402,9 +402,11 @@ export class ChantLine extends ChantLayoutElement {
       curr = notations[i];
       
       var actualRightBoundary;
-      if(i === lastNotationIndex) {
+      if(i === lastNotationIndex || curr.constructor === Custos || (prev.constructor === Custos && curr.isDivider)) {
         // on the last notation of the score, we don't need a custos or trailing space, so we use staffRight as the
         // right boundary.
+        // Also, if the current notation is a divider and the previous was a custos, we don't need extra space
+        // because if the following notation won't fit, we can switch the order and use the custos as the end-of-the-line custos
         actualRightBoundary = this.staffRight;
       } else if (i === lastNotationIndex - 1) {
         // on the penultimate notation, make sure there is at least enough room for whichever takes up less space,
@@ -420,14 +422,34 @@ export class ChantLine extends ChantLayoutElement {
       var fitsOnLine = this.positionNotationElement(ctxt, prevWithLyrics, prev, curr, actualRightBoundary);
       if (fitsOnLine === false) {
 
+        // first check for elements that cannot begin a system: dividers and custodes
+        while(this.numNotationsOnLine > 0 && (curr.isDivider || curr.constructor === Custos)) {
+          curr = notations[ --i ];
+          this.numNotationsOnLine--;
+        }
+
         // check if the prev elements want to be kept with this one
         for (j = i - 1; j > this.notationsStartIndex; j--) {
           var cne = notations[j];
 
-          if (cne.keepWithNext === true || (j === i - 1 && curr.isDivider))
+          if (cne.keepWithNext === true)
             this.numNotationsOnLine--;
           else
             break;
+        }
+
+        if(notations[j].isDivider && notations[j - 1].constructor === Custos) {
+          // reverse the order: put the divider first, and end the line with the custos.
+          var prevWithLyrics = null;
+          for (i = j - 2; i >= this.notationsStartIndex; i--) {
+            if(notations[i].hasLyrics()) {
+              prevWithLyrics = notations[i];
+              break;
+            }
+          }
+          this.positionNotationElement(ctxt, prevWithLyrics, notations[j - 2], notations[j], this.staffRight);
+          this.custos = notations[j - 1];
+          this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
         }
 
         // we are at the end of the line!
@@ -447,21 +469,22 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
-    // create the automatic custos at the end of the line if there are neumes left in the notations
-    for (i = this.notationsStartIndex + this.numNotationsOnLine; i < notations.length; i++) {
-      var notation = notations[i];
+    if(!this.custos) {
+      // create the automatic custos at the end of the line if there are neumes left in the notations
+      for (i = this.notationsStartIndex + this.numNotationsOnLine; i < notations.length; i++) {
+        var notation = notations[i];
 
-      if (notation.isNeume) {
+        if (notation.isNeume) {
 
-        this.custos = new Custos(true);
-        ctxt.currNotationIndex = i - 1; // make sure the context knows where the custos is 
-        this.custos.performLayout(ctxt);
+          this.custos = new Custos(true);
+          ctxt.currNotationIndex = i - 1; // make sure the context knows where the custos is
+          this.custos.performLayout(ctxt);
 
-        // Put the custos at the very end of the line
-        this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
-
-        // nothing more to see here...
-        break;
+          // Put the custos at the very end of the line
+          this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
+          // nothing more to see here...
+          break;
+        }
       }
     }
 
@@ -536,6 +559,9 @@ export class ChantLine extends ChantLayoutElement {
       if (curr.constructor === ChantLineBreak)
         continue;
 
+      if (curr === this.custos)
+        continue;
+
       // otherwise, we can add space before this element
       toJustify.push(curr);
     }
@@ -549,6 +575,9 @@ export class ChantLine extends ChantLayoutElement {
     for (i = this.notationsStartIndex; i < lastIndex; i++) {
 
       curr = notations[i];
+
+      if (curr === this.custos)
+        continue;
 
       if (toJustifyIndex < toJustify.length && toJustify[toJustifyIndex] === curr) {
         offset += increment;
