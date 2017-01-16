@@ -378,7 +378,7 @@ export class ChantLine extends ChantLayoutElement {
       this.staffLeft += padding;
     } else {
       prev = notations[newElementStart - 1];
-      if(prev.constructor === DoubleBar && prev.hasLyrics()) {
+      if(prev.constructor === DoubleBar && prev.hasLyrics() && (prev.lyrics.length > 1 || !prev.lyrics[0].text.match(/^i+j\.?/))) {
         beginningLyrics = prev.lyrics.map(function(lyric){
           var newLyric = new Lyric(ctxt, lyric.originalText, lyric.lyricType);
           newLyric.elidesToNext = lyric.elidesToNext;
