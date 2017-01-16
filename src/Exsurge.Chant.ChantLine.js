@@ -26,9 +26,9 @@
 import * as Exsurge from 'Exsurge.Core'
 import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
 import { QuickSvg, ChantLayoutElement, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, DropCap } from 'Exsurge.Drawing'
-import { ChantLineBreak } from 'Exsurge.Chant'
+import { ChantLineBreak, TextOnly } from 'Exsurge.Chant'
 import { Glyphs } from 'Exsurge.Glyphs'
-import { Custos } from 'Exsurge.Chant.Signs'
+import { Custos, DoubleBar } from 'Exsurge.Chant.Signs'
 import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema, BraceShape, BracePoint } from 'Exsurge.Chant.Markings'
 
 
@@ -116,6 +116,14 @@ export class ChantLine extends ChantLayoutElement {
 
       for (var j = 0; j < notation.lyrics.length; j++) {
         notation.lyrics[j].bounds.y = offset + this.lyricLineBaselines[j];
+        offset += this.lyricLineHeights[j];
+      }
+    }
+
+    if(this.beginningLyric) {
+      offset = this.notationBounds.y + this.notationBounds.height;
+      for (j = 0; j < this.beginningLyric.lyrics.length; j++) {
+        this.beginningLyric.lyrics[j].bounds.y = offset + this.lyricLineBaselines[j];
         offset += this.lyricLineHeights[j];
       }
     }
@@ -282,6 +290,9 @@ export class ChantLine extends ChantLayoutElement {
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
+    if (this.beginningLyric)
+      inner += this.beginningLyric.createSvgFragment(ctxt);
+
     // add all of the notations
     for (i = this.notationsStartIndex; i < lastIndex; i++)
       inner += notations[i].createSvgFragment(ctxt);
@@ -344,7 +355,7 @@ export class ChantLine extends ChantLayoutElement {
   buildFromChantNotationIndex(ctxt, newElementStart, width) {
 
     // todo: reset / clear the children we have in case they have data
-    var notations = this.score.notations;
+    var notations = this.score.notations, beginningLyric = null, prev = null, prevWithLyrics = null;
     this.notationsStartIndex = newElementStart;
     this.numNotationsOnLine = 0;
 
@@ -368,6 +379,20 @@ export class ChantLine extends ChantLayoutElement {
         padding = Math.max(padding, this.score.annotation.bounds.width + this.score.annotation.padding * 4);
 
       this.staffLeft += padding;
+    } else {
+      prev = notations[newElementStart - 1];
+      if(prev.constructor === DoubleBar && prev.hasLyrics()) {
+        beginningLyric = new TextOnly();
+        beginningLyric.lyrics = prev.lyrics.map(function(lyric){
+          var newLyric = new Lyric(ctxt, lyric.originalText, lyric.lyricType);
+          newLyric.elidesToNext = lyric.elidesToNext;
+          // Hide the original lyric by setting its bounds.y to an extremely high number.
+          // If the chant is re-laid out, this value will be recalculated so that it won't stay hidden.
+          lyric.bounds.y = Number.MAX_SAFE_INTEGER;
+          return newLyric;
+        });
+        beginningLyric.performLayout(ctxt);
+      }
     }
 
     // set up the clef...
@@ -384,10 +409,17 @@ export class ChantLine extends ChantLayoutElement {
     this.startingClef.performLayout(ctxt);
     this.startingClef.bounds.x = this.staffLeft;
 
-    var curr = this.startingClef, prev = null, prevWithLyrics = null;
+    var curr = this.startingClef;
 
     // estimate how much space we have available to us
     var rightNotationBoundary = this.staffRight - Glyphs.CustosLong.bounds.width * ctxt.glyphScaling - ctxt.intraNeumeSpacing * 4; // possible custos on the line
+
+    if(beginningLyric) {
+      this.positionNotationElement(ctxt, null, curr, beginningLyric, rightNotationBoundary);
+      prev = curr;
+      curr = beginningLyric;
+      this.beginningLyric = beginningLyric;
+    }
 
     // iterate through the notations, fittng what we can on this line
     var i, j, lastNotationIndex = notations.length - 1;
