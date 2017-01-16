@@ -622,6 +622,17 @@ export class Gabc {
       },
       handle: function(currNote, prevNote) {
         
+        if (currNote.shape) {
+          var neume = new Neumes.Punctum();
+          var state = createNeume(neume, false);
+          // if the current note is on a space within the staff AND the previous note is on the line below AND the previous note has a mora,
+          // then we went the trailing space at its default of intraNeumeSpacing to prevent the dot from running up into the current note.
+          // Otherwise, we want no trailing space.
+          if ((currNote.staffPosition > prevNote.staffPosition) && (currNote.staffPosition % 2 === 1 || prevNote.staffPosition !== currNote.staffPosition - 1 || !prevNote.morae || prevNote.morae.length === 0))
+            neume.trailingSpace = 0;
+          return state;
+        }
+        
         if (currNote.staffPosition > prevNote.staffPosition)
           return podatusState;
         else if (currNote.staffPosition < prevNote.staffPosition) {
