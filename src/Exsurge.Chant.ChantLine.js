@@ -440,7 +440,7 @@ export class ChantLine extends ChantLayoutElement {
 
         if(notations[j].isDivider && notations[j - 1].constructor === Custos) {
           // reverse the order: put the divider first, and end the line with the custos.
-          var prevWithLyrics = null;
+          prevWithLyrics = null;
           for (i = j - 2; i >= this.notationsStartIndex; i--) {
             if(notations[i].hasLyrics()) {
               prevWithLyrics = notations[i];
