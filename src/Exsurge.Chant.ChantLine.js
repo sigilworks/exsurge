@@ -120,10 +120,10 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
-    if(this.beginningLyric) {
+    if(this.startingClef.hasLyrics()) {
       offset = this.notationBounds.y + this.notationBounds.height;
-      for (j = 0; j < this.beginningLyric.lyrics.length; j++) {
-        this.beginningLyric.lyrics[j].bounds.y = offset + this.lyricLineBaselines[j];
+      for (j = 0; j < this.startingClef.lyrics.length; j++) {
+        this.startingClef.lyrics[j].bounds.y = offset + this.lyricLineBaselines[j];
         offset += this.lyricLineHeights[j];
       }
     }
@@ -290,9 +290,6 @@ export class ChantLine extends ChantLayoutElement {
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
-    if (this.beginningLyric)
-      inner += this.beginningLyric.createSvgFragment(ctxt);
-
     // add all of the notations
     for (i = this.notationsStartIndex; i < lastIndex; i++)
       inner += notations[i].createSvgFragment(ctxt);
@@ -355,7 +352,7 @@ export class ChantLine extends ChantLayoutElement {
   buildFromChantNotationIndex(ctxt, newElementStart, width) {
 
     // todo: reset / clear the children we have in case they have data
-    var notations = this.score.notations, beginningLyric = null, prev = null, prevWithLyrics = null;
+    var notations = this.score.notations, beginningLyrics = null, prev = null, prevWithLyrics = null;
     this.notationsStartIndex = newElementStart;
     this.numNotationsOnLine = 0;
 
@@ -382,8 +379,7 @@ export class ChantLine extends ChantLayoutElement {
     } else {
       prev = notations[newElementStart - 1];
       if(prev.constructor === DoubleBar && prev.hasLyrics()) {
-        beginningLyric = new TextOnly();
-        beginningLyric.lyrics = prev.lyrics.map(function(lyric){
+        beginningLyrics = prev.lyrics.map(function(lyric){
           var newLyric = new Lyric(ctxt, lyric.originalText, lyric.lyricType);
           newLyric.elidesToNext = lyric.elidesToNext;
           // Hide the original lyric by setting its bounds.y to an extremely high number.
@@ -391,7 +387,12 @@ export class ChantLine extends ChantLayoutElement {
           lyric.bounds.y = Number.MAX_SAFE_INTEGER;
           return newLyric;
         });
-        beginningLyric.performLayout(ctxt);
+        var minX = beginningLyrics.map(function(l) {
+          return l.bounds.x;
+        }).reduce(function(a,b){ return a < b? a : b; });
+        beginningLyrics.forEach(function(l) {
+          l.bounds.x -= minX;
+        })
       }
     }
 
@@ -411,15 +412,12 @@ export class ChantLine extends ChantLayoutElement {
 
     var curr = this.startingClef;
 
+    if(beginningLyrics) {
+      curr.lyrics = beginningLyrics;
+    }
+
     // estimate how much space we have available to us
     var rightNotationBoundary = this.staffRight - Glyphs.CustosLong.bounds.width * ctxt.glyphScaling - ctxt.intraNeumeSpacing * 4; // possible custos on the line
-
-    if(beginningLyric) {
-      this.positionNotationElement(ctxt, null, curr, beginningLyric, rightNotationBoundary);
-      prev = curr;
-      curr = beginningLyric;
-      this.beginningLyric = beginningLyric;
-    }
 
     // iterate through the notations, fittng what we can on this line
     var i, j, lastNotationIndex = notations.length - 1;
