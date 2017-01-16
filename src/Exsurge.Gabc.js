@@ -388,11 +388,11 @@ export class Gabc {
         for (var i = 0; i < neumes.length; i++)
           notations.push(neumes[i]);
 
-        // reset the trailing space
-        trailingSpace = -1;
-
         notes = [];
       }
+
+      // reset the trailing space
+      trailingSpace = -1;
 
       // then, if we're passed a notation, let's add it
       // also, perform chant logic here
