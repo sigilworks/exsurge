@@ -164,6 +164,7 @@ export class Clef extends ChantNotationElement {
     this.octave = octave;
     this.defaultAccidental = defaultAccidental;
     this.activeAccidental = defaultAccidental;
+    this.keepWithNext = true;
   }
 
   resetAccidentals() {
