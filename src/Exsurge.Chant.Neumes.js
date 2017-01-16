@@ -547,7 +547,7 @@ export class Climacus extends Neume {
 
     this.build(ctxt)
       .virgaAt(this.notes[0])
-      .advanceBy(ctxt.intraNeumeSpacing / 2)
+      .advanceBy(ctxt.intraNeumeSpacing)
       .withInclinati(this.notes.slice(1));
 
     this.finishLayout(ctxt);
