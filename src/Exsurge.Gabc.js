@@ -633,13 +633,16 @@ export class Gabc {
           return state;
         }
         
-        if (currNote.staffPosition > prevNote.staffPosition)
+        if (currNote.staffPosition > prevNote.staffPosition) {
+          if (currNote.ictus) currNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
           return podatusState;
-        else if (currNote.staffPosition < prevNote.staffPosition) {
+        } else if (currNote.staffPosition < prevNote.staffPosition) {
           if (currNote.shape === NoteShape.Inclinatum)
             return climacusState;
-          else
+          else {
+            if(prevNote.ictus) prevNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
             return clivisState;
+          }
         } else
           return distrophaState;
       }
@@ -685,7 +688,9 @@ export class Gabc {
       handle: function(currNote, prevNote) {
 
         if (currNote.staffPosition > prevNote.staffPosition) {
-
+          if (currNote.ictus) currNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
+          if (prevNote.ictus) prevNote.ictus.positionHint = Markings.MarkingPositionHint.Below;
+          
           if (prevNote.shape === NoteShape.Oriscus)
             return salicusState;
           else
@@ -707,9 +712,10 @@ export class Gabc {
       },
       handle: function(currNote, prevNote) {
 
-        if (currNote.shape === NoteShape.Default && currNote.staffPosition > prevNote.staffPosition)
+        if (currNote.shape === NoteShape.Default && currNote.staffPosition > prevNote.staffPosition) {
+          if (currNote.ictus) currNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
           return porrectusState;
-        else
+        } else
           return createNeume(new Neumes.Clivis(), false);
       }
     };
