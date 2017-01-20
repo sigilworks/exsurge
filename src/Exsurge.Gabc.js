@@ -635,7 +635,7 @@ export class Gabc {
         
         if (currNote.staffPosition > prevNote.staffPosition) {
           if (currNote.ictus) currNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
-          return podatusState;
+            return podatusState;
         } else if (currNote.staffPosition < prevNote.staffPosition) {
           if (currNote.shape === NoteShape.Inclinatum)
             return climacusState;
@@ -643,8 +643,11 @@ export class Gabc {
             if(prevNote.ictus) prevNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
             return clivisState;
           }
-        } else
+        } else if(prevNote.morae && prevNote.morae.length) {
+          return createNeume(new Neumes.Punctum(), false);
+        } else {
           return distrophaState;
+        }
       }
     };
 
@@ -852,9 +855,13 @@ export class Gabc {
         return new Neumes.Distropha();
       },
       handle: function(currNote, prevNote) {
-        if (currNote.staffPosition === prevNote.staffPosition)
-          return tristrophaState;
-        else
+        if (currNote.staffPosition === prevNote.staffPosition) {
+          if(prevNote.morae && prevNote.morae.length) {
+            return createNeume(new Neumes.Distropha(), false);
+          } else {
+            return tristrophaState;
+          }
+        } else
           return createNeume(new Neumes.Apostropha(), false, false);
       }
     };
