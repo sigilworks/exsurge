@@ -357,7 +357,7 @@ export class Gabc {
       text = text.substring(0, text.length - 1);
     }
 
-    if (text === "*" || text === "†")
+    if (text.match(/^(?:[*†]|i+j)\.?$/))
       lyricType = LyricType.Directive;
 
     var lyric = new Lyric(ctxt, text, lyricType);
