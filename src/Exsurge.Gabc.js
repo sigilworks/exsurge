@@ -230,7 +230,7 @@ export class Gabc {
     for (var j = 0; j < matches.length; j++) {
       var match = matches[j];
 
-      var lyricText = match[1].trim();
+      var lyricText = match[1].trim().replace(/~/g,' ');
       var notationData = match[2];
 
       var items = this.parseNotations(ctxt, notationData);
