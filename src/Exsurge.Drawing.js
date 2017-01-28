@@ -216,7 +216,7 @@ export var QuickSvg = {
     node.setAttribute('transform', 'scale(' + sx + ',' + sy + ')');
     return node;
   }
-}
+};
 
 export var TextMeasuringStrategy = {
   // shapes
@@ -1017,9 +1017,6 @@ export class TextElement extends ChantLayoutElement {
     this.bounds.x = 0;
     this.bounds.y = 0;
 
-    this.bounds.x = 0;
-    this.bounds.y = 0;
-    
     this.origin.x = 0;
   
     if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
@@ -1035,10 +1032,12 @@ export class TextElement extends ChantLayoutElement {
       this.bounds.width = bbox.width;
       this.bounds.height = bbox.height;
       this.origin.y = -bbox.y; // offset to baseline from top
+      if(this.dominantBaseline === 'hanging') this.bounds.y = this.origin.y * 0.65;
     } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
       this.bounds.width = this.measureSubstring(ctxt);
       this.bounds.height = this.fontSize * 1.2;
       this.origin.y = this.fontSize;
+      if(this.dominantBaseline === 'hanging') this.bounds.y = this.origin.y * 0.65;
     }
   }
 
@@ -1094,7 +1093,7 @@ export class TextElement extends ChantLayoutElement {
       'y': this.bounds.y,
       'class': this.getCssClasses().trim(),
       'text-anchor': this.textAnchor,
-      'dominant-baseline': this.dominantBaseline,
+      //'dominant-baseline': this.dominantBaseline, // hanging baseline doesn't work in Safari
       'style': styleProperties
     }, spans);
   }
@@ -1316,6 +1315,66 @@ export class Annotation extends TextElement {
 
   getCssClasses() {
     return "annotation " + super.getCssClasses();
+  }
+}
+
+export class Annotations extends ChantLayoutElement {
+  /**
+   * @param {String} text
+   */
+  constructor(ctxt, ...texts) {
+    super();
+
+    this.annotations = texts.map(function(text) {
+      return new Annotation(ctxt, text);
+    });
+    this.padding = Math.max.apply(null, this.annotations.map(function(annotation) { return annotation.padding; }));
+  }
+
+  updateBounds(multiplier) {
+    if(!multiplier) multiplier = 1;
+    for(var i=0; i < this.annotations.length; ++i) {
+      var annotation = this.annotations[i];
+      annotation.bounds.x += this.bounds.x * multiplier;
+      annotation.bounds.y += this.bounds.y * multiplier;
+    }
+  }
+
+  recalculateMetrics(ctxt) {
+    this.bounds.x = 0;
+    this.bounds.y = 0;
+
+    this.bounds.width = 0;
+    this.bounds.height = 0;
+
+    this.origin.x = 0;
+    this.origin.y = 0;
+
+    for(var i=0; i < this.annotations.length; ++i) {
+      var annotation = this.annotations[i];
+      annotation.recalculateMetrics(ctxt);
+      this.bounds.width = Math.max(this.bounds.width, annotation.bounds.width);
+      annotation.bounds.y += this.bounds.height;
+      this.bounds.height += annotation.bounds.height / 1.4;
+      this.origin.y = this.origin.y || annotation.origin.y;
+    }
+  }
+
+  draw(ctxt) {
+    this.updateBounds();
+    this.annotations.forEach(function(annotation) {
+      annotation.draw(ctxt);
+    });
+    this.updateBounds(-1);
+  }
+
+  createSvgFragment(ctxt) {
+    this.updateBounds();
+    var result = this.annotations.map(function(annotation) {
+      return annotation.createSvgFragment(ctxt);
+    }).join('');
+    this.updateBounds(-1);
+    return result;
   }
 }
 
