@@ -1032,12 +1032,10 @@ export class TextElement extends ChantLayoutElement {
       this.bounds.width = bbox.width;
       this.bounds.height = bbox.height;
       this.origin.y = -bbox.y; // offset to baseline from top
-      if(this.dominantBaseline === 'hanging') this.bounds.y = this.origin.y * 0.65;
     } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
       this.bounds.width = this.measureSubstring(ctxt);
       this.bounds.height = this.fontSize * 1.2;
       this.origin.y = this.fontSize;
-      if(this.dominantBaseline === 'hanging') this.bounds.y = this.origin.y * 0.65;
     }
   }
 

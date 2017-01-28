@@ -158,12 +158,11 @@ export class ChantLine extends ChantLayoutElement {
       if (this.score.annotation !== null) {
         // annotations use dominant-baseline to align text to the top
         this.score.annotation.bounds.x = this.staffLeft / 2;
-        var boundsY = this.score.annotation.bounds.y;
         this.score.annotation.bounds.y = - ctxt.staffInterval * 3;
         if(this.score.dropCap !== null) {
           this.score.annotation.bounds.y = Math.min(this.score.annotation.bounds.y, this.score.dropCap.bounds.y - this.score.annotation.bounds.height - (this.score.dropCap.fontSize * 0.65));
         }
-        this.score.annotation.bounds.y += boundsY;
+        this.score.annotation.bounds.y += this.score.annotation.origin.y * 0.65;
       }
     }
 
