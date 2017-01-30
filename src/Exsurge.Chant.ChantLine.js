@@ -60,8 +60,9 @@ export class ChantLine extends ChantLayoutElement {
     this.nextLine = null;
     this.previousLine = null; // for layout assistance
 
-    this.lyricLineHeights = []; // height of each text line
-    this.lyricLineBaselines = []; // offsets from the top of the text line to the baseline
+    this.lyricLineHeight = 0; // height of each text line
+    this.lyricLineBaseline = 0; // offsets from the top of the text line to the baseline
+    this.numLyricLines = 0; // maximum count of lyrics on the same syllable
 
     // fixme: make these configurable values from the score
     this.spaceAfterNotations = 0; // the space between the notation bounds and the first text track
@@ -85,8 +86,9 @@ export class ChantLine extends ChantLayoutElement {
     this.notationBounds.union(this.startingClef.bounds);
 
     // reset the lyric line offsets before we [re]calculate them now
-    this.lyricLineHeights = [];
-    this.lyricLineBaselines = [];
+    this.lyricLineHeight = 0;
+    this.lyricLineBaseline = 0;
+    this.numLyricLines = 0;
 
     for (i = this.notationsStartIndex; i < lastIndex; i++) {
       notation = notations[i];
@@ -94,14 +96,10 @@ export class ChantLine extends ChantLayoutElement {
       this.notationBounds.union(notation.bounds);
 
       // keep track of lyric line offsets
-      for (j = 0; j < notation.lyrics.length; j++) {
-        if (this.lyricLineHeights.length < j + 1) {
-          this.lyricLineHeights.push(0);
-          this.lyricLineBaselines.push(0);
-        }
-
-        this.lyricLineHeights[j] = Math.max(this.lyricLineHeights[j], notation.lyrics[j].bounds.height);
-        this.lyricLineBaselines[j] = Math.max(this.lyricLineBaselines[j], notation.lyrics[j].origin.y);
+      if(notation.hasLyrics()) {
+        this.lyricLineHeight = Math.max(this.lyricLineHeight, notation.lyrics[0].bounds.height);
+        this.lyricLineBaseline = Math.max(this.lyricLineBaseline, notation.lyrics[0].origin.y);
+        this.numLyricLines = Math.max(this.numLyricLines, notation.lyrics.length);
       }
     }
 
@@ -115,16 +113,16 @@ export class ChantLine extends ChantLayoutElement {
       var offset = this.notationBounds.y + this.notationBounds.height;
 
       for (var j = 0; j < notation.lyrics.length; j++) {
-        notation.lyrics[j].bounds.y = offset + this.lyricLineBaselines[j];
-        offset += this.lyricLineHeights[j];
+        notation.lyrics[j].bounds.y = offset + this.lyricLineBaseline;
+        offset += this.lyricLineHeight;
       }
     }
 
     if(this.startingClef.hasLyrics()) {
       offset = this.notationBounds.y + this.notationBounds.height;
       for (j = 0; j < this.startingClef.lyrics.length; j++) {
-        this.startingClef.lyrics[j].bounds.y = offset + this.lyricLineBaselines[j];
-        offset += this.lyricLineHeights[j];
+        this.startingClef.lyrics[j].bounds.y = offset + this.lyricLineBaseline;
+        offset += this.lyricLineHeight;
       }
     }
 
@@ -132,11 +130,8 @@ export class ChantLine extends ChantLayoutElement {
     for (i = 0; i < this.braces.length; i++)
       this.notationBounds.union(this.braces[i].bounds);
 
-    var totalHeight = this.notationBounds.height;
-
     // add up the lyric line heights to get the total height of the chant line
-    for (i = 0; i < this.lyricLineHeights.length; i++)
-      totalHeight += this.lyricLineHeights[i];
+    var totalHeight = this.notationBounds.height + (this.lyricLineHeight * this.numLyricLines);
 
     // dropCap and the annotations
     if (this.notationsStartIndex === 0) {
@@ -144,10 +139,7 @@ export class ChantLine extends ChantLayoutElement {
       if (this.score.dropCap !== null) {
 
         var dropCapY;
-        if (this.lyricLineHeights.length > 0) {
-          dropCapY = this.notationBounds.y + this.notationBounds.height + this.lyricLineBaselines[0];
-        } else
-          dropCapY = this.notationBounds.y + this.notationBounds.height;
+        dropCapY = this.notationBounds.y + this.notationBounds.height + this.lyricLineBaseline;
 
         // drop caps and annotations are drawn from their center, so aligning them
         // horizontally is as easy as this.staffLeft / 2
