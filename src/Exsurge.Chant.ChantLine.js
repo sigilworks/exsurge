@@ -97,9 +97,9 @@ export class ChantLine extends ChantLayoutElement {
 
       // keep track of lyric line offsets
       if(notation.hasLyrics()) {
-        this.lyricLineHeight = Math.max(this.lyricLineHeight, notation.lyrics[0].bounds.height);
-        this.lyricLineBaseline = Math.max(this.lyricLineBaseline, notation.lyrics[0].origin.y);
-        this.numLyricLines = Math.max(this.numLyricLines, notation.lyrics.length);
+        if(notation.lyrics[0].bounds.height > this.lyricLineHeight) this.lyricLineHeight = notation.lyrics[0].bounds.height;
+        if(notation.lyrics[0].origin.y > this.lyricLineBaseline) this.lyricLineBaseline = notation.lyrics[0].origin.y;
+        if(notation.lyrics.length > this.numLyricLines) this.numLyricLines = notation.lyrics.length;
       }
     }
 
@@ -912,7 +912,7 @@ export class ChantLine extends ChantLayoutElement {
           } else
             right += ctxt.minLyricWordSpacing;
 
-          prevLyricRightMax = Math.max(prevLyricRightMax, right);
+          if(right > prevLyricRight) prevLyricRightMax = right;
         }
 
         if (i < curr.lyrics.length && curr.lyrics[i] !== null) {
