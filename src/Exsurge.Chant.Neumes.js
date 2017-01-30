@@ -391,6 +391,42 @@ export class Neume extends ChantNotationElement {
     return new NeumeBuilder(ctxt, this);
   }
 
+  // for any subclasses that begin with a podatus, they can call this from their own positionMarkings()
+  positionPodatusMarkings() {
+    var marking, i;
+
+    // 1. episema on lower note by default be below, upper note above
+    // 2. morae: 
+    //   a. if podatus difference is 1 and lower note is on a line,
+    //      the lower mora should be below
+    for (i = 0; i < this.notes[0].epismata.length; i++)
+      if (this.notes[0].epismata[i].positionHint === MarkingPositionHint.Default)
+        this.notes[0].epismata[i].positionHint = MarkingPositionHint.Below;
+
+    // The mora on the first (lower) note needs to be below it, if the second note
+    // is only one pitch above, and the first note is on a line.
+    if (this.notes[1].staffPosition - this.notes[0].staffPosition === 1 &&
+          Math.abs(this.notes[0].staffPosition % 2) === 1) {
+      if (this.notes[0].morae.length === 1) {
+        marking = this.notes[0].morae[0];
+      } else if (this.notes[1].morae.length > 1) {
+        marking = this.notes[1].morae[0];
+      }
+      if(marking) marking.positionHint = MarkingPositionHint.Below;
+    }
+
+    // if there is a mora on the first note but not on the second, and the neume
+    // continues with a punctum higher than the second note, we need to adjust
+    // the space after the neume so that it follows immediately with no gap
+    if (this.notes[0].morae.length > 0 && this.notes[1].morae.length === 0) {
+      this.notes[0].morae[0].ignoreBounds = true;
+    }
+
+    for (i = 0; i < this.notes[1].epismata.length; i++)
+      if (this.notes[1].epismata[i].positionHint === MarkingPositionHint.Default)
+        this.notes[1].epismata[i].positionHint = MarkingPositionHint.Above;
+  }
+
   // for any subclasses that basically end with a clivis, they can call this from their positionMarkings()
   positionClivisMarkings() {
     var mark, i, hasTopEpisema = false;
@@ -777,6 +813,10 @@ export class PesQuassus extends Neume {
  */
 export class PesSubpunctis extends Neume {
 
+  positionMarkings() {
+    this.positionPodatusMarkings();
+  }
+
   performLayout(ctxt) {
     super.performLayout(ctxt);
 
@@ -800,38 +840,7 @@ export class PesSubpunctis extends Neume {
 export class Podatus extends Neume {
 
   positionMarkings() {
-    var marking, i;
-
-    // 1. episema on lower note by default be below, upper note above
-    // 2. morae: 
-    //   a. if podatus difference is 1 and lower note is on a line,
-    //      the lower mora should be below
-    for (i = 0; i < this.notes[0].epismata.length; i++)
-      if (this.notes[0].epismata[i].positionHint === MarkingPositionHint.Default)
-        this.notes[0].epismata[i].positionHint = MarkingPositionHint.Below;
-
-    // The mora on the first (lower) note needs to be below it, if the second note
-    // is only one pitch above, and the first note is on a line.
-    if (this.notes[1].staffPosition - this.notes[0].staffPosition === 1 &&
-          Math.abs(this.notes[0].staffPosition % 2) === 1) {
-      if (this.notes[0].morae.length === 1) {
-        marking = this.notes[0].morae[0];
-      } else if (this.notes[1].morae.length > 1) {
-        marking = this.notes[1].morae[0];
-      }
-      if(marking) marking.positionHint = MarkingPositionHint.Below;
-    }
-
-    // if there is a mora on the first note but not on the second, and the neume
-    // continues with a punctum higher than the second note, we need to adjust
-    // the space after the neume so that it follows immediately with no gap
-    if (this.notes[0].morae.length > 0 && this.notes[1].morae.length === 0) {
-      this.notes[0].morae[0].ignoreBounds = true;
-    }
-
-    for (i = 0; i < this.notes[1].epismata.length; i++)
-      if (this.notes[1].epismata[i].positionHint === MarkingPositionHint.Default)
-        this.notes[1].epismata[i].positionHint = MarkingPositionHint.Above;
+    this.positionPodatusMarkings();
   }
 
   performLayout(ctxt) {
@@ -847,6 +856,43 @@ export class Podatus extends Neume {
  * Porrectus
  */
 export class Porrectus extends Neume {
+
+  positionMarkings() {
+    var mark, i, hasTopEpisema = false;
+
+    var lastNote =        this.notes[this.notes.length - 1];
+    var penultimateNote = this.notes[this.notes.length - 2];
+    var antepenult =      this.notes[this.notes.length - 3];
+
+    // first do the outer (higher) notes to see if we should try to move
+    // episemata on the other lower note
+    for (i = 0; i < antepenult.epismata.length; i++) {
+      mark = antepenult.epismata[i];
+
+      if (mark.positionHint === MarkingPositionHint.Default) {
+        mark.positionHint = MarkingPositionHint.Above;
+        hasTopEpisema = true;
+      }
+    }
+    for (i = 0; i < lastNote.epismata.length; i++) {
+      mark = lastNote.epismata[i];
+
+      if (mark.positionHint === MarkingPositionHint.Default) {
+        mark.positionHint = MarkingPositionHint.Above;
+        hasTopEpisema = true;
+      }
+    }
+
+    // 1. episema on lower note should be below
+    // 2. like the podatus, mora on lower note needs to below
+    //    under certain circumstances
+    for (i = 0; i < penultimateNote.epismata.length; i++) {
+      mark = penultimateNote.epismata[i];
+
+      if (mark.positionHint === MarkingPositionHint.Default)
+        mark.positionHint = hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below;
+    }
+  }
 
   performLayout(ctxt) {
     super.performLayout(ctxt);

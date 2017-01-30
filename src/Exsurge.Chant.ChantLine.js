@@ -25,7 +25,7 @@
 
 import * as Exsurge from 'Exsurge.Core'
 import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
-import { QuickSvg, ChantLayoutElement, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, DropCap } from 'Exsurge.Drawing'
+import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, DropCap } from 'Exsurge.Drawing'
 import { ChantLineBreak, TextOnly } from 'Exsurge.Chant'
 import { Glyphs } from 'Exsurge.Glyphs'
 import { Custos, DoubleBar } from 'Exsurge.Chant.Signs'
@@ -735,7 +735,7 @@ export class ChantLine extends ChantLayoutElement {
               epismata[epismata.length - 1].terminating === true ||
               epismata[epismata.length - 1].alignment === HorizontalEpisemaAlignment.Left ||
               episema.alignment === HorizontalEpisemaAlignment.Right ||
-              spaceBetweenEpismata > ctxt.intraNeumeSpacing * 2) {
+              (spaceBetweenEpismata > ctxt.intraNeumeSpacing * 2 && (note.glyphVisualizer.glyphCode !== GlyphCode.None))) {
 
             // start a new set of epismata to potentially blend
             epismata = [];
@@ -758,6 +758,10 @@ export class ChantLine extends ChantLayoutElement {
 
             // extend the last episema to meet the new one
             var newWidth = (neume.bounds.x + episema.bounds.x) - (epismata[epismata.length - 1].note.neume.bounds.x + epismata[epismata.length - 1].bounds.x);
+            if(newWidth < 0) {
+              newWidth *= -1;
+              epismata[epismata.length - 1].bounds.x -= newWidth;
+            }
             epismata[epismata.length - 1].bounds.width = newWidth;
 
             epismata.push(episema);

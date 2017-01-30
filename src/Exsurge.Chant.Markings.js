@@ -88,9 +88,12 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
     var y = 0, step;
     var minDistanceAway = ctxt.staffInterval * 0.4; // min distance from neume
-
+    var glyphCode = this.note.glyphVisualizer.glyphCode;
+    
     if (this.positionHint === MarkingPositionHint.Below) {
       y = this.note.bounds.bottom() + minDistanceAway; // the highest the line could be at
+      if (glyphCode === GlyphCode.None) // correction for episema under the second note of a porrectus
+        y += ctxt.staffInterval;
       step = Math.floor(y / ctxt.staffInterval);
 
       // if it's an odd step, that means we're on a staff line,
@@ -109,8 +112,8 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
     y = step * ctxt.staffInterval;
 
-    var glyphCode = this.note.glyphVisualizer.glyphCode;
     var width;
+    var x = this.note.bounds.x;
 
     // The porrectus requires special handling of the note width,
     // otherwise the width is just that of the note itself
@@ -119,10 +122,12 @@ export class HorizontalEpisema extends ChantLayoutElement {
         glyphCode === GlyphCode.Porrectus3 ||
         glyphCode === GlyphCode.Porrectus4)
       width = ctxt.staffInterval;
-    else
+    else if (glyphCode === GlyphCode.None) {
+      width = ctxt.staffInterval;
+      x -= width;
+    } else {
       width = this.note.bounds.width;
-
-    var x = this.note.bounds.x;
+    }
 
     // also, the position hint can affect the x/width of the episema
     if (this.alignment === HorizontalEpisemaAlignment.Left) {
