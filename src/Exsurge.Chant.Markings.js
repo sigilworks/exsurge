@@ -133,8 +133,8 @@ export class HorizontalEpisema extends ChantLayoutElement {
     if (this.alignment === HorizontalEpisemaAlignment.Left) {
       width *= .80;
     } else if (this.alignment === HorizontalEpisemaAlignment.Center) {
-      x += width * .20;
-      width *= .60;
+      x += width * .10;
+      width *= .80;
     } else if (this.alignment === HorizontalEpisemaAlignment.Right) {
       x += width * .20;
       width *= .80;

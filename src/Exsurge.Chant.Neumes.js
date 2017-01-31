@@ -39,13 +39,19 @@ class NeumeBuilder {
     this.x = startingX;
     this.lastNote = null;
     this.lineIsHanging = false;
+    this.minX = 0;
   }
 
   // used to start a hanging line on the left of the next note
   lineFrom(note) {
-    this.lastNote = note;
-    this.lineIsHanging = true;
-
+    var previousNotation = this.ctxt.notations[this.ctxt.currNotationIndex - 1];
+    if(this.x === 0 && previousNotation && previousNotation.trailingSpace === 0) {
+      this.lastNote = previousNotation.notes.slice(-1)[0];
+      this.minX = -ctxt.neumeLineWeight;
+    } else {
+      this.lastNote = note;
+      this.lineIsHanging = true;
+    }
     return this;
   }
 
@@ -69,7 +75,7 @@ class NeumeBuilder {
     if (needsLine) {
       var line = new NeumeLineVisualizer(this.ctxt, this.lastNote, note, this.lineIsHanging);
       this.neume.addVisualizer(line);
-      line.bounds.x = Math.max(0, this.x - line.bounds.width);
+      line.bounds.x = Math.max(this.minX, this.x - line.bounds.width);
 
       if (!noteAlignsRight)
         this.x = line.bounds.x;

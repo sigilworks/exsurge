@@ -1218,7 +1218,7 @@ export class Gabc {
         break;
     }
 
-    var attachmentPoint = results[3] === '0' ? Markings.BraceAttachment.Left : Markings.BraceAttachment.Right;
+    var attachmentPoint = results[3] === '1' ? Markings.BraceAttachment.Left : Markings.BraceAttachment.Right;
     var brace = null;
     var type;
 
