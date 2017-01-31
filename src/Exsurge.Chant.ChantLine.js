@@ -718,6 +718,8 @@ export class ChantLine extends ChantLayoutElement {
         processElementForLedgerLine(note, neume.bounds.x, neume.bounds.y);
 
         // blend epismata as we're able
+        if (note.epismata.length === 0)
+          epismata = [];
         for (k = 0; k < note.epismata.length; k++) {
 
           var episema = note.epismata[k];
@@ -734,12 +736,13 @@ export class ChantLine extends ChantLayoutElement {
               epismata[epismata.length - 1].positionHint !== episema.positionHint ||
               epismata[epismata.length - 1].terminating === true ||
               epismata[epismata.length - 1].alignment === HorizontalEpisemaAlignment.Left ||
+              epismata[epismata.length - 1].alignment === HorizontalEpisemaAlignment.Center ||
               episema.alignment === HorizontalEpisemaAlignment.Right ||
+              episema.alignment === HorizontalEpisemaAlignment.Center ||
               (spaceBetweenEpismata > ctxt.intraNeumeSpacing * 2 && (note.glyphVisualizer.glyphCode !== GlyphCode.None))) {
 
             // start a new set of epismata to potentially blend
-            epismata = [];
-            epismata.push(episema);
+            epismata = [episema];
           } else {
             // blend all previous with this one
             var newY;
