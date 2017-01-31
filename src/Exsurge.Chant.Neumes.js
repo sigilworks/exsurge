@@ -47,7 +47,7 @@ class NeumeBuilder {
     var previousNotation = this.ctxt.notations[this.ctxt.currNotationIndex - 1];
     if(this.x === 0 && previousNotation && previousNotation.trailingSpace === 0) {
       this.lastNote = previousNotation.notes.slice(-1)[0];
-      this.minX = -ctxt.neumeLineWeight;
+      this.minX = -this.ctxt.neumeLineWeight;
     } else {
       this.lastNote = note;
       this.lineIsHanging = true;
