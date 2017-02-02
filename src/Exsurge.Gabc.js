@@ -506,7 +506,7 @@ export class Gabc {
             // custos
             var custos = new Signs.Custos();
 
-            custos.staffPosition = this.gabcHeightToExsurgeHeight(data[0]);
+            custos.staffPosition = this.gabcHeightToExsurgeHeight(atom[0]);
 
             addNotation(custos);
 
