@@ -130,9 +130,6 @@ export class ChantLine extends ChantLayoutElement {
     for (i = 0; i < this.braces.length; i++)
       this.notationBounds.union(this.braces[i].bounds);
 
-    // add up the lyric line heights to get the total height of the chant line
-    var totalHeight = this.notationBounds.height + (this.lyricLineHeight * this.numLyricLines);
-
     // dropCap and the annotations
     if (this.notationsStartIndex === 0) {
 
@@ -153,10 +150,18 @@ export class ChantLine extends ChantLayoutElement {
         this.score.annotation.bounds.y = - ctxt.staffInterval * 3;
         if(this.score.dropCap !== null) {
           this.score.annotation.bounds.y = Math.min(this.score.annotation.bounds.y, this.score.dropCap.bounds.y - this.score.annotation.bounds.height - (this.score.dropCap.fontSize * 0.65));
+          var yDiff = this.score.annotation.bounds.y - this.notationBounds.y;
+          if(yDiff < 0) {
+            this.notationBounds.y = this.score.annotation.bounds.y;
+            this.notationBounds.height -= yDiff;
+          }
         }
         this.score.annotation.bounds.y += this.score.annotation.origin.y * 0.65;
       }
     }
+
+    // add up the lyric line heights to get the total height of the chant line
+    var totalHeight = this.notationBounds.height + (this.lyricLineHeight * this.numLyricLines);
 
     this.notationBounds.height += ctxt.lyricTextSize;
 
