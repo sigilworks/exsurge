@@ -543,6 +543,18 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
+    // find the final lyric and mark it as connecting if needed.
+    var lastWithLyrics = null;
+    for(i = this.notationsStartIndex + this.numNotationsOnLine - 1; i >= this.notationsStartIndex; --i) {
+      if(notations[i].hasLyrics()) {
+        lastWithLyrics = notations[i];
+        break;
+      }
+    }
+    if (lastWithLyrics && lastWithLyrics.lyrics[0].allowsConnector())
+      lastWithLyrics.lyrics[0].setNeedsConnector(true);
+
+
     // if the provided width is less than zero, then set the width of the line
     // based on the last notation
     var last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
@@ -591,7 +603,7 @@ export class ChantLine extends ChantLayoutElement {
     if (this.custos)
       extraSpace -= this.custos.bounds.width + this.custos.leadingSpace;
 
-    if (extraSpace <= 0)
+    if (extraSpace === 0)
       return;
 
     var prev = null, curr = null, prevWithLyrics = null;
@@ -989,13 +1001,6 @@ export class ChantLine extends ChantLayoutElement {
       return true;
 
     // if we made it this far, then the element won't fit on this line.
-    // set the position of the current element to the beginning of a chant line,
-    // and mark the previous lyric as connecting if needed.
-    // curr.bounds.x = this.startingClef.bounds.right();
-
-    if (prevWithLyrics.hasLyrics() && prevWithLyrics.lyrics[0].allowsConnector())
-      prevWithLyrics.lyrics[0].setNeedsConnector(true);
-
     return false;
   }
 }
