@@ -1499,6 +1499,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (var i = 0; i < this.lyrics.length; i++)
       this.lyrics[i].recalculateMetrics(ctxt);
+
+    if(this.alText)
+      for (i = 0; i < this.alText.length; i++)
+        this.alText[i].recalculateMetrics(ctxt);
   }
 
   // some subclasses have internal dependencies on other notations (for example,
@@ -1517,6 +1521,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (var i = 0; i < this.lyrics.length; i++)
       this.lyrics[i].bounds.x = this.origin.x - this.lyrics[i].origin.x;
+
+    if(this.alText)
+      for (i = 0; i < this.alText.length; i++)
+        this.alText[i].bounds.x = 0;
 
     this.needsLayout = false;
   }
@@ -1543,6 +1551,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (i = 0; i < this.lyrics.length; i++)
       inner += this.lyrics[i].createSvgFragment(ctxt);
+
+    if(this.alText)
+      for (i = 0; i < this.alText.length; i++)
+        inner += this.alText[i].createSvgFragment(ctxt);
 
     return QuickSvg.createFragment('g', {
       // this.constructor.name will not be the same after being mangled by UglifyJS

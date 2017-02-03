@@ -224,6 +224,9 @@ export class Gabc {
     var matches = [];
     var notations = [];
     var currSyllable = 0;
+    var makeAlText = function(text) {
+      return new AboveLinesText(ctxt, text);
+    };
     
     while ((match = __syllablesRegex.exec(word)))
       matches.push(match);
@@ -232,7 +235,7 @@ export class Gabc {
       var match = matches[j];
 
       var lyricText = match[1].trim().replace(/~/g,' ');
-      var altText = lyricText.match(__altRegex);
+      var alText = lyricText.match(__altRegex);
       var notationData = match[2];
 
       var items = this.parseNotations(ctxt, notationData);
@@ -242,17 +245,17 @@ export class Gabc {
 
       notations = notations.concat(items);
 
-      if (altText) {
-        for(var i = 0; i < altText.length; ++i) {
-          var index = lyricText.indexOf(altText[i]);
-          lyricText = lyricText.slice(0,index) + lyricText.slice(index + altText[i].length);
-          altText[i] = altText[i].slice(5,-6); // trim <alt> and </alt>
+      if (alText) {
+        for(var i = 0; i < alText.length; ++i) {
+          var index = lyricText.indexOf(alText[i]);
+          lyricText = lyricText.slice(0,index) + lyricText.slice(index + alText[i].length);
+          alText[i] = alText[i].slice(5,-6); // trim <alt> and </alt>
         }
       }
-      if (lyricText === '' && !altText)
+      if (lyricText === '' && !alText)
         continue;
 
-      // add the lyrics and/or altText to the first notation that makes sense...
+      // add the lyrics and/or alText to the first notation that makes sense...
       var notationWithLyrics = null;
       for (i = 0; i < items.length; i++) {
         var cne = items[i];
@@ -267,10 +270,8 @@ export class Gabc {
       if (notationWithLyrics === null)
         return notations;
     
-      if (altText)
-        notationWithLyrics.altText = altText.map(function(text) {
-          return new AboveLinesText(ctxt, text);
-        });
+      if (alText)
+        notationWithLyrics.alText = alText.map(makeAlText);
 
       if (lyricText === '')
         continue;
