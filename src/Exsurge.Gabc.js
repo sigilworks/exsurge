@@ -40,7 +40,7 @@ var __notationsRegex = /z0|z|Z|::|:|;|,|`|c1|c2|c3|c4|f3|f4|cb3|cb4|\/\/|\/| |\!
 //  1. o or u, to indicate over or under
 //  2. b, cb, or cba, to indicate the brace type
 //  3. 0 or 1 to indicate the attachment point
-//  4. {}( or ) to indicate opening/closing (this group will be null if the metric version is used)
+//  4. { or } to indicate opening/closing (this group will be null if the metric version is used)
 //  5. a float indicating the millimeter length of the brace (not supported yet)
 var __braceSpecRegex = /([ou])(b|cb|cba):([01])(?:([{}])|;(\d*(?:\.\d+)?)mm)/;
 
@@ -1186,6 +1186,11 @@ export class Gabc {
       }
     }
 
+    if(this.needToEndBrace && !note.braceStart && !note.braceEnd) {
+      note.braceEnd = new Markings.BracePoint(note, this.needToEndBrace.isAbove, this.needToEndBrace.shape, this.needToEndBrace.attachment === Markings.BraceAttachment.Left? Markings.BraceAttachment.Right : Markings.BraceAttachment.Left);
+      delete this.needToEndBrace;
+    }
+
     notes.push(note);
   }
 
@@ -1222,10 +1227,13 @@ export class Gabc {
     var brace = null;
     var type;
 
-    if (results[4] === '{')
+    if (results[4] === '{' || results[5])
       note.braceStart = new Markings.BracePoint(note, above, shape, attachmentPoint);
     else
       note.braceEnd = new Markings.BracePoint(note, above, shape, attachmentPoint);
+
+    // just have the next note end a brace that uses length;
+    if(results[5]) this.needToEndBrace = note.braceStart;
   }
 
   // takes raw gabc text source and parses it into words. For example, passing

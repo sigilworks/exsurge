@@ -106,6 +106,10 @@ export class ChantLine extends ChantLayoutElement {
     if (this.custos)
       this.notationBounds.union(this.custos.bounds);
 
+    // add any braces to the notationBounds as well
+    for (i = 0; i < this.braces.length; i++)
+      this.notationBounds.union(this.braces[i].bounds);
+
     // finalize the lyrics placement
     for (i = this.notationsStartIndex; i < lastIndex; i++) {
       notation = notations[i];
@@ -125,10 +129,6 @@ export class ChantLine extends ChantLayoutElement {
         offset += this.lyricLineHeight;
       }
     }
-
-    // add any braces to the notationBounds as well
-    for (i = 0; i < this.braces.length; i++)
-      this.notationBounds.union(this.braces[i].bounds);
 
     // dropCap and the annotations
     if (this.notationsStartIndex === 0) {
