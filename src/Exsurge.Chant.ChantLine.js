@@ -149,7 +149,14 @@ export class ChantLine extends ChantLayoutElement {
         this.score.annotation.bounds.x = this.staffLeft / 2;
         this.score.annotation.bounds.y = - ctxt.staffInterval * 3;
         if(this.score.dropCap !== null) {
-          this.score.annotation.bounds.y = Math.min(this.score.annotation.bounds.y, this.score.dropCap.bounds.y - this.score.annotation.bounds.height - (this.score.dropCap.fontSize * 0.65));
+          var lowestPossibleAnnotationY = this.score.dropCap.bounds.y - this.score.annotation.bounds.height - (this.score.dropCap.fontSize * 0.65);
+          // if the annotation would overlap with the drop cap, move the annotation higher.
+          // otherwise, center the annotation in the vertical space between the top of the drop cap and the top of the staff.
+          if(lowestPossibleAnnotationY < this.score.annotation.bounds.y) {
+            this.score.annotation.bounds.y = lowestPossibleAnnotationY;
+          } else {
+            this.score.annotation.bounds.y = (this.score.annotation.bounds.y + lowestPossibleAnnotationY) / 2;
+          }
           var yDiff = this.score.annotation.bounds.y - this.notationBounds.y;
           if(yDiff < 0) {
             this.notationBounds.y = this.score.annotation.bounds.y;
