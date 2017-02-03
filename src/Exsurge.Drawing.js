@@ -238,6 +238,10 @@ export class ChantContext {
     this.lyricTextSize = 16; // in points?
     this.lyricTextFont = "'Palatino Linotype', 'Book Antiqua', Palatino, serif";
     this.lyricTextColor = "#000";
+
+    this.altTextSize = this.lyricTextSize;
+    this.altTextFont = this.lyricTextFont;
+    this.altTextColor = this.lyricTextColor;
     
     this.dropCapTextSize = 64;
     this.dropCapTextFont = this.lyricTextFont;
@@ -1281,6 +1285,22 @@ export class Lyric extends TextElement {
     }
 
     return super.createSvgFragment(ctxt);
+  }
+}
+
+export class AboveLinesText extends TextElement {
+
+  /**
+   * @param {String} text
+   */
+  constructor(ctxt, text) {
+    super(ctxt, text, ctxt.altTextFont, ctxt.altTextSize, 'start');
+
+    this.padding = ctxt.staffInterval / 2;
+  }
+
+  getCssClasses() {
+    return "aboveLinesText " + super.getCssClasses();
   }
 }
 

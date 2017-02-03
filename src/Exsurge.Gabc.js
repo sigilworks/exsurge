@@ -25,7 +25,7 @@
 //
 
 import { Units, Pitch, Point, Rect, Margins, Size, Step } from 'Exsurge.Core'
-import { LyricType, Lyric } from 'Exsurge.Drawing'
+import { LyricType, Lyric, AboveLinesText } from 'Exsurge.Drawing'
 import { Note, LiquescentType, NoteShape, NoteShapeModifiers, ChantMapping, ChantScore, ChantDocument, Clef, DoClef, FaClef, TextOnly, ChantLineBreak } from 'Exsurge.Chant'
 import * as Markings from 'Exsurge.Chant.Markings'
 import * as Signs from 'Exsurge.Chant.Signs'
@@ -33,6 +33,7 @@ import * as Neumes from 'Exsurge.Chant.Neumes'
 
 // reusable reg exps
 var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
+var __altRegex = /<alt>(.*?)<\/alt>/g;
 var __notationsRegex = /z0|z|Z|::|:|;|,|`|c1|c2|c3|c4|f3|f4|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
 
 // for the brace string inside of [ and ] in notation data
@@ -231,6 +232,7 @@ export class Gabc {
       var match = matches[j];
 
       var lyricText = match[1].trim().replace(/~/g,' ');
+      var altText = lyricText.match(__altRegex);
       var notationData = match[2];
 
       var items = this.parseNotations(ctxt, notationData);
@@ -240,12 +242,19 @@ export class Gabc {
 
       notations = notations.concat(items);
 
-      if (lyricText === '')
+      if (altText) {
+        for(var i = 0; i < altText.length; ++i) {
+          var index = lyricText.indexOf(altText[i]);
+          lyricText = lyricText.slice(0,index) + lyricText.slice(index + altText[i].length);
+          altText[i] = altText[i].slice(5,-6); // trim <alt> and </alt>
+        }
+      }
+      if (lyricText === '' && !altText)
         continue;
 
-      // add the lyrics to the first notation that makes sense...
+      // add the lyrics and/or altText to the first notation that makes sense...
       var notationWithLyrics = null;
-      for (var i = 0; i < items.length; i++) {
+      for (i = 0; i < items.length; i++) {
         var cne = items[i];
 
         if (cne.isAccidental || cne.constructor === Signs.Custos)
@@ -258,6 +267,14 @@ export class Gabc {
       if (notationWithLyrics === null)
         return notations;
     
+      if (altText)
+        notationWithLyrics.altText = altText.map(function(text) {
+          return new AboveLinesText(ctxt, text);
+        });
+
+      if (lyricText === '')
+        continue;
+
       var proposedLyricType;
       
       // if it's not a neume or a TextOnly notation, then make the lyrics a directive
