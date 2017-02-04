@@ -25,7 +25,7 @@
 //
 
 import { Units, Pitch, Point, Rect, Margins, Size, Step } from 'Exsurge.Core'
-import { LyricType, Lyric } from 'Exsurge.Drawing'
+import { LyricType, Lyric, AboveLinesText } from 'Exsurge.Drawing'
 import { Note, LiquescentType, NoteShape, NoteShapeModifiers, ChantMapping, ChantScore, ChantDocument, Clef, DoClef, FaClef, TextOnly, ChantLineBreak } from 'Exsurge.Chant'
 import * as Markings from 'Exsurge.Chant.Markings'
 import * as Signs from 'Exsurge.Chant.Signs'
@@ -33,6 +33,7 @@ import * as Neumes from 'Exsurge.Chant.Neumes'
 
 // reusable reg exps
 var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
+var __altRegex = /<alt>(.*?)<\/alt>/g;
 var __notationsRegex = /z0|z|Z|::|:|;|,|`|c1|c2|c3|c4|f3|f4|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
 
 // for the brace string inside of [ and ] in notation data
@@ -223,6 +224,9 @@ export class Gabc {
     var matches = [];
     var notations = [];
     var currSyllable = 0;
+    var makeAlText = function(text) {
+      return new AboveLinesText(ctxt, text);
+    };
     
     while ((match = __syllablesRegex.exec(word)))
       matches.push(match);
@@ -231,6 +235,7 @@ export class Gabc {
       var match = matches[j];
 
       var lyricText = match[1].trim().replace(/~/g,' ');
+      var alText = lyricText.match(__altRegex);
       var notationData = match[2];
 
       var items = this.parseNotations(ctxt, notationData);
@@ -240,12 +245,19 @@ export class Gabc {
 
       notations = notations.concat(items);
 
-      if (lyricText === '')
+      if (alText) {
+        for(var i = 0; i < alText.length; ++i) {
+          var index = lyricText.indexOf(alText[i]);
+          lyricText = lyricText.slice(0,index) + lyricText.slice(index + alText[i].length);
+          alText[i] = alText[i].slice(5,-6); // trim <alt> and </alt>
+        }
+      }
+      if (lyricText === '' && !alText)
         continue;
 
-      // add the lyrics to the first notation that makes sense...
+      // add the lyrics and/or alText to the first notation that makes sense...
       var notationWithLyrics = null;
-      for (var i = 0; i < items.length; i++) {
+      for (i = 0; i < items.length; i++) {
         var cne = items[i];
 
         if (cne.isAccidental || cne.constructor === Signs.Custos)
@@ -258,6 +270,12 @@ export class Gabc {
       if (notationWithLyrics === null)
         return notations;
     
+      if (alText)
+        notationWithLyrics.alText = alText.map(makeAlText);
+
+      if (lyricText === '')
+        continue;
+
       var proposedLyricType;
       
       // if it's not a neume or a TextOnly notation, then make the lyrics a directive

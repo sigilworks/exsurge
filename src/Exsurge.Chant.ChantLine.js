@@ -90,16 +90,26 @@ export class ChantLine extends ChantLayoutElement {
     this.lyricLineBaseline = 0;
     this.numLyricLines = 0;
 
+    this.altLineHeight = 0;
+    this.altLineBaseline = 0;
+    this.numAltLines = 0;
+
     for (i = this.notationsStartIndex; i < lastIndex; i++) {
       notation = notations[i];
 
       this.notationBounds.union(notation.bounds);
 
       // keep track of lyric line offsets
-      if(notation.hasLyrics()) {
+      if(this.numLyricLines === 0 && notation.hasLyrics()) {
         if(notation.lyrics[0].bounds.height > this.lyricLineHeight) this.lyricLineHeight = notation.lyrics[0].bounds.height;
         if(notation.lyrics[0].origin.y > this.lyricLineBaseline) this.lyricLineBaseline = notation.lyrics[0].origin.y;
         if(notation.lyrics.length > this.numLyricLines) this.numLyricLines = notation.lyrics.length;
+      }
+
+      if(this.numAltLines === 0 && notation.alText) {
+        if(notation.alText[0].bounds.height > this.altLineHeight) this.altLineHeight = notation.alText[0].bounds.height;
+        if(notation.alText[0].origin.y > this.altLineBaseline) this.altLineBaseline = notation.alText[0].origin.y;
+        if(notation.alText.length > this.numAltLines) this.numAltLines = notation.alText.length;        
       }
     }
 
@@ -120,6 +130,14 @@ export class ChantLine extends ChantLayoutElement {
         notation.lyrics[j].bounds.y = offset + this.lyricLineBaseline;
         offset += this.lyricLineHeight;
       }
+
+      if(notation.alText) {
+        offset = this.notationBounds.y;
+        for (j = 0; j < notation.alText.length; j++) {
+          offset -= this.altLineHeight;
+          notation.alText[j].bounds.y = offset + this.altLineBaseline;
+        }
+      }
     }
 
     if(this.startingClef.hasLyrics()) {
@@ -136,7 +154,7 @@ export class ChantLine extends ChantLayoutElement {
       if (this.score.dropCap !== null) {
 
         var dropCapY;
-        dropCapY = this.notationBounds.y + this.notationBounds.height + this.lyricLineBaseline;
+        dropCapY = this.notationBounds.y + this.notationBounds.height + this.lyricLineBaseline + (this.altLineHeight * this.numAltLines) - (this.altLineHeight * this.numAltLines);
 
         // drop caps and annotations are drawn from their center, so aligning them
         // horizontally is as easy as this.staffLeft / 2
@@ -168,9 +186,9 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // add up the lyric line heights to get the total height of the chant line
-    var totalHeight = this.notationBounds.height + (this.lyricLineHeight * this.numLyricLines);
-
-    this.notationBounds.height += ctxt.lyricTextSize;
+    this.notationBounds.height += (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines);
+    var totalHeight = this.notationBounds.height;
+    this.notationBounds.y -= this.altLineHeight * this.numAltLines;
 
     this.bounds.x = 0;
     this.bounds.y = this.notationBounds.y;
@@ -722,21 +740,29 @@ export class ChantLine extends ChantLayoutElement {
     // ledger lines and to smooth out epismata
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
 
-      minY = Math.min(minY, notations[i].bounds.y);
-      maxY = Math.max(maxY, notations[i].bounds.bottom());
+      var neume = notations[i];
 
-      if (notations[i].constructor === Custos) {
-        processElementForLedgerLine(notations[i]);
+      minY = Math.min(minY, neume.bounds.y);
+      maxY = Math.max(maxY, neume.bounds.bottom());
+
+      if (neume.constructor === Custos) {
+        processElementForLedgerLine(neume);
         continue;
       }
 
+      // if the AboveLinesText would extend beyond the right edge of the staff, right align it instead
+      if (neume.alText)
+        for (var j = 0; j < neume.alText.length; j++) {
+          var beyondStaffRight = neume.bounds.x + neume.alText[j].bounds.right() - this.staffRight;
+          if (beyondStaffRight > 0)
+            neume.alText[j].bounds.x -= beyondStaffRight;
+        }
+
       // if it's not a neume then just skip here
-      if (!notations[i].isNeume)
+      if (!neume.isNeume)
         continue;
 
-      var neume = notations[i];
-
-      for (var j = 0; j < neume.notes.length; j++) {
+      for (j = 0; j < neume.notes.length; j++) {
         var k, note = neume.notes[j];
 
         processElementForLedgerLine(note, neume.bounds.x, neume.bounds.y);

@@ -238,6 +238,10 @@ export class ChantContext {
     this.lyricTextSize = 16; // in points?
     this.lyricTextFont = "'Palatino Linotype', 'Book Antiqua', Palatino, serif";
     this.lyricTextColor = "#000";
+
+    this.altTextSize = this.lyricTextSize;
+    this.altTextFont = this.lyricTextFont;
+    this.altTextColor = this.lyricTextColor;
     
     this.dropCapTextSize = 64;
     this.dropCapTextFont = this.lyricTextFont;
@@ -1284,6 +1288,22 @@ export class Lyric extends TextElement {
   }
 }
 
+export class AboveLinesText extends TextElement {
+
+  /**
+   * @param {String} text
+   */
+  constructor(ctxt, text) {
+    super(ctxt, text, ctxt.altTextFont, ctxt.altTextSize, 'start');
+
+    this.padding = ctxt.staffInterval / 2;
+  }
+
+  getCssClasses() {
+    return "aboveLinesText " + super.getCssClasses();
+  }
+}
+
 export class DropCap extends TextElement {
 
   /**
@@ -1479,6 +1499,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (var i = 0; i < this.lyrics.length; i++)
       this.lyrics[i].recalculateMetrics(ctxt);
+
+    if(this.alText)
+      for (i = 0; i < this.alText.length; i++)
+        this.alText[i].recalculateMetrics(ctxt);
   }
 
   // some subclasses have internal dependencies on other notations (for example,
@@ -1497,6 +1521,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (var i = 0; i < this.lyrics.length; i++)
       this.lyrics[i].bounds.x = this.origin.x - this.lyrics[i].origin.x;
+
+    if(this.alText)
+      for (i = 0; i < this.alText.length; i++)
+        this.alText[i].bounds.x = this.hasLyrics()? this.lyrics[i].bounds.x : 0;
 
     this.needsLayout = false;
   }
@@ -1523,6 +1551,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (i = 0; i < this.lyrics.length; i++)
       inner += this.lyrics[i].createSvgFragment(ctxt);
+
+    if(this.alText)
+      for (i = 0; i < this.alText.length; i++)
+        inner += this.alText[i].createSvgFragment(ctxt);
 
     return QuickSvg.createFragment('g', {
       // this.constructor.name will not be the same after being mangled by UglifyJS
