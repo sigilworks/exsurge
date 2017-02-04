@@ -1524,7 +1524,7 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     if(this.alText)
       for (i = 0; i < this.alText.length; i++)
-        this.alText[i].bounds.x = 0;
+        this.alText[i].bounds.x = this.hasLyrics()? this.lyrics[i].bounds.x : 0;
 
     this.needsLayout = false;
   }

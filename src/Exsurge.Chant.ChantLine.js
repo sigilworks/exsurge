@@ -740,21 +740,29 @@ export class ChantLine extends ChantLayoutElement {
     // ledger lines and to smooth out epismata
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
 
-      minY = Math.min(minY, notations[i].bounds.y);
-      maxY = Math.max(maxY, notations[i].bounds.bottom());
+      var neume = notations[i];
 
-      if (notations[i].constructor === Custos) {
-        processElementForLedgerLine(notations[i]);
+      minY = Math.min(minY, neume.bounds.y);
+      maxY = Math.max(maxY, neume.bounds.bottom());
+
+      if (neume.constructor === Custos) {
+        processElementForLedgerLine(neume);
         continue;
       }
 
+      // if the AboveLinesText would extend beyond the right edge of the staff, right align it instead
+      if (neume.alText)
+        for (var j = 0; j < neume.alText.length; j++) {
+          var beyondStaffRight = neume.bounds.x + neume.alText[j].bounds.right() - this.staffRight;
+          if (beyondStaffRight > 0)
+            neume.alText[j].bounds.x -= beyondStaffRight;
+        }
+
       // if it's not a neume then just skip here
-      if (!notations[i].isNeume)
+      if (!neume.isNeume)
         continue;
 
-      var neume = notations[i];
-
-      for (var j = 0; j < neume.notes.length; j++) {
+      for (j = 0; j < neume.notes.length; j++) {
         var k, note = neume.notes[j];
 
         processElementForLedgerLine(note, neume.bounds.x, neume.bounds.y);
