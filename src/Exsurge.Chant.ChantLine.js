@@ -708,10 +708,10 @@ export class ChantLine extends ChantLayoutElement {
           staffPosition = staffPosition - (staffPosition + 1) % 2;
 
         // if we have a ledger line close by, then average out the distance between the two
-        var minLedgerSeperation = ctxt.staffInterval * 5;
+        var minLedgerSeparation = ctxt.staffInterval * ctxt.minLedgerSeparation;
 
         if (this.ledgerLines.length > 0 &&
-            this.ledgerLines[this.ledgerLines.length - 1].x2 + minLedgerSeperation >= x1) {
+            this.ledgerLines[this.ledgerLines.length - 1].x2 + minLedgerSeparation >= x1) {
 
           // average out the distance
           var half = (x1 - this.ledgerLines[this.ledgerLines.length - 1].x2) / 2;
