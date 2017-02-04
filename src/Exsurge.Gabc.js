@@ -637,10 +637,10 @@ export class Gabc {
           if (currNote.ictus) currNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
             return podatusState;
         } else if (currNote.staffPosition < prevNote.staffPosition) {
+          if(prevNote.ictus) prevNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
           if (currNote.shape === NoteShape.Inclinatum)
             return climacusState;
           else {
-            if(prevNote.ictus) prevNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
             return clivisState;
           }
         } else if(prevNote.morae && prevNote.morae.length) {
@@ -1068,7 +1068,9 @@ export class Gabc {
             mark.positionHint = Markings.MarkingPositionHint.Above;
           else if (haveLookahead && lookahead === '0')
             mark.positionHint = Markings.MarkingPositionHint.Below;
-
+          else if (note.shape === NoteShape.Virga) // ictus on a virga goes above by default:
+            mark.positionHint = Markings.MarkingPositionHint.Above;
+          
           note.ictus = mark;
           break;
 
