@@ -751,12 +751,14 @@ export class ChantLine extends ChantLayoutElement {
       }
 
       // if the AboveLinesText would extend beyond the right edge of the staff, right align it instead
-      if (neume.alText)
+      if (neume.alText) {
         for (var j = 0; j < neume.alText.length; j++) {
+          neume.alText[j].bounds.x = neume.hasLyrics()? neume.lyrics[j].bounds.x : 0;
           var beyondStaffRight = neume.bounds.x + neume.alText[j].bounds.right() - this.staffRight;
           if (beyondStaffRight > 0)
             neume.alText[j].bounds.x -= beyondStaffRight;
         }
+      }
 
       // if it's not a neume then just skip here
       if (!neume.isNeume)
