@@ -239,9 +239,10 @@ export class ChantContext {
     this.lyricTextFont = "'Palatino Linotype', 'Book Antiqua', Palatino, serif";
     this.lyricTextColor = "#000";
 
-    this.altTextSize = this.lyricTextSize;
-    this.altTextFont = this.lyricTextFont;
-    this.altTextColor = this.lyricTextColor;
+    this.alTextSize = this.lyricTextSize;
+    this.alTextFont = this.lyricTextFont;
+    this.alTextColor = this.lyricTextColor;
+    this.alTextStyle = '_';
     
     this.dropCapTextSize = 64;
     this.dropCapTextFont = this.lyricTextFont;
@@ -852,6 +853,13 @@ var italicMarkup = "_";
 var redMarkup = "^";
 var smallCapsMarkup = "%";
 
+var fontStyleDictionary = {
+  "*": 'font-weight:bold;',
+  "_": 'font-style:italic;',
+  "^": 'fill:#f00;', // SVG text color is set by the fill property
+  "%": "font-variant:small-caps;font-feature-settings:'smcp';-webkit-font-feature-settings:'smcp';"
+}
+
 function MarkupStackFrame(symbol, startIndex, properties) {
   this.symbol = symbol;
   this.startIndex = startIndex;
@@ -859,25 +867,7 @@ function MarkupStackFrame(symbol, startIndex, properties) {
 }
 
 MarkupStackFrame.createStackFrame = function(symbol, startIndex) {
-
-  var properties = "";
-
-  switch(symbol) {
-    case boldMarkup:
-      properties = 'font-weight:bold;';
-      break;
-    case italicMarkup:
-      properties = 'font-style:italic;';
-      break;
-    case redMarkup:
-      properties = 'fill:#f00;'; // SVG text color is set by the fill property
-      break;
-    case smallCapsMarkup:
-      properties = "font-variant:small-caps;font-feature-settings:'smcp';-webkit-font-feature-settings:'smcp';";
-      break;
-  }
-
-  return new MarkupStackFrame(symbol, startIndex, properties);
+  return new MarkupStackFrame(symbol, startIndex, fontStyleDictionary[symbol] || "");
 };
 
 
@@ -1114,7 +1104,7 @@ export var LyricType = {
 
 export class Lyric extends TextElement {
   constructor(ctxt, text, lyricType) {
-    super(ctxt, text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start');
+    super(ctxt, (ctxt.lyricTextStyle || '') + text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start');
 
     // save the original text in case we need to later use the lyric
     // in a dropcap...
@@ -1296,7 +1286,7 @@ export class AboveLinesText extends TextElement {
    * @param {String} text
    */
   constructor(ctxt, text) {
-    super(ctxt, text, ctxt.altTextFont, ctxt.altTextSize, 'start');
+    super(ctxt, (ctxt.alTextStyle || '') + text, ctxt.alTextFont, ctxt.alTextSize, 'start');
 
     this.padding = ctxt.staffInterval / 2;
   }
@@ -1312,7 +1302,7 @@ export class DropCap extends TextElement {
    * @param {String} text
    */
   constructor(ctxt, text) {
-    super(ctxt, text, ctxt.dropCapTextFont, ctxt.dropCapTextSize, 'middle');
+    super(ctxt, text, (ctxt.dropCapTextStyle || '') + ctxt.dropCapTextFont, ctxt.dropCapTextSize, 'middle');
 
     this.padding = ctxt.staffInterval * 2;
   }
@@ -1328,7 +1318,7 @@ export class Annotation extends TextElement {
    * @param {String} text
    */
   constructor(ctxt, text) {
-    super(ctxt, text, ctxt.annotationTextFont, ctxt.annotationTextSize, 'middle');
+    super(ctxt, (ctxt.annotationTextStyle || '') + text, ctxt.annotationTextFont, ctxt.annotationTextSize, 'middle');
     this.padding = ctxt.staffInterval;
     this.dominantBaseline = 'hanging'; // so that annotations can be aligned at the top.
   }
