@@ -176,37 +176,27 @@ export class Ictus extends GlyphVisualizer {
   performLayout(ctxt) {
 
     var glyphCode;
-
-    // fixme: this positioning logic doesn't work for the ictus on a virga apparently...?
+    // we have to place the ictus futher from the note in some cases to avoid a collision with an episema on the same note:
+    var staffPosition = this.note.staffPosition;
+    var placeFurtherFromNote = (this.note.epismata.length > 0 && this.note.epismata[0].positionHint === this.positionHint);
+    var horizontalOffset = this.note.bounds.width / 2;
+    var verticalOffset = 0;
+    var shortOffset = 1;
 
     if (this.positionHint === MarkingPositionHint.Above) {
       glyphCode = GlyphCode.VerticalEpisemaAbove;
+      if(placeFurtherFromNote) {
+        if(staffPosition % 2 === 0) ++staffPosition;
+      } else shortOffset = 0.9;
+      verticalOffset = -ctxt.staffInterval * ((staffPosition % 2)? shortOffset : 1.5);
     } else {
       glyphCode = GlyphCode.VerticalEpisemaBelow;
+      if(placeFurtherFromNote) {
+        if(staffPosition % 2 === 0) --staffPosition;
+      } else shortOffset = 0.8;
+      verticalOffset = ctxt.staffInterval * ((staffPosition % 2)? shortOffset : 1.5);
     }
-
-    var staffPosition = this.note.staffPosition;
     
-    var horizontalOffset = this.note.bounds.width / 2;
-    var verticalOffset = 0;
-
-    switch (glyphCode) {
-      case GlyphCode.VerticalEpisemaAbove:
-        if (staffPosition % 2 === 0)
-          verticalOffset -= ctxt.staffInterval * 1.5;
-        else
-          verticalOffset -= ctxt.staffInterval * .9;
-        break;
-
-      case GlyphCode.VerticalEpisemaBelow:
-      default:
-        if (staffPosition % 2 === 0)
-          verticalOffset += ctxt.staffInterval * 1.5;
-        else
-          verticalOffset += ctxt.staffInterval * .8;
-        break;
-    }
-
     this.setGlyph(ctxt, glyphCode);
     this.setStaffPosition(ctxt, staffPosition);
 
