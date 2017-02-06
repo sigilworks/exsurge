@@ -935,7 +935,7 @@ export class TextElement extends ChantLayoutElement {
       that.spans.push(new TextSpan(spanText, properties));
     };
 
-    var markupRegex = /(\*|_|\^|%|[ARVarv]\/\.)/g;
+    var markupRegex = /\*|_|\^|%|([ARVarv])\/\./g;
 
     var match = null;
     while ((match = markupRegex.exec(text))) {
@@ -943,9 +943,8 @@ export class TextElement extends ChantLayoutElement {
       var markupSymbol = match[0];
 
       // non-matching symbols first
-      if (markupSymbol === "A/." || markupSymbol === "R/." || markupSymbol === "V/." ||
-          markupSymbol === "a/." || markupSymbol === "r/." || markupSymbol === "v/.") {
-        closeSpan(text[match.index] + ".", "font-family:'Exsurge Characters';fill:#f00;");
+      if (match[1]) {
+        closeSpan(match[1] + ".", "font-family:'Exsurge Characters';fill:#f00;");
       } else if (markupStack.length === 0) {
         // otherwise we're dealing with matching markup delimeters
         // if this is our first markup frame, then just create an inline for preceding text and push the stack frame
