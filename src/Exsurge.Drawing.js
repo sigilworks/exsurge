@@ -716,7 +716,7 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
     var y, dx, dy;
 
     dx = width / 6;
-    dy = ctxt.staffInterval * 1.5;
+    dy = this.bounds.height * 3;
     if (this.isAbove) {
       y = this.bounds.bottom();
       dy = -dy;
