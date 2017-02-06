@@ -715,14 +715,13 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
     var width = this.bounds.width;
     var y, dx, dy;
 
+    dx = width / 6;
+    dy = ctxt.staffInterval * 1.5;
     if (this.isAbove) {
       y = this.bounds.bottom();
-      dx = width / 6;
-      dy = -width / 6;
+      dy = -dy;
     } else {
       y = this.bounds.y;
-      dx = width / 6;
-      dy = width / 6;
     }
 
     //Calculate Control Points of path,
