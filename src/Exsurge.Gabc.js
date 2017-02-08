@@ -638,7 +638,7 @@ export class Gabc {
       neume: function() {
         return new Neumes.Punctum();
       },
-      handle: function(currNote, prevNote) {
+      handle: function(currNote, prevNote, notesRemaining) {
         
         if (currNote.shape) {
           var neume = new Neumes.Punctum();
@@ -696,9 +696,17 @@ export class Gabc {
             prevNote.shapeModifiers |= NoteShapeModifiers.Descending;
             return createNeume(new Neumes.Clivis(), true);
           }
-        } else
+        } else {
           // stand alone oriscus
-          return createNeume(new Neumes.Oriscus(), true);
+          var neume = new Neumes.Oriscus(),
+              state = createNeume(neume, false);
+          // if the current note is on a space within the staff AND the previous note is on the line below AND the previous note has a mora,
+          // then we went the trailing space at its default of intraNeumeSpacing to prevent the dot from running up into the current note.
+          // Otherwise, we want no trailing space.
+          if ((currNote.staffPosition > prevNote.staffPosition) && (currNote.staffPosition % 2 === 1 || prevNote.staffPosition !== currNote.staffPosition - 1 || !prevNote.morae || prevNote.morae.length === 0))
+            neume.trailingSpace = 0;
+          return state;
+        }
       }
     };
 
@@ -934,7 +942,7 @@ export class Gabc {
       var prevNote = currNoteIndex > 0 ? notes[currNoteIndex - 1] : null;
       var currNote = notes[currNoteIndex];
 
-      state = state.handle(currNote, prevNote);
+      state = state.handle(currNote, prevNote, notes.length - 1 - currNoteIndex);
 
       // if we are on the last note, then try to create a neume if we need to.
       if (currNoteIndex === notes.length - 1 && state !== unknownState)
@@ -1106,8 +1114,11 @@ export class Gabc {
           if (note.shape === NoteShape.Stropha) {
             // if we're already a stropha, that means this is gabc's
             // quick stropha feature (e.g., gsss). create a new note
+            let newNote = new Note();
+            newNote.staffPosition = note.staffPosition;
+            newNote.pitch = note.pitch;
             notes.push(note);
-            note = new Note();
+            note = newNote;
             episemaNoteIndex++; // since a new note was added, increase the index here
           }
           
@@ -1119,8 +1130,11 @@ export class Gabc {
           if (note.shape === NoteShape.Virga) {
             // if we're already a stropha, that means this is gabc's
             // quick virga feature (e.g., gvvv). create a new note
+            let newNote = new Note();
+            newNote.staffPosition = note.staffPosition;
+            newNote.pitch = note.pitch;
             notes.push(note);
-            note = new Note();
+            note = newNote;
             episemaNoteIndex++; // since a new note was added, increase the index here
           }
 
