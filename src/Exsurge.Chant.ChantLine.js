@@ -928,15 +928,8 @@ export class ChantLine extends ChantLayoutElement {
         return true;
     }
 
-    // if the curr notation has no lyrics, then we force the prev notation
-    // with lyrics to have syllable connectors.
+    // if the curr notation has no lyrics, then simply check whether there is enough room
     if (curr.hasLyrics() === false) {
-
-      for (i = 0; i < prevWithLyrics.lyrics.length; i++) {
-
-        if (prevWithLyrics.lyrics[i] !== null && prevWithLyrics.lyrics[i].allowsConnector())
-          prevWithLyrics.lyrics[i].setNeedsConnector(true);
-      }
 
       if (curr.bounds.right() + curr.trailingSpace < rightNotationBoundary)
         return true;
@@ -1032,8 +1025,13 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     if (curr.bounds.right() + curr.trailingSpace < rightNotationBoundary &&
-        curr.getLyricRight(0) <= this.staffRight)
+        curr.getLyricRight(0) <= this.staffRight) {
+      if(prev.isAccidental) {
+        // move the previous accidental up next to the current note:
+        prev.bounds.x = curr.bounds.x - prev.bounds.width - prev.trailingSpace;
+      }
       return true;
+    }
 
     // if we made it this far, then the element won't fit on this line.
     return false;
