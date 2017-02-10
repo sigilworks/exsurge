@@ -607,7 +607,9 @@ export class Gabc {
           currNoteIndex--;
 
         neume.keepWithNext = true;
-        neume.trailingSpace = ctxt.intraNeumeSpacing;
+        if (notes[currNoteIndex+1].shape === NoteShape.Quilisma)
+          neume.trailingSpace = 0;
+        else neume.trailingSpace = ctxt.intraNeumeSpacing;
       }
 
       return unknownState;
