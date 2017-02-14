@@ -176,7 +176,7 @@ export var QuickSvg = {
     var fragment = '<' + name + ' ';
 
     for (var attr in attributes) {
-      if (attributes.hasOwnProperty(attr))
+      if (attributes.hasOwnProperty(attr) && (typeof attributes[attr]!=='undefined'))
         fragment += attr + '="' + attributes[attr] + '" ';
     }
 
@@ -656,9 +656,10 @@ export class GlyphVisualizer extends ChantLayoutElement {
     canvasCtxt.translate(-x, -y);
   }
 
-  createSvgFragment(ctxt) {
+  createSvgFragment(ctxt, sourceIndex) {
 
     return QuickSvg.createFragment('use', {
+      sourceIndex: sourceIndex,
       'xlink:href': '#' + this.glyphCode,
       x: this.bounds.x + this.origin.x,
       y: this.bounds.y + this.origin.y
@@ -1082,6 +1083,7 @@ export class TextElement extends ChantLayoutElement {
       this.getExtraStyleProperties(ctxt);
 
     return QuickSvg.createFragment('text', {
+      'sourceIndex': this.sourceIndex,
       'x': this.bounds.x,
       'y': this.bounds.y,
       'class': this.getCssClasses().trim(),

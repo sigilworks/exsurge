@@ -242,7 +242,7 @@ export class Gabc {
       var alText = lyricText.match(__altRegex);
       var notationData = match[2];
 
-      var items = this.parseNotations(ctxt, notationData, match.index + match[1].length + 1);
+      var items = this.parseNotations(ctxt, notationData, sourceIndex + match.index + match[1].length + 1);
 
       if (items.length === 0)
         continue;
@@ -253,7 +253,7 @@ export class Gabc {
         for(var i = 0; i < alText.length; ++i) {
           var index = lyricText.indexOf(alText[i]);
           lyricText = lyricText.slice(0,index) + lyricText.slice(index + alText[i].length);
-          alText[i] = makeAlText(alText[i].slice(5,-6), index+5); // trim <alt> and </alt>
+          alText[i] = makeAlText(alText[i].slice(5,-6), sourceIndex+index+5); // trim <alt> and </alt>
         }
       }
       if (lyricText === '' && !alText)
@@ -302,7 +302,7 @@ export class Gabc {
           proposedLyricType === LyricType.SingleSyllable)
         ctxt.activeClef.resetAccidentals();
 
-      var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType, match.index);
+      var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType, sourceIndex + match.index);
 
       if (lyrics === null || lyrics.length === 0)
         continue;
@@ -437,7 +437,7 @@ export class Gabc {
       return notations;
 
     for (var i = 0; i < atoms.length; i++) {
-      sourceIndex += atoms[i-1] || 0;
+      sourceIndex += (atoms[i-1] && atoms[i-1].length) || 0;
       var atom = atoms[i];
 
       // handle the clefs and dividers here

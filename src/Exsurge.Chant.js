@@ -150,7 +150,7 @@ export class Note extends ChantLayoutElement {
 
     this.glyphVisualizer.bounds.x = this.bounds.x;
     this.glyphVisualizer.bounds.y = this.bounds.y;
-    return this.glyphVisualizer.createSvgFragment(ctxt);
+    return this.glyphVisualizer.createSvgFragment(ctxt, this.sourceIndex);
   }
 }
 
