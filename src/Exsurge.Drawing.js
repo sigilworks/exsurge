@@ -880,7 +880,7 @@ var __subsForTspans = {
 
 export class TextElement extends ChantLayoutElement {
 
-  constructor(ctxt, text, fontFamily, fontSize, textAnchor) {
+  constructor(ctxt, text, fontFamily, fontSize, textAnchor, sourceIndex) {
     super();
 
     // set these to some sane values for now...
@@ -894,6 +894,7 @@ export class TextElement extends ChantLayoutElement {
     this.fontFamily = fontFamily;
     this.fontSize = fontSize;
     this.textAnchor = textAnchor;
+    this.sourceIndex = sourceIndex;
     this.dominantBaseline = 'baseline'; // default placement
 
     this.generateSpansFromText(ctxt, text);
@@ -1101,8 +1102,8 @@ export var LyricType = {
 };
 
 export class Lyric extends TextElement {
-  constructor(ctxt, text, lyricType) {
-    super(ctxt, (ctxt.lyricTextStyle || '') + text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start');
+  constructor(ctxt, text, lyricType, sourceIndex) {
+    super(ctxt, (ctxt.lyricTextStyle || '') + text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start', sourceIndex);
 
     // save the original text in case we need to later use the lyric
     // in a dropcap...
@@ -1283,8 +1284,8 @@ export class AboveLinesText extends TextElement {
   /**
    * @param {String} text
    */
-  constructor(ctxt, text) {
-    super(ctxt, (ctxt.alTextStyle || '') + text, ctxt.alTextFont, ctxt.alTextSize, 'start');
+  constructor(ctxt, text, sourceIndex) {
+    super(ctxt, (ctxt.alTextStyle || '') + text, ctxt.alTextFont, ctxt.alTextSize, 'start', sourceIndex);
 
     this.padding = ctxt.staffInterval / 2;
   }

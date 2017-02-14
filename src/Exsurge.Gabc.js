@@ -200,14 +200,18 @@ export class Gabc {
   // and returns an array of ChantMapping objects, one for each word.
   static createMappingsFromWords(ctxt, words) {
     var mappings = [];
+    var sourceIndex = 0,
+        wordLength = 0;
 
     for (var i = 0; i < words.length; i++) {
+      sourceIndex += wordLength;
+      wordLength = words[i].length + 1;
       var word = words[i].trim();
 
       if (word === '')
         continue;
 
-      var mapping = this.createMappingFromWord(ctxt, word);
+      var mapping = this.createMappingFromWord(ctxt, word, sourceIndex);
 
       if (mapping)
         mappings.push(mapping);
@@ -219,13 +223,13 @@ export class Gabc {
   // takes a gabc word (like those returned by splitWords below) and returns
   // a ChantMapping object that contains the gabc word source text as well
   // as the generated notations.
-  static createMappingFromWord(ctxt, word) {
+  static createMappingFromWord(ctxt, word, sourceIndex) {
 
     var matches = [];
     var notations = [];
     var currSyllable = 0;
-    var makeAlText = function(text) {
-      return new AboveLinesText(ctxt, text);
+    var makeAlText = function(text, sourceIndex) {
+      return new AboveLinesText(ctxt, text, sourceIndex);
     };
     
     while ((match = __syllablesRegex.exec(word)))
@@ -238,7 +242,7 @@ export class Gabc {
       var alText = lyricText.match(__altRegex);
       var notationData = match[2];
 
-      var items = this.parseNotations(ctxt, notationData);
+      var items = this.parseNotations(ctxt, notationData, match.index + match[1].length + 1);
 
       if (items.length === 0)
         continue;
@@ -249,7 +253,7 @@ export class Gabc {
         for(var i = 0; i < alText.length; ++i) {
           var index = lyricText.indexOf(alText[i]);
           lyricText = lyricText.slice(0,index) + lyricText.slice(index + alText[i].length);
-          alText[i] = alText[i].slice(5,-6); // trim <alt> and </alt>
+          alText[i] = makeAlText(alText[i].slice(5,-6), index+5); // trim <alt> and </alt>
         }
       }
       if (lyricText === '' && !alText)
@@ -271,7 +275,7 @@ export class Gabc {
         return notations;
     
       if (alText)
-        notationWithLyrics.alText = alText.map(makeAlText);
+        notationWithLyrics.alText = alText;
 
       if (lyricText === '')
         continue;
@@ -298,7 +302,7 @@ export class Gabc {
           proposedLyricType === LyricType.SingleSyllable)
         ctxt.activeClef.resetAccidentals();
 
-      var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType);
+      var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType, match.index);
 
       if (lyrics === null || lyrics.length === 0)
         continue;
@@ -306,11 +310,11 @@ export class Gabc {
       notationWithLyrics.lyrics = lyrics;
     }
 
-    return new ChantMapping(word, notations);
+    return new ChantMapping(word, notations, sourceIndex);
   }
 
   // returns an array of lyrics (an array because each syllable can have multiple lyrics)
-  static createSyllableLyrics(ctxt, text, proposedLyricType) {
+  static createSyllableLyrics(ctxt, text, proposedLyricType, sourceIndex) {
 
     var lyrics = [];
 
@@ -343,7 +347,7 @@ export class Gabc {
           centerStartIndex = -1; // if there's no closing bracket, don't enable centering
       }
 
-      var lyric = this.makeLyric(ctxt, lyricText, proposedLyricType);
+      var lyric = this.makeLyric(ctxt, lyricText, proposedLyricType, sourceIndex);
 
       // if we have manual lyric centering, then set it now
       if (centerStartIndex >= 0) {
@@ -357,7 +361,7 @@ export class Gabc {
     return lyrics;
   }
 
-  static makeLyric(ctxt, text, lyricType) {
+  static makeLyric(ctxt, text, lyricType, sourceIndex) {
 
     if (text.length > 1 && text[text.length - 1] === '-') {
       if (lyricType === LyricType.EndingSyllable)
@@ -378,7 +382,7 @@ export class Gabc {
     if (text.match(/^(?:[*†]+|i+j|\d+)\.?$/))
       lyricType = LyricType.Directive;
 
-    var lyric = new Lyric(ctxt, text, lyricType);
+    var lyric = new Lyric(ctxt, text, lyricType, sourceIndex);
     lyric.elidesToNext = elides;
 
     return lyric;
@@ -386,7 +390,7 @@ export class Gabc {
 
   // takes a string of gabc notations and creates exsurge objects out of them.
   // returns an array of notations.
-  static parseNotations(ctxt, data) {
+  static parseNotations(ctxt, data, sourceIndex) {
 
     // if there is no data, then this must be a text only object
     if (!data)
@@ -415,7 +419,7 @@ export class Gabc {
       // then, if we're passed a notation, let's add it
       // also, perform chant logic here
       if (notation !== null) {
-
+        notation.sourceIndex = sourceIndex;
         if (notation.isClef) {
           ctxt.activeClef = notation;
         } else if (notation.isAccidental)
@@ -433,7 +437,7 @@ export class Gabc {
       return notations;
 
     for (var i = 0; i < atoms.length; i++) {
-
+      sourceIndex += atoms[i-1] || 0;
       var atom = atoms[i];
 
       // handle the clefs and dividers here
@@ -545,7 +549,7 @@ export class Gabc {
             }
 
             var noteArray = [];
-            this.createNoteFromData(ctxt, ctxt.activeClef, atom, noteArray);
+            this.createNoteFromData(ctxt, ctxt.activeClef, atom, noteArray, sourceIndex);
             var accidental = new Signs.Accidental(noteArray[0].staffPosition, accidentalType);
             accidental.trailingSpace = ctxt.intraNeumeSpacing * 2;
 
@@ -555,7 +559,7 @@ export class Gabc {
           } else {
 
             // looks like it's a note
-            this.createNoteFromData(ctxt, ctxt.activeClef, atom, notes);
+            this.createNoteFromData(ctxt, ctxt.activeClef, atom, notes, sourceIndex);
           }
           break;
       }
@@ -968,9 +972,10 @@ export class Gabc {
   }
 
   // appends any notes created to the notes array argument
-  static createNoteFromData(ctxt, clef, data, notes) {
+  static createNoteFromData(ctxt, clef, data, notes, sourceIndex) {
 
     var note = new Note();
+    note.sourceIndex = sourceIndex;
 
     if (data.length < 1)
       throw 'Invalid note data: ' + data;
@@ -1306,6 +1311,8 @@ export class Gabc {
     var syllables = [];
     var matches = [];
     
+    syllables.wordLength = gabcWord.length;
+
     while ((match = __syllablesRegex.exec(gabcWord)))
       matches.push(match);
 

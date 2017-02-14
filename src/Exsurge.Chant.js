@@ -340,9 +340,10 @@ export class ChantMapping {
   // source can be any object type. in the case of gabc, source is a text
   // string that maps to a gabc word (e.g.: "no(g)bis(fg)").
   // notations is an array of ChantNotationElements
-  constructor(source, notations) {
+  constructor(source, notations, sourceIndex) {
     this.source = source;
     this.notations = notations;
+    this.sourceIndex = sourceIndex;
   }
 }
 
