@@ -150,7 +150,7 @@ export class Gabc {
 
     var results = this.diffDescriptorsAndNewWords(mappings, newWords);
 
-    var index = 0, j, k;
+    var index = 0, j, k, l, sourceIndex = 0, wordLength = 0, mapping;
 
     ctxt.activeClef = Clef.default();
 
@@ -160,33 +160,56 @@ export class Gabc {
       var resultCode = results[i][0];
       var resultValues = results[i][1];
 
+      console.info(0, sourceIndex);
+      if(index>0) sourceIndex = mappings[index-1].sourceIndex + mappings[index-1].source.length + 1;
+      console.info(1, sourceIndex);
       if (resultCode === '=') {
-        // skip over ones that haven't changed, but updating the clef as we go
+        var sourceIndexDiff = sourceIndex - mappings[index].sourceIndex;
+        // skip over ones that haven't changed, but updating the clef and source index as we go
         for (j = 0; j < resultValues.length; j++, index++) {
-          for (k = 0; k < mappings[index].notations.length; k++) {
+          mapping = mappings[index];
+          mapping.sourceIndex += sourceIndexDiff;
+          for (k = 0; k < mapping.notations.length; k++) {
             // notify the notation that its dependencies are no longer valid
-            mappings[index].notations[k].resetDependencies();
+            mapping.notations[k].resetDependencies();
 
-            if (mappings[index].notations[k].isClef)
+            if (mapping.notations[k].isClef)
               ctxt.activeClef = mappings[index].notations[k];
+
+            if(sourceIndexDiff) {
+              // update source index:
+              if(mapping.notations[k].notes) {
+                for(l=0; l < mapping.notations[k].notes.length; ++l) {
+                  mapping.notations[k].notes[l].sourceIndex += sourceIndexDiff;  
+                }
+              }
+              for(l=0; l < mapping.notations[k].lyrics.length; ++l) {
+                mapping.notations[k].lyrics[l].sourceIndex += sourceIndexDiff;
+              }
+              if(mapping.notations[k].alText) {
+                for(l=0; l < mapping.notations[k].alText.length; ++l) {
+                  mapping.notations[k].alText[l].sourceIndex += sourceIndexDiff;
+                }  
+              }
+            }
           }
         }
-
       } else if (resultCode === '-') {
         // delete elements that no longer exist, but first notify all
         // elements of the change
         mappings.splice(index, resultValues.length);
-
       } else if (resultCode === '+') {
         // insert new ones
         for (j = 0; j < resultValues.length; j++) {
-          var mapping = this.createMappingFromWord(ctxt, resultValues[j]);
+          wordLength = resultValues[j].length + 1;
+          var mapping = this.createMappingFromWord(ctxt, resultValues[j], sourceIndex);
 
           for (k = 0; k < mapping.notations.length; k++)
             if (mapping.notations[k].isClef)
               ctxt.activeClef = mapping.notations[k];
 
           mappings.splice(index++, 0, mapping);
+          sourceIndex += wordLength;
         }
       }
     }
