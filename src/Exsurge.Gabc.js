@@ -160,9 +160,7 @@ export class Gabc {
       var resultCode = results[i][0];
       var resultValues = results[i][1];
 
-      console.info(0, sourceIndex);
       if(index>0) sourceIndex = mappings[index-1].sourceIndex + mappings[index-1].source.length + 1;
-      console.info(1, sourceIndex);
       if (resultCode === '=') {
         var sourceIndexDiff = sourceIndex - mappings[index].sourceIndex;
         // skip over ones that haven't changed, but updating the clef and source index as we go
@@ -202,7 +200,7 @@ export class Gabc {
         // insert new ones
         for (j = 0; j < resultValues.length; j++) {
           wordLength = resultValues[j].length + 1;
-          var mapping = this.createMappingFromWord(ctxt, resultValues[j], sourceIndex);
+          mapping = this.createMappingFromWord(ctxt, resultValues[j], sourceIndex);
 
           for (k = 0; k < mapping.notations.length; k++)
             if (mapping.notations[k].isClef)
