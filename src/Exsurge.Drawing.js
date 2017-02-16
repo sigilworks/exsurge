@@ -657,7 +657,6 @@ export class GlyphVisualizer extends ChantLayoutElement {
   }
 
   createSvgFragment(ctxt, sourceIndex) {
-
     return QuickSvg.createFragment('use', {
       sourceIndex: sourceIndex,
       'xlink:href': '#' + this.glyphCode,
@@ -1232,8 +1231,9 @@ export class Lyric extends TextElement {
   }
 
   generateDropCap(ctxt) {
-
-     var dropCap = new DropCap(ctxt, this.originalText.substring(0, 1));
+    if (this.dropCap) return this.dropCap;
+    var dropCap = this.dropCap = new DropCap(ctxt, this.originalText.substring(0, 1), this.sourceIndex);
+    this.sourceIndex++;
 
     // if the dropcap is a single character syllable (vowel) that is the
     // beginning of the word, then we use a hyphen in place of the lyric text
@@ -1302,8 +1302,8 @@ export class DropCap extends TextElement {
   /**
    * @param {String} text
    */
-  constructor(ctxt, text) {
-    super(ctxt, text, (ctxt.dropCapTextStyle || '') + ctxt.dropCapTextFont, ctxt.dropCapTextSize, 'middle');
+  constructor(ctxt, text, sourceIndex) {
+    super(ctxt, text, (ctxt.dropCapTextStyle || '') + ctxt.dropCapTextFont, ctxt.dropCapTextSize, 'middle', sourceIndex);
 
     this.padding = ctxt.staffInterval * 2;
   }
@@ -1536,7 +1536,7 @@ export class ChantNotationElement extends ChantLayoutElement {
     var inner = "";
 
     for (var i = 0; i < this.visualizers.length; i++)
-      inner += this.visualizers[i].createSvgFragment(ctxt);
+      inner += this.visualizers[i].createSvgFragment(ctxt, this.sourceIndex);
 
     for (i = 0; i < this.lyrics.length; i++)
       inner += this.lyrics[i].createSvgFragment(ctxt);

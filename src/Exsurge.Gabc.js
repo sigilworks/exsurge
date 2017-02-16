@@ -572,6 +572,7 @@ export class Gabc {
             var noteArray = [];
             this.createNoteFromData(ctxt, ctxt.activeClef, atom, noteArray, sourceIndex);
             var accidental = new Signs.Accidental(noteArray[0].staffPosition, accidentalType);
+            accidental.sourceIndex = sourceIndex;
             accidental.trailingSpace = ctxt.intraNeumeSpacing * 2;
 
             ctxt.activeClef.activeAccidental = accidental;
@@ -1143,6 +1144,7 @@ export class Gabc {
             // if we're already a stropha, that means this is gabc's
             // quick stropha feature (e.g., gsss). create a new note
             let newNote = new Note();
+            newNote.sourceIndex = sourceIndex + i;
             newNote.staffPosition = note.staffPosition;
             newNote.pitch = note.pitch;
             notes.push(note);
@@ -1159,6 +1161,7 @@ export class Gabc {
             // if we're already a stropha, that means this is gabc's
             // quick virga feature (e.g., gvvv). create a new note
             let newNote = new Note();
+            newNote.sourceIndex = sourceIndex + i;
             newNote.staffPosition = note.staffPosition;
             newNote.pitch = note.pitch;
             notes.push(note);
