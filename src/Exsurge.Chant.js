@@ -146,6 +146,13 @@ export class Note extends ChantLayoutElement {
     this.glyphVisualizer.draw(ctxt);
   }
 
+  createSvgNode(ctxt) {
+
+    this.glyphVisualizer.bounds.x = this.bounds.x;
+    this.glyphVisualizer.bounds.y = this.bounds.y;
+    return this.glyphVisualizer.createSvgNode(ctxt, this.sourceIndex);
+  }
+
   createSvgFragment(ctxt) {
 
     this.glyphVisualizer.bounds.x = this.bounds.x;
@@ -566,6 +573,28 @@ export class ChantScore {
     canvasCtxt.translate(-this.bounds.x, -this.bounds.y);
   }
 
+  createSvgNode(ctxt) {
+
+    // create defs section
+    var node = [ctxt.defsNode.cloneNode(true)];
+
+    for (var i = 0; i < this.lines.length; i++)
+      node.push( this.lines[i].createSvgNode(ctxt) );
+
+    node = QuickSvg.createNode('g', {}, node);
+
+    node = QuickSvg.createNode('svg', {
+      'xmlns': 'http://www.w3.org/2000/svg',
+      'version': '1.1',
+      'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+      'class': 'ChantScore',
+      'width': this.bounds.width,
+      'height': this.bounds.height
+    }, node);
+
+    return node;
+  }
+
   createSvg(ctxt) {
 
     var fragment = "";
@@ -592,6 +621,29 @@ export class ChantScore {
     }, fragment);
 
     return fragment;
+  }
+
+  createSvgNodeForEachLine(ctxt) {
+
+    var node = [];
+
+    var top = 0;
+    for (var i = 0; i < this.lines.length; i++) {
+      var lineFragment = [ctxt.defsNode.cloneNode(true), this.lines[i].createSvgNode(ctxt, top)];
+      var height = this.lines[i].bounds.height + ctxt.staffInterval * 1.5;
+      lineFragment = QuickSvg.createNode('g', {}, lineFragment);
+      lineFragment = QuickSvg.createNode('svg', {
+        'xmlns': 'http://www.w3.org/2000/svg',
+        'version': '1.1',
+        'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+        'class': 'ChantScore',
+        'width': this.bounds.width,
+        'height': height
+      }, lineFragment);
+      node.push(lineFragment);
+      top += height;
+    }
+    return node;
   }
 
   createSvgForEachLine(ctxt) {

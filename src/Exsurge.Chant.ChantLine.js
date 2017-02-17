@@ -260,6 +260,75 @@ export class ChantLine extends ChantLayoutElement {
     canvasCtxt.translate(-this.bounds.x, -this.bounds.y);
   }
 
+  createSvgNode(ctxt, top = 0) {
+    var inner = [];
+
+    // add the chant lines
+    var i, x1 = this.staffLeft, x2 = this.staffRight;
+
+    // create the staff lines
+    for (i = -3; i <= 3; i += 2) {
+
+      inner.push( QuickSvg.createNode('line', {
+        'x1': x1,
+        'y1': ctxt.staffInterval * i,
+        'x2': x2,
+        'y2': ctxt.staffInterval * i,
+        'stroke': ctxt.staffLineColor,
+        'stroke-width': ctxt.staffLineWeight,
+        'class': 'staffLine'
+      }) );
+    }
+
+    // create the ledger lines
+    for (i = 0; i < this.ledgerLines.length; i++) {
+
+      var ledgerLine = this.ledgerLines[i];
+      var y = ctxt.calculateHeightFromStaffPosition(ledgerLine.staffPosition);
+
+      inner.push( QuickSvg.createNode('line', {
+        'x1': ledgerLine.x1,
+        'y1': y,
+        'x2': ledgerLine.x2,
+        'y2': y,
+        'stroke': ctxt.staffLineColor,
+        'stroke-width': ctxt.staffLineWeight,
+        'class': 'ledgerLine'
+      }) );
+    }
+
+    // add any braces
+    for (i = 0; i < this.braces.length; i++)
+      inner.push( this.braces[i].createSvgNode(ctxt) );
+
+    // dropCap and the annotations
+    if (this.notationsStartIndex === 0) {
+
+      if (this.score.dropCap !== null)
+        inner.push( this.score.dropCap.createSvgNode(ctxt) );
+
+      if (this.score.annotation !== null)
+          inner.push( this.score.annotation.createSvgNode(ctxt) );
+    }
+
+    inner.push( this.startingClef.createSvgNode(ctxt) );
+
+    var notations = this.score.notations;
+    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
+
+    // add all of the notations
+    for (i = this.notationsStartIndex; i < lastIndex; i++)
+      inner.push( notations[i].createSvgNode(ctxt) );
+
+    if (this.custos)
+      inner.push( this.custos.createSvgNode(ctxt) );
+
+    return QuickSvg.createNode('g', {
+      'class': 'chantLine',
+      'transform': 'translate(' + this.bounds.x + ',' + (this.bounds.y - top) + ')'
+    }, inner);
+  }
+
   createSvgFragment(ctxt, top = 0) {
     var inner = "";
 
