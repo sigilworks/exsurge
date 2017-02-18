@@ -183,6 +183,10 @@ export var QuickSvg = {
 
   createNode: function(name, attributes, children) {
     var node = document.createElementNS(this.ns, name);
+    if(attributes && attributes.source) {
+      node.source = attributes.source;
+      delete attributes.source;
+    }
     for (var attr in attributes) {
       if (attributes.hasOwnProperty(attr) && (typeof attributes[attr]!=='undefined')) {
         var val = attributes[attr];
@@ -197,7 +201,7 @@ export var QuickSvg = {
     if (children) {
       if (typeof(children) === 'string') {
         node.textContent = children;
-      } else if(children.length) {
+      } else if(children.constructor === [].constructor) {
         for(var i = 0; i < children.length; ++i) {
           node.appendChild(children[i]);
         }
@@ -743,18 +747,19 @@ export class GlyphVisualizer extends ChantLayoutElement {
     canvasCtxt.translate(-x, -y);
   }
 
-  createSvgNode(ctxt, sourceIndex) {
+  createSvgNode(ctxt, source) {
     return QuickSvg.createNode('use', {
-      sourceIndex: sourceIndex,
+      source: source,
+      sourceIndex: source.sourceIndex,
       'xlink:href': '#' + this.glyphCode,
       x: this.bounds.x + this.origin.x,
       y: this.bounds.y + this.origin.y
     });
   }
 
-  createSvgFragment(ctxt, sourceIndex) {
+  createSvgFragment(ctxt, source) {
     return QuickSvg.createFragment('use', {
-      sourceIndex: sourceIndex,
+      sourceIndex: source.sourceIndex,
       'xlink:href': '#' + this.glyphCode,
       x: this.bounds.x + this.origin.x,
       y: this.bounds.y + this.origin.y
@@ -1211,6 +1216,7 @@ export class TextElement extends ChantLayoutElement {
       this.getExtraStyleProperties(ctxt);
 
     return QuickSvg.createNode('text', {
+      'source': this,
       'sourceIndex': this.sourceIndex,
       'x': this.bounds.x,
       'y': this.bounds.y,
@@ -1714,7 +1720,7 @@ export class ChantNotationElement extends ChantLayoutElement {
     var inner = [];
 
     for (var i = 0; i < this.visualizers.length; i++)
-      inner.push( this.visualizers[i].createSvgNode(ctxt, this.sourceIndex) );
+      inner.push( this.visualizers[i].createSvgNode(ctxt, this) );
 
     for (i = 0; i < this.lyrics.length; i++)
       inner.push( this.lyrics[i].createSvgNode(ctxt) );
@@ -1734,7 +1740,7 @@ export class ChantNotationElement extends ChantLayoutElement {
     var inner = "";
 
     for (var i = 0; i < this.visualizers.length; i++)
-      inner += this.visualizers[i].createSvgFragment(ctxt, this.sourceIndex);
+      inner += this.visualizers[i].createSvgFragment(ctxt, this);
 
     for (i = 0; i < this.lyrics.length; i++)
       inner += this.lyrics[i].createSvgFragment(ctxt);
