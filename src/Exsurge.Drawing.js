@@ -188,7 +188,7 @@ export var QuickSvg = {
         var val = attributes[attr];
         var match = attr.match(/^([^:]+):([^:]+)$/);
         if(match) {
-          node.setAttributeNS(this[match[0]], this[match[1]], val);
+          node.setAttributeNS(this[match[1]], match[2], val);
         } else {
           node.setAttribute(attr, val);
         }
@@ -197,10 +197,12 @@ export var QuickSvg = {
     if (children) {
       if (typeof(children) === 'string') {
         node.textContent = children;
-      } else {
+      } else if(children.length) {
         for(var i = 0; i < children.length; ++i) {
           node.appendChild(children[i]);
         }
+      } else {
+        node.appendChild(children);
       }
     }
     return node;

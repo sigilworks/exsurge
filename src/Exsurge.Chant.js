@@ -586,7 +586,6 @@ export class ChantScore {
     node = QuickSvg.createNode('svg', {
       'xmlns': 'http://www.w3.org/2000/svg',
       'version': '1.1',
-      'xmlns:xlink': 'http://www.w3.org/1999/xlink',
       'class': 'ChantScore',
       'width': this.bounds.width,
       'height': this.bounds.height
@@ -635,7 +634,6 @@ export class ChantScore {
       lineFragment = QuickSvg.createNode('svg', {
         'xmlns': 'http://www.w3.org/2000/svg',
         'version': '1.1',
-        'xmlns:xlink': 'http://www.w3.org/1999/xlink',
         'class': 'ChantScore',
         'width': this.bounds.width,
         'height': height

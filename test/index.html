@@ -82,7 +82,8 @@
       score.performLayoutAsync(ctxt, function() {
         score.layoutChantLines(ctxt, chantContainer.clientWidth, function() {
           // render the score to svg code
-          chantContainer.innerHTML = score.createSvg(ctxt);
+          while(chantContainer.firstChild) chantContainer.removeChild(chantContainer.firstChild);
+          chantContainer.appendChild(score.createSvgNode(ctxt));
         });
       });
     }
