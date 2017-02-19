@@ -750,7 +750,7 @@ export class GlyphVisualizer extends ChantLayoutElement {
   createSvgNode(ctxt, source) {
     return QuickSvg.createNode('use', {
       source: source,
-      sourceIndex: source.sourceIndex,
+      'source-index': source.sourceIndex,
       'xlink:href': '#' + this.glyphCode,
       x: this.bounds.x + this.origin.x,
       y: this.bounds.y + this.origin.y
@@ -759,7 +759,7 @@ export class GlyphVisualizer extends ChantLayoutElement {
 
   createSvgFragment(ctxt, source) {
     return QuickSvg.createFragment('use', {
-      sourceIndex: source.sourceIndex,
+      'source-index': source.sourceIndex,
       'xlink:href': '#' + this.glyphCode,
       x: this.bounds.x + this.origin.x,
       y: this.bounds.y + this.origin.y
@@ -1217,7 +1217,7 @@ export class TextElement extends ChantLayoutElement {
 
     return QuickSvg.createNode('text', {
       'source': this,
-      'sourceIndex': this.sourceIndex,
+      'source-index': this.sourceIndex,
       'x': this.bounds.x,
       'y': this.bounds.y,
       'class': this.getCssClasses().trim(),
@@ -1246,7 +1246,7 @@ export class TextElement extends ChantLayoutElement {
       this.getExtraStyleProperties(ctxt);
 
     return QuickSvg.createFragment('text', {
-      'sourceIndex': this.sourceIndex,
+      'source-index': this.sourceIndex,
       'x': this.bounds.x,
       'y': this.bounds.y,
       'class': this.getCssClasses().trim(),
