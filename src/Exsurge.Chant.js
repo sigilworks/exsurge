@@ -388,12 +388,19 @@ export class ChantScore {
 
   updateNotations(ctxt) {
 
-    var i;
+    var i, j, mapping, notation;
 
     // flatten all mappings into one array for N(0) access to notations
     this.notations = [];
-    for(i = 0; i < this.mappings.length; i++)
-      this.notations = this.notations.concat(this.mappings[i].notations);
+    for(i = 0; i < this.mappings.length; i++) {
+      mapping = this.mappings[i];
+      for(j = 0; j < mapping.notations.length; j++) {
+        notation = mapping.notations[j];
+        notation.score = this;
+        notation.mapping = mapping;
+        this.notations.push(notation);
+      }
+    }
 
     // find the starting clef...
     // start with a default clef in case the notations don't provide one.

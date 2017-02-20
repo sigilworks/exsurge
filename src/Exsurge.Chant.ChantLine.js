@@ -308,7 +308,7 @@ export class ChantLine extends ChantLayoutElement {
         inner.push( this.score.dropCap.createSvgNode(ctxt) );
 
       if (this.score.annotation !== null)
-          inner = inner.concat( this.score.annotation.createSvgNode(ctxt) );
+        inner = inner.concat( this.score.annotation.createSvgNode(ctxt) );
     }
 
     inner.push( this.startingClef.createSvgNode(ctxt) );

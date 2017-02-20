@@ -268,7 +268,8 @@ export class Gabc {
       if (items.length === 0)
         continue;
 
-      notations = notations.concat(items);
+      for (var k = 0; k < items.length; ++k)
+        notations.push(items[k]);
 
       if (alText) {
         for(var i = 0; i < alText.length; ++i) {
