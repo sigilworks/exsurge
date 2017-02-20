@@ -1085,10 +1085,10 @@ export class Gabc {
             else
               break;
 
-            // the gabc definition for epismata is so convoluted...
-            // - double underscores create epismata over multiple notes.
+            // the gabc definition for episemata is so convoluted...
+            // - double underscores create episemata over multiple notes.
             // - unless the _ has a 0, 1, 3, 4, or 5 modifier, which means
-            //   another underscore puts a second epismata on the same note
+            //   another underscore puts a second episema on the same note
             // - (when there's a 2 lookahead, then this is treated as an
             //   unmodified underscore, so another underscore would be
             //   added to previous notes
@@ -1104,11 +1104,11 @@ export class Gabc {
           }
 
           // since gabc allows consecutive underscores which is a shortcut to
-          // apply the epismata to previous notes, we keep track of that here
+          // apply the episemata to previous notes, we keep track of that here
           // in order to add the new episema to the correct note.
 
           if (episemaNote)
-            episemaNote.epismata.push(mark);
+            episemaNote.episemata.push(mark);
 
           if (episemaNote === note && episemaHadModifier)
             episemaNote = note;

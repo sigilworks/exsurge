@@ -801,12 +801,12 @@ export class ChantLine extends ChantLayoutElement {
       }
     };
 
-    var epismata = []; // keep track of epismata in case we can connect some
+    var episemata = []; // keep track of episemata in case we can connect some
     var startBrace = null, startBraceNotationIndex = 0;
     var minY = Number.MAX_VALUE, maxY = Number.MIN_VALUE; // for braces
 
     // make a final pass over all of the notes to add any necessary
-    // ledger lines and to smooth out epismata
+    // ledger lines and to smooth out episemata
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
 
       var neume = notations[i];
@@ -838,57 +838,57 @@ export class ChantLine extends ChantLayoutElement {
 
         processElementForLedgerLine(note, neume.bounds.x, neume.bounds.y);
 
-        // blend epismata as we're able
-        if (note.epismata.length === 0)
-          epismata = [];
-        for (k = 0; k < note.epismata.length; k++) {
+        // blend episemata as we're able
+        if (note.episemata.length === 0)
+          episemata = [];
+        for (k = 0; k < note.episemata.length; k++) {
 
-          var episema = note.epismata[k];
+          var episema = note.episemata[k];
 
-          var spaceBetweenEpismata = 0;
+          var spaceBetweenEpisemata = 0;
 
-          // calculate the distance between the last epismata and this one...
-          // lots of code for a simple: currEpismata.left - prevEpismata.right
-          if (epismata.length > 0)
-            spaceBetweenEpismata = neume.bounds.x + episema.bounds.x - (epismata[epismata.length - 1].note.neume.bounds.x + epismata[epismata.length - 1].bounds.right());
+          // calculate the distance between the last episemata and this one...
+          // lots of code for a simple: currEpisemata.left - prevEpisemata.right
+          if (episemata.length > 0)
+            spaceBetweenEpisemata = neume.bounds.x + episema.bounds.x - (episemata[episemata.length - 1].note.neume.bounds.x + episemata[episemata.length - 1].bounds.right());
 
           // we try to blend the episema if we're able.
-          if (epismata.length === 0 ||
-              epismata[epismata.length - 1].positionHint !== episema.positionHint ||
-              epismata[epismata.length - 1].terminating === true ||
-              epismata[epismata.length - 1].alignment === HorizontalEpisemaAlignment.Left ||
-              epismata[epismata.length - 1].alignment === HorizontalEpisemaAlignment.Center ||
+          if (episemata.length === 0 ||
+              episemata[episemata.length - 1].positionHint !== episema.positionHint ||
+              episemata[episemata.length - 1].terminating === true ||
+              episemata[episemata.length - 1].alignment === HorizontalEpisemaAlignment.Left ||
+              episemata[episemata.length - 1].alignment === HorizontalEpisemaAlignment.Center ||
               episema.alignment === HorizontalEpisemaAlignment.Right ||
               episema.alignment === HorizontalEpisemaAlignment.Center ||
-              (spaceBetweenEpismata > ctxt.intraNeumeSpacing * 2 && (note.glyphVisualizer.glyphCode !== GlyphCode.None))) {
+              (spaceBetweenEpisemata > ctxt.intraNeumeSpacing * 2 && (note.glyphVisualizer.glyphCode !== GlyphCode.None))) {
 
-            // start a new set of epismata to potentially blend
-            epismata = [episema];
+            // start a new set of episemata to potentially blend
+            episemata = [episema];
           } else {
             // blend all previous with this one
             var newY;
 
             if (episema.positionHint === MarkingPositionHint.Below)
-              newY = Math.max(episema.bounds.y, epismata[epismata.length - 1].bounds.y);
+              newY = Math.max(episema.bounds.y, episemata[episemata.length - 1].bounds.y);
             else
-              newY = Math.min(episema.bounds.y, epismata[epismata.length - 1].bounds.y);
+              newY = Math.min(episema.bounds.y, episemata[episemata.length - 1].bounds.y);
 
             if (episema.bounds.y !== newY)
               episema.bounds.y = newY;
             else {
-              for (var l = 0; l < epismata.length; l++)
-                epismata[l].bounds.y = newY;
+              for (var l = 0; l < episemata.length; l++)
+                episemata[l].bounds.y = newY;
             }
 
             // extend the last episema to meet the new one
-            var newWidth = (neume.bounds.x + episema.bounds.x) - (epismata[epismata.length - 1].note.neume.bounds.x + epismata[epismata.length - 1].bounds.x);
+            var newWidth = (neume.bounds.x + episema.bounds.x) - (episemata[episemata.length - 1].note.neume.bounds.x + episemata[episemata.length - 1].bounds.x);
             if(newWidth < 0) {
               newWidth *= -1;
-              epismata[epismata.length - 1].bounds.x -= newWidth;
+              episemata[episemata.length - 1].bounds.x -= newWidth;
             }
-            epismata[epismata.length - 1].bounds.width = newWidth;
+            episemata[episemata.length - 1].bounds.width = newWidth;
 
-            epismata.push(episema);
+            episemata.push(episema);
           }
         }
 

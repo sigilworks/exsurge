@@ -356,9 +356,9 @@ export class Neume extends ChantNotationElement {
       var note = this.notes[i];
       var j;
 
-      for (j = 0; j < note.epismata.length; j++) {
-        note.epismata[j].performLayout(ctxt);
-        this.addVisualizer(note.epismata[j]);
+      for (j = 0; j < note.episemata.length; j++) {
+        note.episemata[j].performLayout(ctxt);
+        this.addVisualizer(note.episemata[j]);
       }
 
       for (j = 0; j < note.morae.length; j++) {
@@ -396,24 +396,24 @@ export class Neume extends ChantNotationElement {
   build(ctxt) {
     return new NeumeBuilder(ctxt, this);
   }
-  positionEpismata(note, position) {
+  positionEpisemata(note, position) {
     var mark, i;
-    for (i = 0; i < note.epismata.length; i++)
-      if (note.epismata[i].positionHint === MarkingPositionHint.Default)
-        note.epismata[i].positionHint = position;
-    return note.epismata.length;
+    for (i = 0; i < note.episemata.length; i++)
+      if (note.episemata[i].positionHint === MarkingPositionHint.Default)
+        note.episemata[i].positionHint = position;
+    return note.episemata.length;
   }
-  positionEpismataAbove(note) {
-    return this.positionEpismata(note, MarkingPositionHint.Above);
+  positionEpisemataAbove(note) {
+    return this.positionEpisemata(note, MarkingPositionHint.Above);
   }
-  positionEpismataBelow(note) {
-    return this.positionEpismata(note, MarkingPositionHint.Below);
+  positionEpisemataBelow(note) {
+    return this.positionEpisemata(note, MarkingPositionHint.Below);
   }
 
-  positionPodatusEpismata(bottomNote, topNote) {
+  positionPodatusEpisemata(bottomNote, topNote) {
     // 1. episema on lower note by default be below, upper note above
-    this.positionEpismataBelow(bottomNote);
-    this.positionEpismataAbove(topNote);
+    this.positionEpisemataBelow(bottomNote);
+    this.positionEpisemataAbove(topNote);
   }
   positionPodatusMorae(bottomNote, topNote) {
     var mark;
@@ -439,7 +439,7 @@ export class Neume extends ChantNotationElement {
   }
   // for any subclasses that begin with a podatus, they can call this from their own positionMarkings()
   positionPodatusMarkings(bottomNote, topNote) {
-    this.positionPodatusEpismata(bottomNote, topNote);
+    this.positionPodatusEpisemata(bottomNote, topNote);
     this.positionPodatusMorae(bottomNote, topNote);
   }
 
@@ -447,7 +447,7 @@ export class Neume extends ChantNotationElement {
   // episema below, unless the middle note also has an episema
   positionTorculusMarkings(firstNote, secondNote, thirdNote) {
     var hasTopEpisema = this.positionClivisMarkings(secondNote, thirdNote);
-    hasTopEpisema = this.positionEpismata(firstNote, hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below) && hasTopEpisema;
+    hasTopEpisema = this.positionEpisemata(firstNote, hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below) && hasTopEpisema;
     return hasTopEpisema;
   }
   positionClivisMorae(firstNote, secondNote) {
@@ -461,27 +461,27 @@ export class Neume extends ChantNotationElement {
       }
     }
   }
-  positionClivisEpismata(firstNote, secondNote) {
-    var hasTopEpisema = this.positionEpismataAbove(firstNote);
-    this.positionEpismata(secondNote, hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below);
+  positionClivisEpisemata(firstNote, secondNote) {
+    var hasTopEpisema = this.positionEpisemataAbove(firstNote);
+    this.positionEpisemata(secondNote, hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below);
     return hasTopEpisema;
   }
   positionClivisMarkings(firstNote, secondNote) {
     this.positionClivisMorae(firstNote, secondNote);
-    return this.positionClivisEpismata(firstNote, secondNote);
+    return this.positionClivisEpisemata(firstNote, secondNote);
   }
 
   positionPorrectusMarkings(firstNote, secondNote, thirdNote) {
     // episemata on first and second note work like a clivis,
     // the second note should have its episema below, unless the first note also has an episema.
-    this.positionClivisEpismata(firstNote, secondNote);
+    this.positionClivisEpisemata(firstNote, secondNote);
     this.positionPodatusMarkings(secondNote, thirdNote);
   }
 
   positionPorrectusFlexusMarkings(first, second, third, fourth) {
-    var hasTopEpisema = this.positionEpismataAbove(first);
+    var hasTopEpisema = this.positionEpisemataAbove(first);
     hasTopEpisema = this.positionClivisMarkings(third, fourth) || hasTopEpisema;
-    this.positionEpismata(second, hasTopEpisema? MarkingPositionHint.Above : MarkingPositionHint.Below);
+    this.positionEpisemata(second, hasTopEpisema? MarkingPositionHint.Above : MarkingPositionHint.Below);
   }
 
   // subclasses can override this in order to correctly place markings in a neume specific way
@@ -500,11 +500,11 @@ export class Apostropha extends Neume {
 
     // logic here is this: if first episema is default position, place it above.
     // then place the second one (if there is one) opposite of the first.
-    for (var i = 0; i < this.notes[0].epismata.length; i++) {
-      if (this.notes[0].epismata[i].positionHint === MarkingPositionHint.Default)
-        this.notes[0].epismata[i].positionHint = positionHint;
+    for (var i = 0; i < this.notes[0].episemata.length; i++) {
+      if (this.notes[0].episemata[i].positionHint === MarkingPositionHint.Default)
+        this.notes[0].episemata[i].positionHint = positionHint;
       else
-        positionHint = this.notes[0].epismata[i].positionHint;
+        positionHint = this.notes[0].episemata[i].positionHint;
 
       // now place the next one in the opposite position
       positionHint = (positionHint === MarkingPositionHint.Above) ? MarkingPositionHint.Below : MarkingPositionHint.Above;
@@ -545,8 +545,8 @@ export class Apostropha extends Neume {
 export class Bivirga extends Neume {
 
   positionMarkings() {
-    this.positionEpismataAbove(this.notes[0]);
-    this.positionEpismataAbove(this.notes[1]);
+    this.positionEpisemataAbove(this.notes[0]);
+    this.positionEpisemataAbove(this.notes[1]);
   }
 
   performLayout(ctxt) {
@@ -570,9 +570,9 @@ export class Bivirga extends Neume {
 export class Trivirga extends Neume {
 
   positionMarkings() {
-    this.positionEpismataAbove(this.notes[0]);
-    this.positionEpismataAbove(this.notes[1]);
-    this.positionEpismataAbove(this.notes[2]);
+    this.positionEpisemataAbove(this.notes[0]);
+    this.positionEpisemataAbove(this.notes[1]);
+    this.positionEpisemataAbove(this.notes[2]);
   }
 
   performLayout(ctxt) {
@@ -597,7 +597,7 @@ export class Climacus extends Neume {
   positionMarkings() {
 
     for (var i = 0; i < this.notes.length; i++) {
-      this.positionEpismataAbove(this.notes[i]);
+      this.positionEpisemataAbove(this.notes[i]);
     }
   }
 
@@ -645,8 +645,8 @@ export class Clivis extends Neume {
 export class Distropha extends Neume {
 
   positionMarkings() {
-    this.positionEpismataAbove(this.notes[0]);
-    this.positionEpismataAbove(this.notes[1]);
+    this.positionEpisemataAbove(this.notes[0]);
+    this.positionEpisemataAbove(this.notes[1]);
   }
 
   performLayout(ctxt) {
@@ -667,7 +667,7 @@ export class Distropha extends Neume {
 export class Oriscus extends Neume {
 
   positionMarkings() {
-    this.positionEpismataAbove(this.notes[0]);
+    this.positionEpisemataAbove(this.notes[0]);
   }
 
   performLayout(ctxt) {
@@ -760,9 +760,9 @@ export class PesQuassus extends Neume {
 export class PesSubpunctis extends Neume {
 
   positionMarkings() {
-    this.positionPodatusEpismata(this.notes[0], this.notes[1]);
+    this.positionPodatusEpisemata(this.notes[0], this.notes[1]);
     for(var i=2; i < this.notes.length; ++i) {
-      this.positionEpismataAbove(this.notes[i]);
+      this.positionEpisemataAbove(this.notes[i]);
     }
   }
 
@@ -893,7 +893,7 @@ export class PunctaInclinata extends Neume {
 export class Punctum extends Neume {
 
   positionMarkings() {
-    this.positionEpismataAbove(this.notes[0]);
+    this.positionEpisemataAbove(this.notes[0]);
   }
 
   performLayout(ctxt) {
@@ -940,7 +940,7 @@ export class Salicus extends Neume {
     // by default place episema below
     // fixme: is this correct?
     for (var i = 0; i < this.notes.length; i++)
-      this.positionEpismataBelow(this.notes[i]);
+      this.positionEpisemataBelow(this.notes[i]);
   }
 
   performLayout(ctxt) {
@@ -982,7 +982,7 @@ export class SalicusFlexus extends Neume {
 
   positionMarkings() {
     var hasTopEpisema = this.positionTorculusMarkings(this.notes[1], this.notes[2], this.notes[3]);
-    this.positionEpismata(this.notes[0], hasTopEpisema? MarkingPositionHint.Above : MarkingPositionHint.Below);
+    this.positionEpisemata(this.notes[0], hasTopEpisema? MarkingPositionHint.Above : MarkingPositionHint.Below);
   }
 
   performLayout(ctxt) {
@@ -1033,9 +1033,9 @@ export class Scandicus extends Neume {
   positionMarkings() {
     if (this.notes[2].shape === NoteShape.Virga) {
       this.positionPodatusMarkings(this.notes[0], this.notes[1]);
-      this.positionEpismataAbove(this.notes[2]);
+      this.positionEpisemataAbove(this.notes[2]);
     } else {
-      this.positionEpismataBelow(this.notes[0]);
+      this.positionEpisemataBelow(this.notes[0]);
       this.positionPodatusMarkings(this.notes[1], this.notes[2]);
     }
   }
@@ -1075,9 +1075,9 @@ export class ScandicusFlexus extends Neume {
       this.positionPodatusMarkings(this.notes[0], this.notes[1]);
       this.positionClivisMarkings(this.notes[2], this.notes[3]);
     } else {
-      this.positionEpismataBelow(this.notes[0]);
+      this.positionEpisemataBelow(this.notes[0]);
       this.positionPodatusMarkings(this.notes[1], this.notes[2]);
-      this.positionEpismataAbove(this.notes[3]);
+      this.positionEpisemataAbove(this.notes[3]);
     }
   }
 
@@ -1163,7 +1163,7 @@ export class TorculusResupinus extends Neume {
 
   positionMarkings() {
     this.positionPorrectusMarkings(this.notes[1], this.notes[2], this.notes[3]);
-    this.positionClivisEpismata(this.notes[1], this.notes[0]);
+    this.positionClivisEpisemata(this.notes[1], this.notes[0]);
   }
 
   performLayout(ctxt) {
@@ -1206,7 +1206,7 @@ export class TorculusResupinusFlexus extends Neume {
 
   positionMarkings() {
     this.positionPorrectusFlexusMarkings(this.notes[1], this.notes[2], this.notes[3], this.notes[4]);
-    this.positionClivisEpismata(this.notes[1], this.notes[0]);
+    this.positionClivisEpisemata(this.notes[1], this.notes[0]);
   }
 
   performLayout(ctxt) {
@@ -1257,9 +1257,9 @@ export class TorculusResupinusFlexus extends Neume {
 export class Tristropha extends Neume {
 
   positionMarkings() {
-    this.positionEpismataAbove(this.notes[0]);
-    this.positionEpismataAbove(this.notes[1]);
-    this.positionEpismataAbove(this.notes[2]);
+    this.positionEpisemataAbove(this.notes[0]);
+    this.positionEpisemataAbove(this.notes[1]);
+    this.positionEpisemataAbove(this.notes[2]);
   }
 
   performLayout(ctxt) {
@@ -1282,7 +1282,7 @@ export class Tristropha extends Neume {
 export class Virga extends Neume {
 
   positionMarkings() {
-    this.positionEpismataAbove(this.notes[0]);
+    this.positionEpisemataAbove(this.notes[0]);
   }
 
   performLayout(ctxt) {

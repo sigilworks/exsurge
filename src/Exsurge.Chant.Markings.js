@@ -83,8 +83,8 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
     // following logic helps to keep the episemae away from staff lines if they get too close
     // the placement is based on a review of the Vatican and solesmes editions, which
-    // seem to always place the epismata centered between staff lines. Probably helps
-    // for visual layout, rather than letting epismata be at various heights.
+    // seem to always place the episemata centered between staff lines. Probably helps
+    // for visual layout, rather than letting episemata be at various heights.
 
     var y = 0, step;
     var minDistanceAway = ctxt.staffInterval * 0.4; // min distance from neume
@@ -190,7 +190,7 @@ export class Ictus extends GlyphVisualizer {
     var glyphCode;
     // we have to place the ictus futher from the note in some cases to avoid a collision with an episema on the same note:
     var staffPosition = this.note.staffPosition;
-    var placeFurtherFromNote = (this.note.epismata.length > 0 && this.note.epismata[0].positionHint === this.positionHint);
+    var placeFurtherFromNote = (this.note.episemata.length > 0 && this.note.episemata[0].positionHint === this.positionHint);
     var horizontalOffset = this.note.bounds.width / 2;
     var verticalOffset = 0;
     var shortOffset = 1;

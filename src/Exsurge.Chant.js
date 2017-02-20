@@ -102,7 +102,7 @@ export class Note extends ChantLayoutElement {
 
     // various markings that can exist on a note, organized by type
     // for faster access and simpler code logic
-    this.epismata = [];
+    this.episemata = [];
     this.morae = []; // silly to have an array of these, but gabc allows multiple morae per note!
 
     // these are set on the note when they are needed, otherwise, they're undefined
