@@ -780,9 +780,9 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
     }
 
     this.isAbove = isAbove;
-    this.braceHeight = ctxt.staffInterval / 2;
+    this.braceHeight = 3 * ctxt.staffInterval / 2;
 
-    this.bounds = new Rect(x1, y, x2 - x1, this.braceHeight);
+    this.bounds = new Rect(x1, isAbove? y - this.braceHeight : y, x2 - x1, this.braceHeight);
 
     this.origin.x = 0;
     this.origin.y = 0;
@@ -835,7 +835,7 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
     var y, dx, dy;
 
     dx = width / 6;
-    dy = this.bounds.height * 3;
+    dy = this.bounds.height;
     if (this.isAbove) {
       y = this.bounds.bottom();
       dy = -dy;
@@ -1721,6 +1721,9 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (var i = 0; i < this.visualizers.length; i++)
       inner.push( this.visualizers[i].createSvgNode(ctxt, this) );
+    if(inner.length) {
+      inner = [ QuickSvg.createNode('g', { class: 'Notations' }, inner) ];
+    }
 
     for (i = 0; i < this.lyrics.length; i++)
       inner.push( this.lyrics[i].createSvgNode(ctxt) );
@@ -1730,6 +1733,7 @@ export class ChantNotationElement extends ChantLayoutElement {
         inner.push( this.alText[i].createSvgNode(ctxt) );
 
     return QuickSvg.createNode('g', {
+      'source': this,
       // this.constructor.name will not be the same after being mangled by UglifyJS
       'class': 'ChantNotationElement ' + this.constructor.name,
       'transform': 'translate(' + this.bounds.x + ',' + 0 + ')'

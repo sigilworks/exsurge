@@ -174,13 +174,22 @@ export class Gabc {
             if (mapping.notations[k].isClef)
               ctxt.activeClef = mappings[index].notations[k];
 
-            if(sourceIndexDiff) {
-              // update source index:
-              if(mapping.notations[k].notes) {
-                for(l=0; l < mapping.notations[k].notes.length; ++l) {
-                  mapping.notations[k].notes[l].sourceIndex += sourceIndexDiff;  
+            // update source index and automatic braces
+            if(mapping.notations[k].notes) {
+              for(l=0; l < mapping.notations[k].notes.length; ++l) {
+                let note = mapping.notations[k].notes[l];
+                note.sourceIndex += sourceIndexDiff;
+                if(note.braceEnd && note.braceEnd.automatic) delete note.braceEnd;
+                if(this.needToEndBrace && !note.braceStart && !note.braceEnd) {
+                  note.braceEnd = new Markings.BracePoint(note, this.needToEndBrace.isAbove, this.needToEndBrace.shape, this.needToEndBrace.attachment === Markings.BraceAttachment.Left? Markings.BraceAttachment.Right : Markings.BraceAttachment.Left);
+                  note.braceEnd.automatic = true;
+                  delete this.needToEndBrace;
+                } else if(note.braceStart && note.braceStart.automatic) {
+                  this.needToEndBrace = note.braceStart;
                 }
               }
+            }
+            if(sourceIndexDiff) {
               for(l=0; l < mapping.notations[k].lyrics.length; ++l) {
                 mapping.notations[k].lyrics[l].sourceIndex += sourceIndexDiff;
               }
@@ -1254,6 +1263,7 @@ export class Gabc {
 
     if(this.needToEndBrace && !note.braceStart && !note.braceEnd) {
       note.braceEnd = new Markings.BracePoint(note, this.needToEndBrace.isAbove, this.needToEndBrace.shape, this.needToEndBrace.attachment === Markings.BraceAttachment.Left? Markings.BraceAttachment.Right : Markings.BraceAttachment.Left);
+      note.braceEnd.automatic = true;
       delete this.needToEndBrace;
     }
 
@@ -1299,7 +1309,10 @@ export class Gabc {
       note.braceEnd = new Markings.BracePoint(note, above, shape, attachmentPoint);
 
     // just have the next note end a brace that uses length;
-    if(results[5]) this.needToEndBrace = note.braceStart;
+    if(results[5]) {
+      note.braceStart.automatic = true;
+      this.needToEndBrace = note.braceStart;
+    }
   }
 
   // takes raw gabc text source and parses it into words. For example, passing
