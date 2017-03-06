@@ -642,7 +642,7 @@ export class Gabc {
         if (includePrevNote === false)
           currNoteIndex--;
 
-        neume.keepWithNext = true;
+        neume.allowLineBreakBeforeNext = neume.keepWithNext = true;
         if (notes[currNoteIndex+1].shape === NoteShape.Quilisma)
           neume.trailingSpace = 0;
         else neume.trailingSpace = ctxt.intraNeumeSpacing;
@@ -995,6 +995,8 @@ export class Gabc {
 
         if (finalTrailingSpace > ctxt.intraNeumeSpacing)
           neumes[neumes.length - 1].keepWithNext = false;
+        else if (finalTrailingSpace > ctxt.intraNeumeSpacing)
+          neumes[neumes.length - 1].allowLineBreakBeforeNext = neumes[neumes.length - 1].keepWithNext = true;
         else
           neumes[neumes.length - 1].keepWithNext = true;
       }

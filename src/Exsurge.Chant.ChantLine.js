@@ -581,14 +581,74 @@ export class ChantLine extends ChantLayoutElement {
         for (j = i - 1; j > this.notationsStartIndex; j--) {
           var cne = notations[j];
 
-          if (cne.keepWithNext === true)
+          // if the line break is allowed (cne.allowLineBreakBeforeNext), keep this number of notations around so we can check during justification
+          // whether there would be too much space introduced between 
+          if (cne.keepWithNext === true) {
+            if(cne.allowLineBreakBeforeNext && !this.maxNumNotationsOnLine)
+              this.maxNumNotationsOnLine = this.numNotationsOnLine;
             this.numNotationsOnLine--;
-          else
+          } else
             break;
+        }
+
+        // determine the neumes we can space apart, if we do end up justifying
+        this.toJustify = [];
+        curr = null;
+        prevWithLyrics = null;
+        var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
+        for (i = this.notationsStartIndex; i < lastIndex; i++) {
+
+          if (curr !== null && curr.hasLyrics())
+            prevWithLyrics = curr;
+
+          prev = curr;
+          curr = notations[i];
+
+          if (prev !== null && prev.keepWithNext === true)
+            continue;
+
+          if (prevWithLyrics !== null && prevWithLyrics.lyrics[0].allowsConnector() && !prevWithLyrics.lyrics[0].needsConnector)
+            continue;
+
+          if (curr.constructor === ChantLineBreak)
+            continue;
+
+          if (curr === this.custos)
+            continue;
+
+          // otherwise, we can add space before this element
+          this.toJustify.push(curr);
+        }
+        this.lastWithLyrics = curr.hasLyrics()? curr : prevWithLyrics;
+
+        if(this.maxNumNotationsOnLine) {
+          // Check whether we should squeeze some extra notations on the line to avoid too much space after justification:
+          // Check how much space we would have without the extra notations
+          var extraSpace = this.staffRight;
+
+          if (this.numNotationsOnLine > 0) {
+            var last = notations[lastIndex - 1], lastWithLyrics = this.lastWithLyrics;
+                
+
+            if (lastWithLyrics)
+              extraSpace -= Math.max(lastWithLyrics.getAllLyricsRight(), last.bounds.right() + last.trailingSpace);
+            else
+              extraSpace -= (last.bounds.right() + last.trailingSpace);
+
+            extraSpace -= Glyphs.CustosLong.bounds.width;
+
+            if(extraSpace / this.toJustify.length > ctxt.staffInterval * 2) {
+              this.lastWithLyrics = notations[lastIndex].hasLyrics()? notations[lastIndex] : this.lastWithLyrics;
+              this.numNotationsOnLine = this.maxNumNotationsOnLine;
+              delete this.maxNumNotationsOnLine;
+            }
+          }
         }
 
         if(notations[j].isDivider && notations[j - 1].constructor === Custos) {
           // reverse the order: put the divider first, and end the line with the custos.
+          // TODO: take into account this.maxNumNotationsOnLine: we will have to wait till justification and deciding between
+          // this.numNotationsOnLine and this.maxNumNotationsOnLine
           prevWithLyrics = null;
           for (i = j - 2; i >= this.notationsStartIndex; i--) {
             if(notations[i].hasLyrics()) {
@@ -638,20 +698,14 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // find the final lyric and mark it as connecting if needed.
-    var lastWithLyrics = null;
-    for(i = this.notationsStartIndex + this.numNotationsOnLine - 1; i >= this.notationsStartIndex; --i) {
-      if(notations[i].hasLyrics()) {
-        lastWithLyrics = notations[i];
-        break;
-      }
-    }
+    lastWithLyrics = this.lastWithLyrics;
     if (lastWithLyrics && lastWithLyrics.lyrics[0].allowsConnector())
       lastWithLyrics.lyrics[0].setNeedsConnector(true);
 
 
     // if the provided width is less than zero, then set the width of the line
     // based on the last notation
-    var last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
+    last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
     if (width <= 0) {
       this.staffRight = last.bounds.right();
       this.justify = false;
@@ -671,7 +725,7 @@ export class ChantLine extends ChantLayoutElement {
   justifyElements() {
 
     var i;
-    var toJustify = [];
+    var toJustify = this.toJustify || [];
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
@@ -679,14 +733,7 @@ export class ChantLine extends ChantLayoutElement {
     var extraSpace = 0;
 
     if (this.numNotationsOnLine > 0) {
-      var last = notations[lastIndex - 1], lastWithLyrics = null;
-
-      for (i = lastIndex - 1; i >= this.notationsStartIndex; i--) {
-        if (notations[i].hasLyrics()) {
-          lastWithLyrics = notations[i];
-          break;
-        }
-      }
+      var last = notations[lastIndex - 1], lastWithLyrics = this.lastWithLyrics;
 
       if (lastWithLyrics)
         extraSpace = this.staffRight - Math.max(lastWithLyrics.getAllLyricsRight(), last.bounds.right() + last.trailingSpace);
@@ -700,36 +747,10 @@ export class ChantLine extends ChantLayoutElement {
     if (extraSpace === 0)
       return;
 
-    var prev = null, curr = null, prevWithLyrics = null;
-
-    // first pass: determine the neumes we can space apart
-    for (i = this.notationsStartIndex; i < lastIndex; i++) {
-
-      if (curr !== null && curr.hasLyrics())
-        prevWithLyrics = curr;
-
-      prev = curr;
-      curr = notations[i];
-
-      if (prev !== null && prev.keepWithNext === true)
-        continue;
-
-      if (prevWithLyrics !== null && prevWithLyrics.lyrics[0].allowsConnector() && !prevWithLyrics.lyrics[0].needsConnector)
-        continue;
-
-      if (curr.constructor === ChantLineBreak)
-        continue;
-
-      if (curr === this.custos)
-        continue;
-
-      // otherwise, we can add space before this element
-      toJustify.push(curr);
-    }
-
     if (toJustify.length === 0)
       return;
 
+    var curr = null;
     var offset = 0;
     var increment = extraSpace / toJustify.length;
     var toJustifyIndex = 0;
