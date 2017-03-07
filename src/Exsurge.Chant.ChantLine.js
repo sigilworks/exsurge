@@ -25,7 +25,7 @@
 
 import * as Exsurge from 'Exsurge.Core'
 import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
-import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, DropCap } from 'Exsurge.Drawing'
+import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, DropCap } from 'Exsurge.Drawing'
 import { ChantLineBreak, TextOnly } from 'Exsurge.Chant'
 import { Glyphs } from 'Exsurge.Glyphs'
 import { Custos, DoubleBar } from 'Exsurge.Chant.Signs'
@@ -67,6 +67,8 @@ export class ChantLine extends ChantLayoutElement {
     // fixme: make these configurable values from the score
     this.spaceAfterNotations = 0; // the space between the notation bounds and the first text track
     this.spaceBetweenTextTracks = 0; // spacing between each text track
+
+    this.lastLyrics = [];
   }
 
   performLayout(ctxt) {
@@ -447,7 +449,7 @@ export class ChantLine extends ChantLayoutElement {
   buildFromChantNotationIndex(ctxt, newElementStart, width) {
 
     // todo: reset / clear the children we have in case they have data
-    var notations = this.score.notations, beginningLyrics = null, prev = null, prevWithLyrics = null;
+    var notations = this.score.notations, beginningLyrics = null, prev = null, prevLyrics = [];
     this.notationsStartIndex = newElementStart;
     this.numNotationsOnLine = 0;
 
@@ -475,7 +477,7 @@ export class ChantLine extends ChantLayoutElement {
       prev = notations[newElementStart - 1];
       if(prev.constructor === DoubleBar && prev.hasLyrics() && (prev.lyrics.length > 1 || !prev.lyrics[0].text.match(/^(i\.?)+j\.?/))) {
         beginningLyrics = prev.lyrics.map(function(lyric){
-          var newLyric = new Lyric(ctxt, lyric.originalText, lyric.lyricType);
+          var newLyric = new Lyric(ctxt, lyric.originalText, lyric.lyricType, lyric.notation);
           newLyric.elidesToNext = lyric.elidesToNext;
           // Hide the original lyric by setting its bounds.y to an extremely high number.
           // If the chant is re-laid out, this value will be recalculated so that it won't stay hidden.
@@ -521,7 +523,7 @@ export class ChantLine extends ChantLayoutElement {
     for (i = newElementStart; i <= lastNotationIndex; i++) {
 
       if (curr.hasLyrics())
-        prevWithLyrics = curr;
+        LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
 
       prev = curr;
       curr = notations[i];
@@ -544,7 +546,7 @@ export class ChantLine extends ChantLayoutElement {
 
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
-      var fitsOnLine = this.positionNotationElement(ctxt, prevWithLyrics, prev, curr, actualRightBoundary);
+      var fitsOnLine = this.positionNotationElement(ctxt, this.lastLyrics, prev, curr, actualRightBoundary);
       if (fitsOnLine === false) {
 
         // first check for elements that cannot begin a system: dividers and custodes
@@ -594,12 +596,8 @@ export class ChantLine extends ChantLayoutElement {
         // determine the neumes we can space apart, if we do end up justifying
         this.toJustify = [];
         curr = null;
-        prevWithLyrics = null;
         var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
         for (i = this.notationsStartIndex; i < lastIndex; i++) {
-
-          if (curr !== null && curr.hasLyrics())
-            prevWithLyrics = curr;
 
           prev = curr;
           curr = notations[i];
@@ -607,7 +605,7 @@ export class ChantLine extends ChantLayoutElement {
           if (prev !== null && prev.keepWithNext === true)
             continue;
 
-          if (prevWithLyrics !== null && prevWithLyrics.lyrics[0].allowsConnector() && !prevWithLyrics.lyrics[0].needsConnector)
+          if (prevLyrics !== null && prevLyrics.length && prevLyrics[0].allowsConnector() && !prevLyrics[0].needsConnector)
             continue;
 
           if (curr.constructor === ChantLineBreak)
@@ -619,26 +617,25 @@ export class ChantLine extends ChantLayoutElement {
           // otherwise, we can add space before this element
           this.toJustify.push(curr);
         }
-        this.lastWithLyrics = curr.hasLyrics()? curr : prevWithLyrics;
-
+        
         if(this.maxNumNotationsOnLine) {
           // Check whether we should squeeze some extra notations on the line to avoid too much space after justification:
           // Check how much space we would have without the extra notations
           var extraSpace = this.staffRight;
 
           if (this.numNotationsOnLine > 0) {
-            var last = notations[lastIndex - 1], lastWithLyrics = this.lastWithLyrics;
+            var last = notations[lastIndex - 1], lastLyrics = this.lastLyrics;
                 
 
-            if (lastWithLyrics)
-              extraSpace -= Math.max(lastWithLyrics.getAllLyricsRight(), last.bounds.right() + last.trailingSpace);
+            if (lastLyrics)
+              extraSpace -= Math.max(LyricArray.getRight(lastLyrics), last.bounds.right() + last.trailingSpace);
             else
               extraSpace -= (last.bounds.right() + last.trailingSpace);
 
             extraSpace -= Glyphs.CustosLong.bounds.width;
 
             if(extraSpace / this.toJustify.length > ctxt.staffInterval * 2) {
-              this.lastWithLyrics = notations[lastIndex].hasLyrics()? notations[lastIndex] : this.lastWithLyrics;
+              if(notations[lastIndex].hasLyrics()) LyricArray.mergeIn(this.lastLyrics, notations[lastIndex].lyrics);
               this.numNotationsOnLine = this.maxNumNotationsOnLine;
               delete this.maxNumNotationsOnLine;
             }
@@ -647,16 +644,14 @@ export class ChantLine extends ChantLayoutElement {
 
         if(notations[j].isDivider && notations[j - 1].constructor === Custos) {
           // reverse the order: put the divider first, and end the line with the custos.
-          // TODO: take into account this.maxNumNotationsOnLine: we will have to wait till justification and deciding between
-          // this.numNotationsOnLine and this.maxNumNotationsOnLine
-          prevWithLyrics = null;
+          prevLyrics = [];
           for (i = j - 2; i >= this.notationsStartIndex; i--) {
             if(notations[i].hasLyrics()) {
-              prevWithLyrics = notations[i];
+              LyricArray.mergeIn(prevLyrics, notations[i].lyrics);
               break;
             }
           }
-          this.positionNotationElement(ctxt, prevWithLyrics, notations[j - 2], notations[j], this.staffRight);
+          this.positionNotationElement(ctxt, prevLyrics, notations[j - 2], notations[j], this.staffRight);
           this.custos = notations[j - 1];
           this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
         }
@@ -698,9 +693,12 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // find the final lyric and mark it as connecting if needed.
-    lastWithLyrics = this.lastWithLyrics;
-    if (lastWithLyrics && lastWithLyrics.lyrics[0].allowsConnector())
-      lastWithLyrics.lyrics[0].setNeedsConnector(true);
+    lastLyrics = this.lastLyrics;
+    i = 0;
+    while (lastLyrics && lastLyrics[i]) {
+      if(lastLyrics[i].allowsConnector()) lastLyrics[i].setNeedsConnector(true);
+      ++i;
+    }
 
 
     // if the provided width is less than zero, then set the width of the line
@@ -733,10 +731,10 @@ export class ChantLine extends ChantLayoutElement {
     var extraSpace = 0;
 
     if (this.numNotationsOnLine > 0) {
-      var last = notations[lastIndex - 1], lastWithLyrics = this.lastWithLyrics;
+      var last = notations[lastIndex - 1], lastLyrics = this.lastLyrics;
 
-      if (lastWithLyrics)
-        extraSpace = this.staffRight - Math.max(lastWithLyrics.getAllLyricsRight(), last.bounds.right() + last.trailingSpace);
+      if (lastLyrics)
+        extraSpace = this.staffRight - Math.max(LyricArray.getRight(lastLyrics), last.bounds.right() + last.trailingSpace);
       else
         extraSpace = this.staffRight - (last.bounds.right() + last.trailingSpace);  
     }
@@ -987,7 +985,7 @@ export class ChantLine extends ChantLayoutElement {
   // returns true if positioning was able to fit the neume before rightNotationBoundary.
   // returns false if cannot fit before given right margin.
   // fixme: if this returns false, shouldn't we set the connectors on prev to be activated?!
-  positionNotationElement(ctxt, prevWithLyrics, prev, curr, rightNotationBoundary) {
+  positionNotationElement(ctxt, prevLyrics, prev, curr, rightNotationBoundary) {
 
     var i;
 
@@ -997,7 +995,7 @@ export class ChantLine extends ChantLayoutElement {
 
     // if the previous notation has no lyrics, then we simply make sure the
     // current notation with lyrics is in the bounds of the line
-    if (prevWithLyrics === null) {
+    if (prevLyrics.length === 0) {
 
       var maxRight = curr.bounds.right() + curr.trailingSpace;
 
@@ -1006,10 +1004,10 @@ export class ChantLine extends ChantLayoutElement {
 
         curr.lyrics[i].setNeedsConnector(false); // we hope for the best!
 
-        if (curr.getLyricLeft(i) < 0)
-          curr.bounds.x += -curr.getLyricLeft(i);
+        if (curr.lyrics[i].getLeft() < 0)
+          curr.bounds.x += -curr.lyrics[i].getLeft();
 
-        maxRight = Math.max(maxRight, curr.getLyricRight(i));
+        maxRight = Math.max(maxRight, curr.lyrics[i].getRight());
       }
 
       if (maxRight > rightNotationBoundary)
@@ -1034,7 +1032,7 @@ export class ChantLine extends ChantLayoutElement {
     //
     // A nice (but probably tricky) enhancement would be to combine lyrics
     // when possible, taking into consideration hyphenation of each syllable!
-    var lyricCount = Math.max(prevWithLyrics.lyrics.length, curr.lyrics.length);
+    var lyricCount = Math.max(prevLyrics.length, curr.lyrics.length);
 
     if (lyricCount > 1) {
 
@@ -1044,13 +1042,13 @@ export class ChantLine extends ChantLayoutElement {
 
       for (i = 0; i < lyricCount; i++) {
           
-        if (i < prevWithLyrics.lyrics.length && prevWithLyrics.lyrics[i] !== null) {
+        if (i < prevLyrics.length && prevLyrics[i] !== null) {
 
-          var right = prevWithLyrics.getLyricRight(i);
+          var right = prevLyrics[i].getRight();
 
-          if (prevWithLyrics.lyrics[i].allowsConnector()) {
-            prevWithLyrics.lyrics[i].setNeedsConnector(true);
-            right += prevWithLyrics.lyrics[i].widthWithConnector - prevWithLyrics.lyrics[i].widthWithoutConnector;
+          if (prevLyrics[i].allowsConnector()) {
+            prevLyrics[i].setNeedsConnector(true);
+            right += prevLyrics[i].widthWithConnector - prevLyrics[i].widthWithoutConnector;
           } else
             right += ctxt.minLyricWordSpacing;
 
@@ -1058,8 +1056,8 @@ export class ChantLine extends ChantLayoutElement {
         }
 
         if (i < curr.lyrics.length && curr.lyrics[i] !== null) {
-          currLyricLeftMin = Math.min(currLyricLeftMin, curr.getLyricLeft(i));
-          currLyricRightMax = Math.max(currLyricRightMax, curr.getLyricRight(i));
+          currLyricLeftMin = Math.min(currLyricLeftMin, curr.lyrics[i].getLeft());
+          currLyricRightMax = Math.max(currLyricRightMax, curr.lyrics[i].getRight());
         }
       }
       
@@ -1081,10 +1079,10 @@ export class ChantLine extends ChantLayoutElement {
     // eliminate syllable connectors when we're able...
     curr.lyrics[0].setNeedsConnector(false); // we hope for the best!
 
-    var currLyricLeft = curr.getLyricLeft(0);
-    var prevLyricRight = prevWithLyrics.getLyricRight(0);
+    var currLyricLeft = curr.lyrics[i].getLeft();
+    var prevLyricRight = prevLyrics[i].getRight();
 
-    if (prevWithLyrics.lyrics[0].allowsConnector() === false) {
+    if (prevLyrics[0].allowsConnector() === false) {
 
       // No connector needed, but include space between words if necessary!
       if (prevLyricRight + ctxt.minLyricWordSpacing > currLyricLeft) {
@@ -1106,8 +1104,8 @@ export class ChantLine extends ChantLayoutElement {
       } else {
 
         // bummer, looks like we couldn't merge the syllables together. Better add a connector...
-        prevWithLyrics.lyrics[0].setNeedsConnector(true);
-        prevLyricRight = prevWithLyrics.getLyricRight(0);
+        prevLyrics[0].setNeedsConnector(true);
+        prevLyricRight = prevLyrics[0].getRight();
 
         if (prevLyricRight > currLyricLeft)
           curr.bounds.x += prevLyricRight - currLyricLeft;
@@ -1115,7 +1113,7 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     if (curr.bounds.right() + curr.trailingSpace < rightNotationBoundary &&
-        curr.getLyricRight(0) <= this.staffRight) {
+        curr.lyrics[0].getRight() <= this.staffRight) {
       if(prev.isAccidental) {
         // move the previous accidental up next to the current note:
         prev.bounds.x = curr.bounds.x - prev.bounds.width - prev.trailingSpace;

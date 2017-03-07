@@ -25,7 +25,7 @@
 //
 
 import { Units, Pitch, Point, Rect, Margins, Size, Step } from 'Exsurge.Core'
-import { LyricType, Lyric, AboveLinesText } from 'Exsurge.Drawing'
+import { LyricType, Lyric, LyricArray, AboveLinesText } from 'Exsurge.Drawing'
 import { Note, LiquescentType, NoteShape, NoteShapeModifiers, ChantMapping, ChantScore, ChantDocument, Clef, DoClef, FaClef, TextOnly, ChantLineBreak } from 'Exsurge.Chant'
 import * as Markings from 'Exsurge.Chant.Markings'
 import * as Signs from 'Exsurge.Chant.Signs'
@@ -333,7 +333,7 @@ export class Gabc {
           proposedLyricType === LyricType.SingleSyllable)
         ctxt.activeClef.resetAccidentals();
 
-      var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType, sourceIndex + match.index);
+      var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType, notationWithLyrics, sourceIndex + match.index);
 
       if (lyrics === null || lyrics.length === 0)
         continue;
@@ -345,7 +345,7 @@ export class Gabc {
   }
 
   // returns an array of lyrics (an array because each syllable can have multiple lyrics)
-  static createSyllableLyrics(ctxt, text, proposedLyricType, sourceIndex) {
+  static createSyllableLyrics(ctxt, text, proposedLyricType, notation, sourceIndex) {
 
     var lyrics = [];
 
@@ -387,7 +387,7 @@ export class Gabc {
           centerStartIndex = -1; // if there's no closing bracket, don't enable centering
       }
 
-      var lyric = this.makeLyric(ctxt, lyricText, proposedLyricType, sourceIndex);
+      var lyric = this.makeLyric(ctxt, lyricText, proposedLyricType, notation, sourceIndex);
 
       // if we have manual lyric centering, then set it now
       if (centerStartIndex >= 0) {
@@ -397,11 +397,11 @@ export class Gabc {
 
       lyrics.push(lyric);
     }
-
+    notation.lyrics = lyrics
     return lyrics;
   }
 
-  static makeLyric(ctxt, text, lyricType, sourceIndex) {
+  static makeLyric(ctxt, text, lyricType, notation, sourceIndex) {
 
     if (text.length > 1 && text[text.length - 1] === '-') {
       if (lyricType === LyricType.EndingSyllable)
@@ -422,7 +422,7 @@ export class Gabc {
     if (text.match(/^(?:[*†]+|i+j|\d+)\.?$/))
       lyricType = LyricType.Directive;
 
-    var lyric = new Lyric(ctxt, text, lyricType, sourceIndex);
+    var lyric = new Lyric(ctxt, text, lyricType, notation, sourceIndex);
     lyric.elidesToNext = elides;
 
     return lyric;

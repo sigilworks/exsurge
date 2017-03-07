@@ -1266,13 +1266,49 @@ export var LyricType = {
   Directive: 4 // for asterisks, "ij." elements, or other performance notes.
 };
 
+export var LyricArray = {
+  getLeft: function(lyricArray) {
+    if (lyricArray.length === 0)
+      return NaN;
+
+    var x = Number.MAX_VALUE;
+    for (var i = 0; i < lyricArray.length; i++) {
+      if (lyricArray[i])
+        x = Math.min(x, lyricArray[i].notation.bounds.x + lyricArray[i].bounds.x);
+    }
+
+    return x;
+  },
+
+  getRight: function(lyricArray) {
+    if (lyricArray.length === 0)
+      return NaN;
+
+    var x = Number.MIN_VALUE;
+    for (var i = 0; i < lyricArray.length; i++) {
+      if (lyricArray[i])
+        x = Math.max(x, lyricArray[i].notation.bounds.x + lyricArray[i].bounds.x + lyricArray[i].bounds.width);
+    }
+
+    return x;
+  },
+
+  mergeIn: function(lyricArray, newLyrics) {
+    for (var i = 0; i < newLyrics.length; ++i) {
+      if(newLyrics[i].text) lyricArray[i] = newLyrics[i];
+    }
+  }
+};
+
 export class Lyric extends TextElement {
-  constructor(ctxt, text, lyricType, sourceIndex) {
+  constructor(ctxt, text, lyricType, notation, sourceIndex) {
     super(ctxt, (ctxt.lyricTextStyle || '') + text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start', sourceIndex);
 
     // save the original text in case we need to later use the lyric
     // in a dropcap...
     this.originalText = text;
+
+    this.notation = notation;
 
     if (typeof lyricType === 'undefined' || lyricType === null || lyricType === "")
       this.lyricType = LyricType.SingleSyllable;
@@ -1324,6 +1360,14 @@ export class Lyric extends TextElement {
       this.lastSpanText = "";
       this.lastSpanTextWithConnector = "";
     }
+  }
+
+  getLeft() {
+    return this.notation.bounds.x + this.bounds.x;
+  }
+
+  getRight(index) {
+    return this.notation.bounds.x + this.bounds.x + this.bounds.width;
   }
 
   recalculateMetrics(ctxt) {
@@ -1601,11 +1645,6 @@ export class ChantNotationElement extends ChantLayoutElement {
       return false;
   }
 
-  getLyricLeft(index) {
-    // warning: no error checking on index or on whether lyric[index] is valid
-    return this.bounds.x + this.lyrics[index].bounds.x;
-  }
-
   getAllLyricsLeft() {
     if (this.lyrics.length === 0)
       return this.bounds.right();
@@ -1617,11 +1656,6 @@ export class ChantNotationElement extends ChantLayoutElement {
     }
 
     return this.bounds.x + x;
-  }
-
-  getLyricRight(index) {
-    // warning: no error checking on index or on whether lyric[index] is valid
-    return this.bounds.x + this.lyrics[index].bounds.x + this.lyrics[index].bounds.width;
   }
 
   getAllLyricsRight() {
