@@ -268,7 +268,7 @@ export class Gabc {
     for (var j = 0; j < matches.length; j++) {
       var match = matches[j];
 
-      var lyricText = match[1].trim().replace(/~/g,' ');
+      var lyricText = match[1].replace(/^\s+/,'').replace(/~/g,' ');
       var alText = lyricText.match(__altRegex);
       var notationData = match[2];
 
@@ -355,6 +355,15 @@ export class Gabc {
     for (var i = 0; i < lyricTexts.length; i++) {
 
       var lyricText = lyricTexts[i];
+
+      if (i > 0 ) {
+        if (lyricText.match(/\s$/)) {
+          lyricText = lyricText.replace(/s+$/,'');
+          proposedLyricType = LyricType.EndingSyllable;
+        } else {
+          proposedLyricType = LyricType.MiddleSyllable;
+        }
+      }
 
       // gabc allows lyrics to indicate the centering part of the text by
       // using braces to indicate how to center the lyric. So a lyric can
