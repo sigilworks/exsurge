@@ -1026,91 +1026,51 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // if we have multiple lyrics on the current or the previous notation,
-    // then we simplify the process. We don't try to eliminate syllable
-    // connectors but we require them on every syllable in the previous
-    // notation that permits a connector.
-    //
-    // A nice (but probably tricky) enhancement would be to combine lyrics
-    // when possible, taking into consideration hyphenation of each syllable!
-    var lyricCount = Math.max(prevLyrics.length, curr.lyrics.length);
+    // we will have to run several passes over each set of lyrics:
 
-    if (lyricCount > 1) {
-
-      var prevLyricRightMax = Number.MIN_VALUE;
-      var currLyricLeftMin = Number.MAX_VALUE;
-      var currLyricRightMax = Number.MIN_VALUE;
-
-      for (i = 0; i < lyricCount; i++) {
-          
+    // on the first pass, we will check the absolute left-most placement of the new syllables
+    // we will make additional passes until everything is stable
+    do {
+      var hasShifted = false;
+      var atLeastOneWithoutConnector = false;
+      for (i = 0; i < curr.lyrics.length; i++) {
         if (i < prevLyrics.length && prevLyrics[i] !== null) {
+          var prevLyricRight = prevLyrics[i].getRight();
+        }
 
-          var right = prevLyrics[i].getRight();
-
-          if (prevLyrics[i].allowsConnector()) {
+        curr.lyrics[i].setNeedsConnector(false); // we hope for the best!
+        var currLyricLeft = curr.lyrics[i].getLeft();
+        if (!prevLyrics[i] || prevLyrics[i].allowsConnector() === false) {
+          // No connector needed, but include space between words if necessary!
+          if (prevLyricRight + ctxt.minLyricWordSpacing > currLyricLeft) {
+            // push the current element over a bit.
+            curr.bounds.x += prevLyricRight + ctxt.minLyricWordSpacing - currLyricLeft;
+            hasShifted = true;
+          }
+        } else {
+          // we may need a connector yet...
+          if (prevLyricRight + 0.1 > currLyricLeft) {
+            // in this case, the lyric elements actually overlap.
+            // so nope, no connector needed. instead, we just place the lyrics together
+            // fixme: for better text layout, we could actually use the kerning values
+            // between the prev and curr lyric elements!
+            curr.bounds.x += prevLyricRight - currLyricLeft;
+            atLeastOneWithoutConnector = true;
+            hasShifted = prevLyricRight - currLyricLeft > 0.5;
+          } else {
+            // bummer, looks like we couldn't merge the syllables together. Better add a connector...
             prevLyrics[i].setNeedsConnector(true);
-            right += prevLyrics[i].widthWithConnector - prevLyrics[i].widthWithoutConnector;
-          } else
-            right += ctxt.minLyricWordSpacing;
+            prevLyricRight = prevLyrics[i].getRight();
 
-          if(right > prevLyricRightMax) prevLyricRightMax = right;
+            if (prevLyricRight > currLyricLeft) {
+              curr.bounds.x += prevLyricRight - currLyricLeft;
+              hasShifted = true;
+            }
+          }
         }
-
-        if (i < curr.lyrics.length && curr.lyrics[i] !== null) {
-          currLyricLeftMin = Math.min(currLyricLeftMin, curr.lyrics[i].getLeft());
-          currLyricRightMax = Math.max(currLyricRightMax, curr.lyrics[i].getRight());
-        }
+   
       }
-      
-      // if the lyrics overlap, then we need to shift over the current element a bit
-      if (prevLyricRightMax > currLyricLeftMin) {
-        curr.bounds.x += prevLyricRightMax - currLyricLeftMin;
-        currLyricRightMax += prevLyricRightMax - currLyricLeftMin;
-      }
-
-      if (curr.bounds.right() < rightNotationBoundary && currLyricRightMax <= this.staffRight)
-        return true;
-      else {
-        curr.bounds.x = 0 ;
-        return false;
-      }
-    }
-    
-    // handling single lyric lines is a little more nuanced, since we carefully
-    // eliminate syllable connectors when we're able...
-    curr.lyrics[0].setNeedsConnector(false); // we hope for the best!
-
-    var currLyricLeft = curr.lyrics[i].getLeft();
-    var prevLyricRight = prevLyrics[i].getRight();
-
-    if (prevLyrics[0].allowsConnector() === false) {
-
-      // No connector needed, but include space between words if necessary!
-      if (prevLyricRight + ctxt.minLyricWordSpacing > currLyricLeft) {
-        // push the current element over a bit.
-        curr.bounds.x += prevLyricRight + ctxt.minLyricWordSpacing - currLyricLeft;
-      }
-
-    } else {
-
-      // we may need a connector yet...
-
-      if (prevLyricRight > currLyricLeft) {
-        // in this case, the lyric elements actually overlap.
-        // so nope, no connector needed. instead, we just place the lyrics together
-        // fixme: for better text layout, we could actually use the kerning values
-        // between the prev and curr lyric elements!
-        curr.bounds.x += prevLyricRight - currLyricLeft;
-
-      } else {
-
-        // bummer, looks like we couldn't merge the syllables together. Better add a connector...
-        prevLyrics[0].setNeedsConnector(true);
-        prevLyricRight = prevLyrics[0].getRight();
-
-        if (prevLyricRight > currLyricLeft)
-          curr.bounds.x += prevLyricRight - currLyricLeft;
-      }
-    }
+    } while(curr.lyrics.length > 1 && hasShifted && atLeastOneWithoutConnector);
 
     if (curr.bounds.right() + curr.trailingSpace < rightNotationBoundary &&
         curr.lyrics[0].getRight() <= this.staffRight) {
