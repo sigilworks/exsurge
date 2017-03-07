@@ -1052,7 +1052,7 @@ export class ChantLine extends ChantLayoutElement {
           } else
             right += ctxt.minLyricWordSpacing;
 
-          if(right > prevLyricRight) prevLyricRightMax = right;
+          if(right > prevLyricRightMax) prevLyricRightMax = right;
         }
 
         if (i < curr.lyrics.length && curr.lyrics[i] !== null) {
