@@ -1034,6 +1034,7 @@ export class ChantLine extends ChantLayoutElement {
       var hasShifted = false;
       var atLeastOneWithoutConnector = false;
       for (i = 0; i < curr.lyrics.length; i++) {
+        if (!curr.lyrics[i].text) continue;
         if (i < prevLyrics.length && prevLyrics[i] !== null) {
           var prevLyricRight = prevLyrics[i].getRight();
         }
