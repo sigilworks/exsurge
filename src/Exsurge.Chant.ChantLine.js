@@ -676,6 +676,9 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
+    if (curr.chantLine === this && curr.hasLyrics())
+      LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
+
     if(!this.custos) {
       // create the automatic custos at the end of the line if there are neumes left in the notations
       for (i = this.notationsStartIndex + this.numNotationsOnLine; i < notations.length; i++) {
@@ -1037,7 +1040,7 @@ export class ChantLine extends ChantLayoutElement {
       var hasShifted = false;
       var atLeastOneWithoutConnector = false;
       for (i = 0; i < curr.lyrics.length; i++) {
-        if (!curr.lyrics[i].text) continue;
+        if (!curr.lyrics[i].originalText) continue;
         if (i < prevLyrics.length && prevLyrics[i] !== null) {
           var prevLyricRight = prevLyrics[i].getRight();
         }
