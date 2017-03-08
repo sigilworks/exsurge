@@ -1297,6 +1297,13 @@ export var LyricArray = {
     for (var i = 0; i < newLyrics.length; ++i) {
       if(newLyrics[i].text) lyricArray[i] = newLyrics[i];
     }
+  },
+
+  setNotation: function(lyricArray, notation) {
+    notation.lyrics = lyricArray;
+    for(var i=0; i<lyricArray.length; ++i) {
+      lyricArray[i].notation = notation;
+    }
   }
 };
 

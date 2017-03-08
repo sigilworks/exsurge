@@ -477,7 +477,7 @@ export class ChantLine extends ChantLayoutElement {
       prev = notations[newElementStart - 1];
       if(prev.constructor === DoubleBar && prev.hasLyrics() && (prev.lyrics.length > 1 || !prev.lyrics[0].text.match(/^(i\.?)+j\.?/))) {
         beginningLyrics = prev.lyrics.map(function(lyric){
-          var newLyric = new Lyric(ctxt, lyric.originalText, lyric.lyricType, lyric.notation);
+          var newLyric = new Lyric(ctxt, lyric.originalText, lyric.lyricType);
           newLyric.elidesToNext = lyric.elidesToNext;
           // Hide the original lyric by setting its bounds.y to an extremely high number.
           // If the chant is re-laid out, this value will be recalculated so that it won't stay hidden.
@@ -510,7 +510,7 @@ export class ChantLine extends ChantLayoutElement {
     var curr = this.startingClef;
 
     if(beginningLyrics) {
-      curr.lyrics = beginningLyrics;
+      LyricArray.setNotation(beginningLyrics, curr);
     }
 
     // estimate how much space we have available to us
@@ -593,6 +593,9 @@ export class ChantLine extends ChantLayoutElement {
             break;
         }
 
+        // if for some reason not a single notation can fit on the line, we'd better put it on anyway, to avoid an infinite loop:
+        if(this.numNotationsOnLine === 0) numNotationsOnLine = 1;
+        
         // determine the neumes we can space apart, if we do end up justifying
         this.toJustify = [];
         curr = null;
