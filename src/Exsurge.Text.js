@@ -86,9 +86,11 @@ export class Latin extends Language {
 
     this.vowels = ['a', 'e', 'i', 'o', 'u',
                    'á', 'é', 'í', 'ó', 'ú',
+                   'ä', 'ë', 'ï', 'ö', 'ü',
+                   'å', 'e̊', 'o̊', 'ů',
                    'æ', 'œ',
                    'ǽ',  // no accented œ in unicode?
-                   'y', 'ý']; // y is treated as a vowel; not native to Latin but useful for words borrowed from Greek
+                   'y', 'ý', 'ÿ']; // y is treated as a vowel; not native to Latin but useful for words borrowed from Greek
 
     this.vowelsThatMightBeConsonants = ['i','u'];
 
