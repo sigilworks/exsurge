@@ -595,7 +595,8 @@ export class ChantScore {
       'version': '1.1',
       'class': 'ChantScore',
       'width': this.bounds.width,
-      'height': this.bounds.height
+      'height': this.bounds.height,
+      'viewBox': [0,0,this.bounds.width,this.bounds.height].join(' ')
     }, node);
 
     return node;
@@ -643,7 +644,8 @@ export class ChantScore {
         'version': '1.1',
         'class': 'ChantScore',
         'width': this.bounds.width,
-        'height': height
+        'height': height,
+        'viewBox': [0,0,this.bounds.width,height].join(' ')
       }, lineFragment);
       node.push(lineFragment);
       top += height;

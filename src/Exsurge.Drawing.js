@@ -279,7 +279,7 @@ export class ChantContext {
     this.defsNode = QuickSvg.createNode('defs');
 
     // font styles
-    this.lyricTextSize = 16; // in points?
+    this.lyricTextSize = 16; // in pixels
     this.lyricTextFont = "'Palatino Linotype', 'Book Antiqua', Palatino, serif";
     this.lyricTextColor = "#000";
 
@@ -305,16 +305,10 @@ export class ChantContext {
     // fixme: for now, we just set these using the glyph scales as noted above, presuming a
     // staff line size of 0.5 in. Really what we should do is scale the punctum size based
     // on the text metrics, right? 1 punctum ~ x height size?
-    this.glyphScaling = 1.0 / 16.0; 
+    this.setGlyphScaling(1.0 / 16.0);
 
-    this.staffInterval = this.glyphPunctumWidth * this.glyphScaling;
-
-    // setup the line weights for the various elements.
-    // we 
-    this.staffLineWeight = Math.round(this.glyphPunctumWidth * this.glyphScaling / 8);
-    this.neumeLineWeight = this.staffLineWeight; // the weight of connecting lines in the glyphs.
-    this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
-    this.episemaLineWeight = this.neumeLineWeight; // of horizontal episemae
+    // max space to add between notations when justifying, in multiples of this.staffInterval
+    this.maxExtraSpaceInStaffIntervals = 1;
 
     // for keeping track of the clef
     this.activeClef = null;
@@ -345,14 +339,6 @@ export class ChantContext {
       this.svgTextMeasurer.setAttribute('id', "TextMeasurer");
       document.querySelector('body').appendChild(this.svgTextMeasurer);
     }
-
-    // measure the size of a hyphen for the lyrics
-    var hyphen = new Lyric(this, "-", LyricType.SingleSyllable);
-    this.hyphenWidth = hyphen.bounds.width;
-
-    this.minLyricWordSpacing = this.hyphenWidth;
-
-    this.intraNeumeSpacing = this.staffInterval / 2.0;
 
     // for connecting neume syllables...
     this.syllableConnector = '-';
@@ -388,6 +374,26 @@ export class ChantContext {
     this.autoColor = true;
 
     this.insertFontsInDoc();
+  }
+
+  setGlyphScaling(glyphScaling) {
+    this.glyphScaling = glyphScaling; 
+
+    this.staffInterval = this.glyphPunctumWidth * this.glyphScaling;
+
+    // setup the line weights for the various elements.
+    this.staffLineWeight = Math.round(this.glyphPunctumWidth * this.glyphScaling / 8);
+    this.neumeLineWeight = this.staffLineWeight; // the weight of connecting lines in the glyphs.
+    this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
+    this.episemaLineWeight = this.neumeLineWeight; // of horizontal episemae
+
+    // measure the size of a hyphen for the lyrics
+    var hyphen = new Lyric(this, this.syllableConnector, LyricType.SingleSyllable);
+    this.hyphenWidth = hyphen.bounds.width;
+
+    this.minLyricWordSpacing = this.hyphenWidth;
+
+    this.intraNeumeSpacing = this.staffInterval / 2.0;
   }
 
   calculateHeightFromStaffPosition(staffPosition) {
