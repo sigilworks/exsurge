@@ -302,11 +302,6 @@ export class ChantContext {
     this.glyphPunctumWidth = Glyphs.PunctumQuadratum.bounds.width;
     this.glyphPunctumHeight = Glyphs.PunctumQuadratum.bounds.height;
 
-    // fixme: for now, we just set these using the glyph scales as noted above, presuming a
-    // staff line size of 0.5 in. Really what we should do is scale the punctum size based
-    // on the text metrics, right? 1 punctum ~ x height size?
-    this.setGlyphScaling(1.0 / 16.0);
-
     // max space to add between notations when justifying, in multiples of this.staffInterval
     this.maxExtraSpaceInStaffIntervals = 1;
 
@@ -342,6 +337,11 @@ export class ChantContext {
 
     // for connecting neume syllables...
     this.syllableConnector = '-';
+
+    // fixme: for now, we just set these using the glyph scales as noted above, presuming a
+    // staff line size of 0.5 in. Really what we should do is scale the punctum size based
+    // on the text metrics, right? 1 punctum ~ x height size?
+    this.setGlyphScaling(1.0 / 16.0);
 
     this.drawGuides = false;
     this.drawDebuggingBounds = true;
