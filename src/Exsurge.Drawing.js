@@ -332,7 +332,7 @@ export class ChantContext {
     if(textMeasuringStrategy === TextMeasuringStrategy.Svg) {
       this.svgTextMeasurer = QuickSvg.svg(1,1);
       this.svgTextMeasurer.setAttribute('id', "TextMeasurer");
-      document.querySelector('body').appendChild(this.svgTextMeasurer);
+      document.body.insertBefore(this.svgTextMeasurer, document.body.firstChild);
     }
 
     // for connecting neume syllables...
