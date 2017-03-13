@@ -376,6 +376,29 @@ export class ChantContext {
     this.insertFontsInDoc();
   }
 
+  createStyleCss() {
+    var textStyles = ['lyric', 'aboveLinesText', 'dropCap', 'annotation'];
+    var style = '';
+    for(var i=0; i < textStyles.length; ++i) {
+      var key = i === 1? 'al' : textStyles[i],
+          color = this[key+'TextColor'],
+          font = this[key+'TextFont'],
+          size = this[key+'TextSize'];
+      style += `.${textStyles[i]}{fill:${color};font-family:${font};font-size:${size}px;font-kerning:normal}`;
+    }
+    return style;
+  }
+
+  createStyleNode() {
+    var node = QuickSvg.createNode('style', {});
+    node.textContent = this.createStyleCss(this);
+    return node;
+  }
+
+  createStyle() {
+    return '<style>' + this.createStyleCss(this) +'</style>';
+  }
+
   setGlyphScaling(glyphScaling) {
     this.glyphScaling = glyphScaling; 
 
@@ -1160,8 +1183,8 @@ export class TextElement extends ChantLayoutElement {
     if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
       while(ctxt.svgTextMeasurer.firstChild)
         ctxt.svgTextMeasurer.firstChild.remove();
-
       ctxt.svgTextMeasurer.appendChild(this.createSvgNode(ctxt));
+      ctxt.svgTextMeasurer.appendChild(ctxt.createStyleNode());
 
       var bbox = ctxt.svgTextMeasurer.firstChild.getBBox();
       this.bounds.width = bbox.width;
@@ -1216,10 +1239,7 @@ export class TextElement extends ChantLayoutElement {
       spans.push( QuickSvg.createNode('tspan', options, this.spans[i].text) );
     }
 
-    var styleProperties = "font-family:" + this.fontFamily +
-      ";font-size:" + this.fontSize + "px" +
-      ";font-kerning:normal;" +
-      this.getExtraStyleProperties(ctxt);
+    var styleProperties = this.getExtraStyleProperties(ctxt);
 
     return QuickSvg.createNode('text', {
       'source': this,
@@ -1246,10 +1266,7 @@ export class TextElement extends ChantLayoutElement {
       spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(this.spans[i].text));
     }
 
-    var styleProperties = "font-family:" + this.fontFamily +
-      ";font-size:" + this.fontSize + "px" +
-      ";font-kerning:normal;" +
-      this.getExtraStyleProperties(ctxt);
+    var styleProperties = this.getExtraStyleProperties(ctxt);
 
     return QuickSvg.createFragment('text', {
       'source-index': this.sourceIndex,

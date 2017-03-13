@@ -584,6 +584,7 @@ export class ChantScore {
 
     // create defs section
     var node = [ctxt.defsNode.cloneNode(true)];
+    node[0].appendChild(ctxt.createStyleNode());
 
     for (var i = 0; i < this.lines.length; i++)
       node.push( this.lines[i].createSvgNode(ctxt) );
@@ -610,6 +611,7 @@ export class ChantScore {
     for (var def in ctxt.defs)
       if (ctxt.defs.hasOwnProperty(def))
         fragment += ctxt.defs[def];
+    fragment += ctxt.createStyle();
 
     fragment = QuickSvg.createFragment('defs', {}, fragment);
 
@@ -637,6 +639,7 @@ export class ChantScore {
     var top = 0;
     for (var i = 0; i < this.lines.length; i++) {
       var lineFragment = [ctxt.defsNode.cloneNode(true), this.lines[i].createSvgNode(ctxt, top)];
+      lineFragment[0].appendChild(ctxt.createStyleNode());
       var height = this.lines[i].bounds.height + ctxt.staffInterval * 1.5;
       lineFragment = QuickSvg.createNode('g', {}, lineFragment);
       lineFragment = QuickSvg.createNode('svg', {
@@ -662,6 +665,7 @@ export class ChantScore {
     for (var def in ctxt.defs)
       if (ctxt.defs.hasOwnProperty(def))
         fragmentDefs += ctxt.defs[def];
+    fragmentDefs += ctxt.createStyle();
 
     fragmentDefs = QuickSvg.createFragment('defs', {}, fragmentDefs);
     var top = 0;

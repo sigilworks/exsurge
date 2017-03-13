@@ -87,6 +87,8 @@ export class Latin extends Language {
     this.vowels = ['a', 'e', 'i', 'o', 'u',
                    'á', 'é', 'í', 'ó', 'ú',
                    'ä', 'ë', 'ï', 'ö', 'ü',
+                   'ā', 'ē', 'ī', 'ō', 'ū',
+                   'ă', 'ĕ', 'ĭ', 'ŏ', 'ŭ',
                    'å', 'e̊', 'o̊', 'ů',
                    'æ', 'œ',
                    'ǽ',  // no accented œ in unicode?
