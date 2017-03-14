@@ -343,6 +343,9 @@ export class ChantContext {
     // staff line size of 0.5 in. Really what we should do is scale the punctum size based
     // on the text metrics, right? 1 punctum ~ x height size?
     this.setGlyphScaling(1.0 / 16.0);
+    
+    // minimum space between puncta of different syllables, multiplied by this.intraNeumeSpacing
+    this.intraSyllabicMultiplier = 2.5;
 
     this.drawGuides = false;
     this.drawDebuggingBounds = true;
@@ -1733,7 +1736,7 @@ export class ChantNotationElement extends ChantLayoutElement {
   performLayout(ctxt) {
 
     if (this.trailingSpace < 0)
-      this.trailingSpace = ctxt.intraNeumeSpacing * 4;
+      this.trailingSpace = ctxt.intraNeumeSpacing * ctxt.intraSyllabicMultiplier;
 
     // reset the bounds and the staff notations before doing a layout
     this.visualizers = [];
