@@ -330,8 +330,9 @@ export class ChantContext {
     this.canvasCtxt.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
 
     if(textMeasuringStrategy === TextMeasuringStrategy.Svg) {
-      this.svgTextMeasurer = QuickSvg.svg(1,1);
+      this.svgTextMeasurer = QuickSvg.svg(0,0);
       this.svgTextMeasurer.setAttribute('id', "TextMeasurer");
+      this.svgTextMeasurer.setAttribute('style', "position:absolute");
       document.body.insertBefore(this.svgTextMeasurer, document.body.firstChild);
     }
 
