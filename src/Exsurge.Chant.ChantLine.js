@@ -605,16 +605,22 @@ export class ChantLine extends ChantLayoutElement {
           prev = curr;
           curr = notations[i];
 
+          if (prev !== null)
+            LyricArray.mergeIn(prevLyrics, prev.lyrics);
+
           if (prev !== null && prev.keepWithNext === true)
             continue;
 
-          if (prevLyrics !== null && prevLyrics.length && prevLyrics[0].allowsConnector() && !prevLyrics[0].needsConnector)
+          if (prevLyrics.length && prevLyrics[0].allowsConnector() && curr.hasLyrics())
             continue;
 
           if (curr.constructor === ChantLineBreak)
             continue;
 
           if (curr === this.custos)
+            continue;
+
+          if (i === 0 && this.score.useDropCap && curr.hasLyrics())
             continue;
 
           // otherwise, we can add space before this element
