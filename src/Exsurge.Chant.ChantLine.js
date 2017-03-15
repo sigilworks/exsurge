@@ -514,7 +514,7 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // estimate how much space we have available to us
-    var rightNotationBoundary = this.staffRight - Glyphs.CustosLong.bounds.width * ctxt.glyphScaling - ctxt.intraNeumeSpacing * 4; // possible custos on the line
+    var rightNotationBoundary = this.staffRight - Glyphs.CustosLong.bounds.width * ctxt.glyphScaling; // possible custos on the line
 
     // iterate through the notations, fittng what we can on this line
     var i, j, lastNotationIndex = notations.length - 1;
@@ -641,7 +641,7 @@ export class ChantLine extends ChantLayoutElement {
             else
               extraSpace -= (last.bounds.right() + last.trailingSpace);
 
-            extraSpace -= Glyphs.CustosLong.bounds.width;
+            extraSpace -= Glyphs.CustosLong.bounds.width * ctxt.glyphScaling;
 
             if(extraSpace / this.toJustify.length > ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals) {
               if(notations[lastIndex].hasLyrics()) LyricArray.mergeIn(this.lastLyrics, notations[lastIndex].lyrics);

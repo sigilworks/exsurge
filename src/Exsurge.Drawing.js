@@ -344,7 +344,7 @@ export class ChantContext {
     // on the text metrics, right? 1 punctum ~ x height size?
     this.setGlyphScaling(1.0 / 16.0);
     
-    // minimum space between puncta of different syllables, multiplied by this.intraNeumeSpacing
+    // minimum space between puncta of different syllables, in multiples of this.intraNeumeSpacing
     this.intraSyllabicMultiplier = 2.5;
 
     this.drawGuides = false;
