@@ -1157,7 +1157,6 @@ export class TextElement extends ChantLayoutElement {
     if(length === 0) return 0;
     if(!length) length = Infinity;
     var canvasCtxt = ctxt.canvasCtxt;
-    var baseFont = this.fontSize + "px " + this.fontFamily;
     var width = 0;
     var subStringLength = 0;
     for (var i = 0; i < this.spans.length; i++) {
@@ -1167,7 +1166,18 @@ export class TextElement extends ChantLayoutElement {
       if(span.properties.indexOf('font-style:italic;') >= 0) font += 'italic ';
       if(span.properties.indexOf("font-variant:small-caps;") >= 0) font += 'small-caps ';
       if(span.properties.indexOf('font-weight:bold;') >= 0) font += 'bold ';
-      font += baseFont;
+      var match = span.properties.match(/(?:^|;)\s*font-size:([^;]+)(?:$|;)/);
+      if(match) {
+        font += match[1] + ' ';
+      } else {
+        font += this.fontSize + 'px ';
+      }
+      match = span.properties.match(/(?:^|;)\s*font-family:([^;]+)(?:$|;)/);
+      if(match) {
+        font += match[1];
+      } else {
+        font += this.fontFamily
+      }
       canvasCtxt.font = font;
       var metrics = canvasCtxt.measureText(myText, this.bounds.x, this.bounds.y);
       width += metrics.width;
