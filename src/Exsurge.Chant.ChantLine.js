@@ -633,22 +633,25 @@ export class ChantLine extends ChantLayoutElement {
           var extraSpace = this.staffRight;
 
           if (this.numNotationsOnLine > 0) {
-            var last = notations[lastIndex - 1], lastLyrics = this.lastLyrics;
+            var last = notations[lastIndex - 1];
                 
 
-            if (lastLyrics)
-              extraSpace -= Math.max(LyricArray.getRight(lastLyrics), last.bounds.right() + last.trailingSpace);
+            if (prevLyrics)
+              extraSpace -= Math.max(LyricArray.getRight(prevLyrics), last.bounds.right() + last.trailingSpace);
             else
               extraSpace -= (last.bounds.right() + last.trailingSpace);
 
             extraSpace -= Glyphs.CustosLong.bounds.width * ctxt.glyphScaling;
 
             if(extraSpace / this.toJustify.length > ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals) {
-              if(notations[lastIndex].hasLyrics()) LyricArray.mergeIn(this.lastLyrics, notations[lastIndex].lyrics);
               this.numNotationsOnLine = this.maxNumNotationsOnLine;
               delete this.maxNumNotationsOnLine;
+            } else {
+              this.lastLyrics = prevLyrics;
             }
           }
+        } else {
+          this.lastLyrics = prevLyrics;
         }
 
         if(notations[j].isDivider && notations[j - 1].constructor === Custos) {
@@ -705,10 +708,9 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // find the final lyric and mark it as connecting if needed.
-    lastLyrics = this.lastLyrics;
     i = 0;
-    while (lastLyrics && lastLyrics[i]) {
-      if(lastLyrics[i].allowsConnector()) lastLyrics[i].setNeedsConnector(true);
+    while (this.lastLyrics && this.lastLyrics[i]) {
+      if(this.lastLyrics[i].allowsConnector()) this.lastLyrics[i].setNeedsConnector(true);
       ++i;
     }
 
