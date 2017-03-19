@@ -636,7 +636,7 @@ export class ChantLine extends ChantLayoutElement {
             var last = notations[lastIndex - 1];
                 
 
-            if (prevLyrics)
+            if (prevLyrics.length)
               extraSpace -= Math.max(LyricArray.getRight(prevLyrics), last.bounds.right() + last.trailingSpace);
             else
               extraSpace -= (last.bounds.right() + last.trailingSpace);
@@ -747,7 +747,7 @@ export class ChantLine extends ChantLayoutElement {
     if (this.numNotationsOnLine > 0) {
       var last = notations[lastIndex - 1], lastLyrics = this.lastLyrics;
 
-      if (lastLyrics)
+      if (lastLyrics.length)
         extraSpace = this.staffRight - Math.max(LyricArray.getRight(lastLyrics), last.bounds.right() + last.trailingSpace);
       else
         extraSpace = this.staffRight - (last.bounds.right() + last.trailingSpace);  
