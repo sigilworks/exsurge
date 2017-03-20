@@ -600,10 +600,13 @@ export class ChantLine extends ChantLayoutElement {
         this.toJustify = [];
         curr = null;
         var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
-        for (i = this.notationsStartIndex; i < lastIndex; i++) {
+        for (i = this.notationsStartIndex; i <= lastIndex; i++) {
 
           prev = curr;
           curr = notations[i];
+
+          if (!curr)
+            continue;
 
           if (prev !== null)
             LyricArray.mergeIn(prevLyrics, prev.lyrics);
@@ -626,6 +629,7 @@ export class ChantLine extends ChantLayoutElement {
           // otherwise, we can add space before this element
           this.toJustify.push(curr);
         }
+        curr = prev;
         
         if(this.maxNumNotationsOnLine) {
           // Check whether we should squeeze some extra notations on the line to avoid too much space after justification:
@@ -685,9 +689,6 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
-    if (curr.chantLine === this && curr.hasLyrics())
-      LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
-
     if(!this.custos) {
       // create the automatic custos at the end of the line if there are neumes left in the notations
       for (i = this.notationsStartIndex + this.numNotationsOnLine; i < notations.length; i++) {
@@ -745,10 +746,10 @@ export class ChantLine extends ChantLayoutElement {
     var extraSpace = 0;
 
     if (this.numNotationsOnLine > 0) {
-      var last = notations[lastIndex - 1], lastLyrics = this.lastLyrics;
+      var last = notations[lastIndex - 1];
 
-      if (lastLyrics.length)
-        extraSpace = this.staffRight - Math.max(LyricArray.getRight(lastLyrics), last.bounds.right() + last.trailingSpace);
+      if (this.lastLyrics.length)
+        extraSpace = this.staffRight - Math.max(LyricArray.getRight(this.lastLyrics), last.bounds.right() + last.trailingSpace);
       else
         extraSpace = this.staffRight - (last.bounds.right() + last.trailingSpace);  
     }
