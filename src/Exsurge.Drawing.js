@@ -1105,12 +1105,12 @@ export class TextElement extends ChantLayoutElement {
       that.spans.push(new TextSpan(spanText, properties));
     };
 
-    var markupRegex = /\*|_|\^|%|([ARVarv])\/\./g;
+    var markupRegex = /([ARVarv])\/\.|([*_^%])(?=(?:(.+?)\2)?)/g;
 
     var match = null;
     while ((match = markupRegex.exec(text))) {
 
-      var markupSymbol = match[0];
+      var markupSymbol = match[2];
 
       // non-matching symbols first
       if (match[1]) {
@@ -1118,6 +1118,8 @@ export class TextElement extends ChantLayoutElement {
       } else if (markupStack.length === 0) {
         // otherwise we're dealing with matching markup delimeters
         // if this is our first markup frame, then just create an inline for preceding text and push the stack frame
+        if (markupSymbol === '*' && !match[3]) // we are only strict with the asterisk, because there are cases when it needs to be displayed rather than count as a markup symbol
+          continue;
         closeSpan(text.substring(spanStartIndex, match.index));
         markupStack.push(MarkupStackFrame.createStackFrame(markupSymbol, match.index));
       } else {
@@ -1134,13 +1136,15 @@ export class TextElement extends ChantLayoutElement {
           continue;
         } else {
           // group open
+          if (markupSymbol === '*' && !match[3])
+            continue;
           closeSpan(text.substring(spanStartIndex, match.index));
           markupStack.push(MarkupStackFrame.createStackFrame(markupSymbol, match.index));
         }
       }
 
       // advance the start index past the current markup
-      spanStartIndex = match.index + markupSymbol.length;
+      spanStartIndex = match.index + match[0].length;
     }
 
     // if we finished matches, and there is still some text left, create one final run
