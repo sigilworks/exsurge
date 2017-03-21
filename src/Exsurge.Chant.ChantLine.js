@@ -519,11 +519,10 @@ export class ChantLine extends ChantLayoutElement {
     // iterate through the notations, fittng what we can on this line
     var i, j, lastNotationIndex = notations.length - 1;
 
+    if (curr.hasLyrics())
+      LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
 
     for (i = newElementStart; i <= lastNotationIndex; i++) {
-
-      if (curr.hasLyrics())
-        LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
 
       prev = curr;
       curr = notations[i];
@@ -675,6 +674,9 @@ export class ChantLine extends ChantLayoutElement {
         // we are at the end of the line!
         break;
       }
+
+      if (curr.hasLyrics())
+        LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
 
       curr.chantLine = this;
       this.numNotationsOnLine++;
