@@ -1460,20 +1460,31 @@ export class Lyric extends TextElement {
       // just center the text.
       if (this.lyricType !== LyricType.Directive) {
 
+        // only consider text content after the last space (if any)
+        var startIndex = this.text.lastIndexOf(' ') + 1;
+
         // Non-directive elements are lined up to the chant notation based on vowel segments,
-        var result = activeLanguage.findVowelSegment(this.text, 0);
+        var result = activeLanguage.findVowelSegment(this.text, startIndex);
       
-        if (result.found === true) {
-          if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
-            // svgTextMeasurer still has the current lyric in it...
-            x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex);
-            x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex + result.length);
-          } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
-            x1 = this.measureSubstring(ctxt, result.startIndex);
-            x2 = this.measureSubstring(ctxt, result.startIndex + result.length);
+        if (result.found !== true) {
+          var match = this.text.slice(startIndex).match(/[a-z]+/i);
+          if(match) {
+            result.startIndex = startIndex + match.index;
+            result.length = match[0].length;
+          } else {
+            result.startIndex = startIndex;
+            result.length = this.text.length - startIndex;
           }
-          offset = x1 + (x2 - x1) / 2;
         }
+        if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
+          // svgTextMeasurer still has the current lyric in it...
+          x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex);
+          x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex + result.length);
+        } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
+          x1 = this.measureSubstring(ctxt, result.startIndex);
+          x2 = this.measureSubstring(ctxt, result.startIndex + result.length);
+        }
+        offset = x1 + (x2 - x1) / 2;
       }
     }
 
