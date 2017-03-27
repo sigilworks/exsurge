@@ -974,10 +974,12 @@ export class Gabc {
         return new Neumes.Torculus();
       },
       handle: function(currNote, prevNote) {
-        if (currNote.shape === NoteShape.Default && currNote.staffPosition > prevNote.staffPosition)
+        if (currNote.shape === NoteShape.Default && currNote.staffPosition > prevNote.staffPosition) {
+          if (currNote.ictus) currNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
           return torculusResupinusState;
-        else
+        } else {
           return createNeume(new Neumes.Torculus(), false);
+        }
       }
     };
 

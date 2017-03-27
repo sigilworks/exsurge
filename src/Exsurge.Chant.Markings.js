@@ -187,13 +187,26 @@ export class Ictus extends GlyphVisualizer {
 
   performLayout(ctxt) {
 
-    var glyphCode;
+    var glyphCode = this.note.glyphVisualizer.glyphCode;
     // we have to place the ictus futher from the note in some cases to avoid a collision with an episema on the same note:
     var staffPosition = this.note.staffPosition;
     var placeFurtherFromNote = (this.note.episemata.length > 0 && this.note.episemata[0].positionHint === this.positionHint);
-    var horizontalOffset = this.note.bounds.width / 2;
+    var horizontalOffset;
     var verticalOffset = 0;
     var shortOffset = 1;
+
+    // The porrectus requires special handling of the note width,
+    // otherwise the width is just that of the note itself
+    if (glyphCode === GlyphCode.Porrectus1 ||
+        glyphCode === GlyphCode.Porrectus2 ||
+        glyphCode === GlyphCode.Porrectus3 ||
+        glyphCode === GlyphCode.Porrectus4)
+      horizontalOffset = ctxt.staffInterval / 2;
+    else if (glyphCode === GlyphCode.None) {
+      horizontalOffset = -ctxt.staffInterval / 2;
+    } else {
+      horizontalOffset = this.note.bounds.width / 2;
+    }
 
     if (this.positionHint === MarkingPositionHint.Above) {
       glyphCode = GlyphCode.VerticalEpisemaAbove;
