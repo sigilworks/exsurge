@@ -275,7 +275,7 @@ class NeumeBuilder {
 
     if (needsLine) {
       var line = new NeumeLineVisualizer(this.ctxt, this.lastNote, start, this.lineIsHanging);
-      this.x = Math.max(0, this.x - line.bounds.width);
+      this.x = Math.max(this.minX, this.x - line.bounds.width);
       line.bounds.x = this.x;
       this.neume.addVisualizer(line);
     }
