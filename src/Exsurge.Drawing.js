@@ -1463,6 +1463,11 @@ export class Lyric extends TextElement {
         // only consider text content after the last space (if any)
         var startIndex = this.text.lastIndexOf(' ') + 1;
 
+        // unless there are no text characters following the space:
+        if (startIndex > 0 && !this.text.slice(startIndex).match(/[a-záéíóúýäëïöüÿàèìòùỳāēīōūȳăĕĭŏŭ]/i)) {
+          startIndex = 0;
+        }
+
         // Non-directive elements are lined up to the chant notation based on vowel segments,
         var result = activeLanguage.findVowelSegment(this.text, startIndex);
       
