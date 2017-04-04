@@ -1200,7 +1200,7 @@ export class TextElement extends ChantLayoutElement {
   
     if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
       while(ctxt.svgTextMeasurer.firstChild)
-        ctxt.svgTextMeasurer.firstChild.remove();
+        ctxt.svgTextMeasurer.removeChild(ctxt.svgTextMeasurer.firstChild);
       ctxt.svgTextMeasurer.appendChild(this.createSvgNode(ctxt));
       ctxt.svgTextMeasurer.appendChild(ctxt.createStyleNode());
 
