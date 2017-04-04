@@ -596,39 +596,7 @@ export class ChantLine extends ChantLayoutElement {
         if(this.numNotationsOnLine === 0) numNotationsOnLine = 1;
         
         // determine the neumes we can space apart, if we do end up justifying
-        this.toJustify = [];
-        curr = null;
-        var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
-        for (i = this.notationsStartIndex; i <= lastIndex; i++) {
-
-          prev = curr;
-          curr = notations[i];
-
-          if (!curr)
-            continue;
-
-          if (prev !== null)
-            LyricArray.mergeIn(prevLyrics, prev.lyrics);
-
-          if (prev !== null && prev.keepWithNext === true)
-            continue;
-
-          if (prevLyrics.length && prevLyrics[0].allowsConnector() && curr.hasLyrics())
-            continue;
-
-          if (curr.constructor === ChantLineBreak)
-            continue;
-
-          if (curr === this.custos)
-            continue;
-
-          if (i === 0 && this.score.useDropCap && curr.hasLyrics())
-            continue;
-
-          // otherwise, we can add space before this element
-          this.toJustify.push(curr);
-        }
-        curr = prev;
+        curr = this.findNeumesToJustify(prevLyrics);
         
         if(this.maxNumNotationsOnLine) {
           // Check whether we should squeeze some extra notations on the line to avoid too much space after justification:
@@ -636,7 +604,7 @@ export class ChantLine extends ChantLayoutElement {
           var extraSpace = this.staffRight;
 
           if (this.numNotationsOnLine > 0) {
-            var last = notations[lastIndex - 1];
+            var last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
                 
 
             if (prevLyrics.length)
@@ -687,6 +655,7 @@ export class ChantLine extends ChantLayoutElement {
       // line breaks are a special case indicating to stop processing here
       if (curr.constructor === ChantLineBreak && width > 0) {
         this.justify = curr.justify;
+        if (this.justify) this.findNeumesToJustify(prevLyrics);
         break;
       }
     }
@@ -726,7 +695,6 @@ export class ChantLine extends ChantLayoutElement {
       this.justify = false;
     } else if (this.notationsStartIndex + this.numNotationsOnLine === notations.length) {
       // this is the last chant line.
-      this.justify = true;
       this.justify = last.isDivider && ((this.staffRight - last.bounds.right()) / this.staffRight < .1);
     }
     
@@ -734,7 +702,69 @@ export class ChantLine extends ChantLayoutElement {
     if (this.justify === true)
       this.justifyElements();
 
+    this.centerDividers();
+
     this.finishLayout(ctxt);
+  }
+
+  centerDividers() {
+    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine,
+        curr;
+    for (var i = this.notationsStartIndex; i < lastIndex; i++) {
+      curr = this.score.notations[i];
+
+      if (curr && curr.isDivider) {
+        var prev = this.score.notations[i - 1];
+        var next = this.score.notations[i + 1];
+        if (prev && next) {
+          var oldBoundsX = curr.bounds.x;
+          curr.bounds.x = (prev.bounds.right() + next.bounds.x - curr.bounds.width) / 2;
+          if(curr.hasLyrics()) {
+            var offset = oldBoundsX - curr.bounds.x;
+            for(var j = curr.lyrics.length - 1; j >= 0; j--) {
+              curr.lyrics[j].bounds.x += offset;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  findNeumesToJustify(prevLyrics) {
+    this.toJustify = [];
+    var prev,
+        curr = null,
+        lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
+    for (var i = this.notationsStartIndex; i <= lastIndex; i++) {
+
+      prev = curr;
+      curr = this.score.notations[i];
+
+      if (!curr)
+        continue;
+
+      if (prev !== null) {
+        LyricArray.mergeIn(prevLyrics, prev.lyrics);
+        if (prev.keepWithNext === true)
+          continue;
+      }
+
+      if (prevLyrics.length && prevLyrics[0].allowsConnector() && curr.hasLyrics())
+        continue;
+
+      if (curr.constructor === ChantLineBreak)
+        continue;
+
+      if (curr === this.custos)
+        continue;
+
+      if (i === 0 && this.score.useDropCap && curr.hasLyrics())
+        continue;
+
+      // otherwise, we can add space before this element
+      this.toJustify.push(curr);
+    }
+    return prev;
   }
 
   justifyElements() {
