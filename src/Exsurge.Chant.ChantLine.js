@@ -715,7 +715,7 @@ export class ChantLine extends ChantLayoutElement {
 
       if (curr && curr.isDivider) {
         var prev = this.score.notations[i - 1];
-        var next = this.score.notations[i + 1];
+        var next = (i + 1 === lastIndex)? this.custos : this.score.notations[i + 1];
         if (prev && next) {
           var oldBoundsX = curr.bounds.x;
           curr.bounds.x = (prev.bounds.right() + next.bounds.x - curr.bounds.width) / 2;
