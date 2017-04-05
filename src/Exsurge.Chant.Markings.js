@@ -264,7 +264,7 @@ export class Mora extends GlyphVisualizer {
         verticalOffset -= ctxt.staffInterval * .75;
     }
 
-    this.bounds.x += this.horizontalOffset + this.note.bounds.right() + ctxt.staffInterval / 4.0;
+    this.bounds.x += this.horizontalOffset + this.note.bounds.right() - this.origin.x;
     this.bounds.y += verticalOffset;
   }
 }
