@@ -251,17 +251,45 @@ export class Mora extends GlyphVisualizer {
     var verticalOffset = 0;
     if (this.positionHint === MarkingPositionHint.Above) {
       if (staffPosition % 2 === 0)
-        verticalOffset -= ctxt.staffInterval + ctxt.staffInterval * .75;
+        verticalOffset -= ctxt.staffInterval * 1.75;
       else
         verticalOffset -= ctxt.staffInterval * .75;
     } else if (this.positionHint === MarkingPositionHint.Below) {
       if (staffPosition % 2 === 0)
-        verticalOffset += ctxt.staffInterval + ctxt.staffInterval * .75;
+        verticalOffset += ctxt.staffInterval * 1.75;
       else
         verticalOffset += ctxt.staffInterval * .75;
     } else {
-      if (Math.abs(staffPosition) % 2 === 1)
+      if (staffPosition % 2 === 0) {
+        // if the note is in a space and followed by a note on the line below, we often want to move the mora dot up slightly so that it is centered
+        // between the top of the note's space and the top of the following note.
+        // Also, we don't need to do this if there is a horizontal offset:
+        if(this.horizontalOffset === 0) {
+          // First, we need to find the next note in the neume.
+          var noteIndex = this.note.neume.notes.indexOf(this.note);
+          var nextNote;
+          if (noteIndex >= 0) {
+            ++noteIndex;
+            if (this.note.neume.notes.length > noteIndex) {
+              nextNote = this.note.neume.notes[noteIndex];
+            } else if (this.note.neume.notes.length === noteIndex && this.note.neume.trailingSpace === 0) {
+              // if this was the last note in its neume, we only care about the next note if there is no trailing space at the end of this neume.
+              var notationIndex = this.note.neume.score.notations.indexOf(this.note.neume);
+              if (notationIndex >= 0) {
+                var nextNotation = this.note.neume.score.notations[notationIndex+1];
+                if (nextNotation && nextNotation.notes) {
+                  nextNote = nextNotation.notes[0];
+                }
+              }
+            }
+          }
+          if(nextNote && nextNote.staffPosition == staffPosition - 1) {
+            verticalOffset -= ctxt.staffInterval * .25;
+          }
+        }
+      } else {
         verticalOffset -= ctxt.staffInterval * .75;
+      }
     }
 
     this.bounds.x += this.horizontalOffset + this.note.bounds.right() - this.origin.x;
