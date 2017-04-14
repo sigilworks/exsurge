@@ -283,7 +283,7 @@ export class Mora extends GlyphVisualizer {
               }
             }
           }
-          if(nextNote && nextNote.staffPosition == staffPosition - 1) {
+          if(nextNote && nextNote.staffPosition === staffPosition - 1) {
             verticalOffset -= ctxt.staffInterval * .25;
           }
         }
