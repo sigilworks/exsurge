@@ -547,7 +547,7 @@ export let Glyphs = {
       "height": 105.546
     },
     "origin": {
-      "x": 35,
+      "x": 50,
       "y": 53.164062
     },
     "align": "left"
