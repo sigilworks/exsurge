@@ -768,7 +768,7 @@ export class PesSubpunctis extends Neume {
     // podatus followed by inclinati
     this.build(ctxt)
       .withPodatus(this.notes[0], this.notes[1])
-      .advanceBy(ctxt.intraNeumeSpacing / 2)
+      .advanceBy(ctxt.intraNeumeSpacing * 0.68)
       .withInclinati(this.notes.slice(2));
 
     this.finishLayout(ctxt);
