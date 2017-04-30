@@ -241,17 +241,13 @@ class NeumeBuilder {
 
       staffPosition = note.staffPosition;
 
-      // fixme: how do these calculations look for puncti inclinati based on staff position offsets?
-      var multiple;
-      switch (Math.abs(prevStaffPosition - staffPosition)) {
+      var multiple = Math.abs(prevStaffPosition - staffPosition);
+      switch (multiple) {
         case 0:
           multiple = 1.1;
           break;
-        case 1:
-          multiple = 0.8;
-          break;
         default:
-          multiple = 1.2;
+          multiple *= 2/3;
           break;
       }
 
