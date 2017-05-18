@@ -543,7 +543,7 @@ export let Glyphs = {
     "bounds": {
       "x": 0,
       "y": 0,
-      "width": 70,
+      "width": 100,
       "height": 105.546
     },
     "origin": {
