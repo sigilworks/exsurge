@@ -297,6 +297,8 @@ export class ChantContext {
     this.annotationTextColor = this.lyricTextColor;
 
     this.minLedgerSeparation = 2; // multiple of staffInterval
+    this.minSpaceAboveStaff = 1; // multiple of staffInterval
+    this.minSpaceBelowStaff = 2; // multiple of staffInterval
 
     // everything depends on the scale of the punctum
     this.glyphPunctumWidth = Glyphs.PunctumQuadratum.bounds.width;

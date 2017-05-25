@@ -75,8 +75,8 @@ export class ChantLine extends ChantLayoutElement {
 
     // start off with a rectangle that holds at least the four staff lines
     // we fudge the 3 to 3.1 so that the svg doesn't crop off the upper/lower staff lines...
-    this.notationBounds = new Rect(this.staffLeft, -3.1 * ctxt.staffInterval,
-      this.staffRight - this.staffLeft, 6.2 * ctxt.staffInterval);
+    this.notationBounds = new Rect(this.staffLeft, -(3.1 + ctxt.minSpaceAboveStaff) * ctxt.staffInterval,
+      this.staffRight - this.staffLeft, (6.2 + ctxt.minSpaceAboveStaff) * ctxt.staffInterval);
 
     // run through all the elements of the line and calculate the bounds of the notations,
     // as well as the bounds of each text track we will use
@@ -188,7 +188,7 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // add up the lyric line heights to get the total height of the chant line
-    this.notationBounds.height += (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines);
+    this.notationBounds.height += Math.max(ctxt.minSpaceBelowStaff * ctxt.staffInterval, (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines));
     var totalHeight = this.notationBounds.height;
     this.notationBounds.y -= this.altLineHeight * this.numAltLines;
 
