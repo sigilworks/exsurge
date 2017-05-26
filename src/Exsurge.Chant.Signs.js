@@ -168,7 +168,7 @@ export class DoubleBar extends Divider {
     this.addVisualizer(line0);
 
     var line1 = new DividerLineVisualizer(ctxt, -3, 3);
-    line1.bounds.x = ctxt.intraNeumeSpacing * 2;
+    line1.bounds.x = ctxt.intraNeumeSpacing * 2 - line1.bounds.width;
     this.addVisualizer(line1);
 
     this.origin.x = this.bounds.width / 2;
