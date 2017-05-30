@@ -26,7 +26,7 @@
 import * as Exsurge from 'Exsurge.Core'
 import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
 import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, DropCap } from 'Exsurge.Drawing'
-import { ChantLineBreak, TextOnly } from 'Exsurge.Chant'
+import { ChantLineBreak, TextOnly, NoteShape } from 'Exsurge.Chant'
 import { Glyphs } from 'Exsurge.Glyphs'
 import { Custos, DoubleBar } from 'Exsurge.Chant.Signs'
 import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema, BraceShape, BracePoint } from 'Exsurge.Chant.Markings'
@@ -581,6 +581,16 @@ export class ChantLine extends ChantLayoutElement {
         // check if the prev elements want to be kept with this one
         for (j = i - 1; j > this.notationsStartIndex; j--) {
           var cne = notations[j];
+          curr = notations[j+1];
+
+          // curr is the first notation on the next line
+          // cne is the last notation on the previous line
+
+          // force any notations starting with a quilisma to be kept with the previous notation:
+          if(curr && curr.notes && curr.notes[0].shape == NoteShape.Quilisma) {
+            this.numNotationsOnLine--;
+            continue;
+          }
 
           // if the line break is allowed (cne.allowLineBreakBeforeNext), keep this number of notations around so we can check during justification
           // whether there would be too much space introduced between 
