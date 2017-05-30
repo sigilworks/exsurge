@@ -25,7 +25,7 @@
 
 import * as Exsurge from 'Exsurge.Core'
 import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
-import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, DropCap } from 'Exsurge.Drawing'
+import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, LyricType, DropCap } from 'Exsurge.Drawing'
 import { ChantLineBreak, TextOnly, NoteShape } from 'Exsurge.Chant'
 import { Glyphs } from 'Exsurge.Glyphs'
 import { Custos, DoubleBar } from 'Exsurge.Chant.Signs'
@@ -587,7 +587,7 @@ export class ChantLine extends ChantLayoutElement {
           // cne is the last notation on the previous line
 
           // force any notations starting with a quilisma to be kept with the previous notation:
-          if(curr && curr.notes && curr.notes[0].shape == NoteShape.Quilisma) {
+          if(curr && curr.notes && curr.notes[0].shape === NoteShape.Quilisma) {
             this.numNotationsOnLine--;
             continue;
           }
@@ -1049,6 +1049,12 @@ export class ChantLine extends ChantLayoutElement {
     // To begin we just place the current notation right after the previous,
     // irrespective of lyrics.
     curr.bounds.x = prev.bounds.right() + prev.trailingSpace;
+
+    if(curr.hasLyrics() && prev.hasLyrics() &&
+        (prev.lyrics[0].lyricType === LyricType.SingleSyllable || prev.lyrics[0].lyricType === LyricType.EndingSyllable) &&
+        (curr.lyrics[0].lyricType === LyricType.SingleSyllable || curr.lyrics[0].lyricType === LyricType.BeginningSyllable)) {
+      curr.bounds.x += ctxt.intraNeumeSpacing * ctxt.intraSyllabicMultiplier;
+    }
 
     // if the previous notation has no lyrics, then we simply make sure the
     // current notation with lyrics is in the bounds of the line
