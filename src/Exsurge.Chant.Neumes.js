@@ -1052,7 +1052,7 @@ export class Scandicus extends Neume {
         .virgaAt(third);
     } else {
       this.build(ctxt)
-        .noteAt(first, GlyphCode.PunctumQuadratum)
+        .noteAt(first, first.shape === NoteShape.Quilisma? GlyphCode.Quilisma : GlyphCode.PunctumQuadratum)
         .withPodatus(second, third);
     }
 

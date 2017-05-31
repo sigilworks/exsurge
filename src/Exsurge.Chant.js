@@ -600,6 +600,9 @@ export class ChantScore {
       'viewBox': [0,0,this.bounds.width,this.bounds.height].join(' ')
     }, node);
 
+    node.source = this;
+    this.svg = node;
+    
     return node;
   }
 
