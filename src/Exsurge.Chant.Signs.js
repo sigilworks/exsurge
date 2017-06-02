@@ -23,7 +23,7 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from 'Exsurge.Core'
+import { Step } from 'Exsurge.Core'
 import { GlyphCode, GlyphVisualizer, DividerLineVisualizer, ChantNotationElement } from 'Exsurge.Drawing'
 
 /*
@@ -253,10 +253,8 @@ export class Accidental extends ChantNotationElement {
 
   applyToPitch(pitch) {
 
-    // fixme: this is broken since we changed to staff positions
-
     // no adjusment needed
-    if (this.octave !== pitch.octave)
+    if (this.pitch.octave !== pitch.octave)
       return;
 
     pitch.step = this.adjustStep(pitch.step);

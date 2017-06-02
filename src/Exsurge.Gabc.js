@@ -599,6 +599,7 @@ export class Gabc {
             var noteArray = [];
             this.createNoteFromData(ctxt, ctxt.activeClef, atom, noteArray, sourceIndex);
             var accidental = new Signs.Accidental(noteArray[0].staffPosition, accidentalType);
+            accidental.pitch = this.gabcHeightToExsurgePitch(ctxt.activeClef, atom[0]);
             accidental.sourceIndex = sourceIndex;
             accidental.trailingSpace = ctxt.intraNeumeSpacing * 2;
 
@@ -1403,9 +1404,6 @@ export class Gabc {
     var exsurgeHeight = this.gabcHeightToExsurgeHeight(gabcHeight)
 
     var pitch = clef.staffPositionToPitch(exsurgeHeight);
-
-    if (clef.activeAccidental !== null)
-      clef.activeAccidental.applyToPitch(pitch);
 
     return pitch;
   }

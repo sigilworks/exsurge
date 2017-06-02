@@ -150,7 +150,8 @@ export class Note extends ChantLayoutElement {
 
     this.glyphVisualizer.bounds.x = this.bounds.x;
     this.glyphVisualizer.bounds.y = this.bounds.y;
-    return this.glyphVisualizer.createSvgNode(ctxt, this);
+    this.svgNode = this.glyphVisualizer.createSvgNode(ctxt, this);
+    return this.svgNode;
   }
 
   createSvgFragment(ctxt) {
@@ -229,8 +230,8 @@ export class DoClef extends Clef {
 
     var step = Pitch.staffOffsetToStep(offset);
 
-    if (this.defaultAccidental !== null && step === this.defaultAccidental.step)
-      step += this.defaultAccidental.accidentalType;
+    if (this.activeAccidental && this.activeAccidental.staffPosition === staffPosition)
+      step += this.activeAccidental.accidentalType;
 
     return new Pitch(step, this.octave + octaveOffset);
   }
@@ -274,8 +275,8 @@ export class FaClef extends Clef {
 
     var step = Pitch.staffOffsetToStep(offset);
 
-    if (step === Step.Ti && this.defaultAccidental === AccidentalType.Flat)
-      step = Step.Te;
+    if (this.activeAccidental && this.activeAccidental.staffPosition === staffPosition)
+      step += this.activeAccidental.accidentalType;
 
     return new Pitch(step, this.octave + octaveOffset);
   }
