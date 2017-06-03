@@ -282,6 +282,10 @@ var __StaffOffsetToStep = [Step.Do, Step.Re, Step.Mi, Step.Fa, Step.So, Step.La,
 
 export class Pitch {
   constructor(step, octave) {
+    if(typeof octave === 'undefined') {
+      octave = Math.floor(step / 12)
+      step = step % 12;
+    }
     this.step = step;
     this.octave = octave;
   }
