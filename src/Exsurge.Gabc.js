@@ -272,6 +272,11 @@ export class Gabc {
       var alText = lyricText.match(__altRegex);
       var notationData = match[2];
 
+      // new words reset the accidentals, per the Solesmes style (see LU xviij)
+      // but we need to also make sure that there _is_ a word and that it has notes associated with it.
+      if (currSyllable === 0 && /\S/.test(lyricText) && /[a-m]/i.test(notationData))
+        ctxt.activeClef.resetAccidentals();      
+
       var items = this.parseNotations(ctxt, notationData, sourceIndex + match.index + match[1].length + 1);
 
       if (items.length === 0)
@@ -327,11 +332,6 @@ export class Gabc {
         proposedLyricType = LyricType.MiddleSyllable;
 
       currSyllable++;
-
-      // also, new words reset the accidentals, per the Solesmes style (see LU xviij)
-      if (proposedLyricType === LyricType.BeginningSyllable ||
-          proposedLyricType === LyricType.SingleSyllable)
-        ctxt.activeClef.resetAccidentals();
 
       var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType, notationWithLyrics, sourceIndex + match.index);
 
