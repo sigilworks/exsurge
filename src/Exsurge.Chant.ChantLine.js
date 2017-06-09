@@ -29,7 +29,7 @@ import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVis
 import { ChantLineBreak, TextOnly, NoteShape } from 'Exsurge.Chant'
 import { Glyphs } from 'Exsurge.Glyphs'
 import { Custos, DoubleBar } from 'Exsurge.Chant.Signs'
-import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema, BraceShape, BracePoint } from 'Exsurge.Chant.Markings'
+import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema, BraceShape, BracePoint, BraceAttachment } from 'Exsurge.Chant.Markings'
 
 
 // a chant line represents one staff line on the page. ChantLines are created by the score
@@ -554,30 +554,6 @@ export class ChantLine extends ChantLayoutElement {
           this.numNotationsOnLine--;
         }
 
-        // check for an end brace in the curr element
-        var braceEndIndex = curr.notes && curr.notes.reduce(function(result,n,i){ return result || (n.braceEnd && (i + 1)) || 0}, 0);
-        var braceStartIndex = curr.notes && curr.notes.reduce(function(result,n,i){ return result || (n.braceStart && (i + 1)) || 0}, 0);
-        // if there is not a start brace earlier in the element than the end brace, we need to find the earlier start brace
-        // to keep the entire brace together on the next line
-        if(braceEndIndex && (!braceStartIndex || braceStartIndex > braceEndIndex)) {
-          // find last index of start brace
-          var index = notations.slice(this.notationsStartIndex, i).reduceRight(function(accum,cne,index){
-            if(accum === -1 && cne.notes) {
-              var braceStart = cne.notes.filter(function(n){ return n.braceStart; }).length;
-              var braceEnd = cne.notes.filter(function(n){ return n.braceEnd; }).length;
-              // if we see another end brace before we get to a start brace, short circuit
-              if(braceEnd) return -2;
-              if(braceStart) return index;
-            }
-            return accum;
-          },-1);
-          // if the start brace was found, this line needs to end just before it:
-          if(index > 0) {
-            this.numNotationsOnLine = index;
-            i = index + this.notationsStartIndex;
-          }
-        }
-
         // check if the prev elements want to be kept with this one
         for (j = i - 1; j > this.notationsStartIndex; j--) {
           var cne = notations[j];
@@ -825,6 +801,51 @@ export class ChantLine extends ChantLayoutElement {
     }
   }
 
+  handleEndBrace(ctxt, note) {
+    var startBrace = ctxt.lastStartBrace;
+    if(!startBrace) return;
+    // calculate the y value of the brace by iterating over all notations
+    // under/over the brace.
+    var y, k, i;
+    var dy = ctxt.intraNeumeSpacing / 2; // some safe space between brace and notes.
+    if (startBrace.isAbove) {
+      y = ctxt.calculateHeightFromStaffPosition(4);
+      for (k = startBrace.notationIndex; k <= i; k++)
+        y = Math.min(y, notations[k].bounds.y - dy);
+    } else {
+      y = ctxt.calculateHeightFromStaffPosition(-4);
+      for (k = startBrace.notationIndex; k <= i; k++)
+        y = Math.max(y, notations[k].bounds.y + dy);
+    }
+
+    var startNote = startBrace.note || this.startingClef;
+
+    var addAcuteAccent = false;
+
+    if (startBrace.shape === BraceShape.RoundBrace) {
+
+      this.braces.push(new RoundBraceVisualizer(ctxt,
+        startBrace.getAttachmentX(startNote),
+        note.braceEnd.getAttachmentX(note),
+        y,
+        startBrace.isAbove));
+
+    } else {
+
+      if (startBrace.shape === BraceShape.AccentedCurlyBrace)
+        addAcuteAccent = true;
+
+      this.braces.push(new CurlyBraceVisualizer(ctxt,
+        startBrace.getAttachmentX(startNote),
+        note.braceEnd.getAttachmentX(note),
+        y,
+        startBrace.isAbove,
+        addAcuteAccent));
+    }
+
+    delete ctxt.lastStartBrace;
+  }
+
   finishLayout(ctxt) {
 
     this.ledgerLines = []; // clear any existing ledger lines
@@ -878,7 +899,7 @@ export class ChantLine extends ChantLayoutElement {
     };
 
     var episemata = []; // keep track of episemata in case we can connect some
-    var startBrace = null, startBraceNotationIndex = 0;
+    var startBrace = null;
     var minY = Number.MAX_VALUE, maxY = Number.MIN_VALUE; // for braces
 
     // make a final pass over all of the notes to add any necessary
@@ -968,53 +989,11 @@ export class ChantLine extends ChantLayoutElement {
           }
         }
 
-        if (note.braceEnd) {
-
-          // calculate the y value of the brace by iterating over all notations
-          // under/over the brace.
-          var y;
-          var dy = ctxt.intraNeumeSpacing / 2; // some safe space between brace and notes.
-          if (startBrace === null) {
-            // fixme: this brace must have started on the previous line...what to do here, draw half a brace?
-          } else {
-            if (startBrace.isAbove) {
-              y = ctxt.calculateHeightFromStaffPosition(4);
-              for (k = startBraceNotationIndex; k <= i; k++)
-                y = Math.min(y, notations[k].bounds.y - dy);
-            } else {
-              y = ctxt.calculateHeightFromStaffPosition(-4);
-              for (k = startBraceNotationIndex; k <= i; k++)
-                y = Math.max(y, notations[k].bounds.y + dy);
-            }
-
-            var addAcuteAccent = false;
-
-            if (startBrace.shape === BraceShape.RoundBrace) {
-
-              this.braces.push(new RoundBraceVisualizer(ctxt,
-                startBrace.getAttachmentX(),
-                note.braceEnd.getAttachmentX(),
-                y,
-                startBrace.isAbove));
-
-            } else {
-
-              if (startBrace.shape === BraceShape.AccentedCurlyBrace)
-                addAcuteAccent = true;
-
-              this.braces.push(new CurlyBraceVisualizer(ctxt,
-                startBrace.getAttachmentX(),
-                note.braceEnd.getAttachmentX(),
-                y,
-                startBrace.isAbove,
-                addAcuteAccent));
-            }
-          }
-        }
+        if(note.braceEnd) this.handleEndBrace(ctxt, note);
 
         if (note.braceStart) {
-          startBrace = note.braceStart;
-          startBraceNotationIndex = i;
+          ctxt.lastStartBrace = startBrace = note.braceStart;
+          startBrace.notationIndex = i;
         }
 
         // update the active brace y position if there is one
@@ -1029,7 +1008,20 @@ export class ChantLine extends ChantLayoutElement {
 
     // if we still have an active brace, that means it spands two chant lines!
     if (startBrace !== null) {
-      startBrace = startBrace;
+      if(this.custos) {
+        // if the next end brace is on the first note following the line break, simply use it with the custos
+        // otherwise, make a new end brace to work for this one, and a new start brace for the next line.
+        var nextNote = notations[lastIndex].notes && notations[lastIndex].notes[0];
+        if(nextNote && nextNote.braceEnd) {
+          this.custos.braceEnd = nextNote.braceEnd;
+          this.handleEndBrace(ctxt, this.custos);
+        } else {
+          this.braceStart = startBrace
+          this.custos.braceEnd = new BracePoint(this.custos, startBrace.isAbove, startBrace.shape, BraceAttachment.Right);
+          this.handleEndBrace(ctxt, this.custos);
+          ctxt.lastStartBrace = new BracePoint(null, startBrace.isAbove, startBrace.shape, BraceAttachment.Left);
+        }
+      }
     }
 
     // don't forget to also include the final custos, which may need a ledger line too

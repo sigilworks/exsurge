@@ -333,10 +333,11 @@ export class BracePoint extends ChantLayoutElement {
     this.attachment = attachment;
   }
 
-  getAttachmentX() {
+  getAttachmentX(note) {
+    if(!note) note = this.note;
     if (this.attachment === BraceAttachment.Left)
-      return this.note.neume.bounds.x + this.note.bounds.x;
+      return (note.neume? note.neume.bounds.x : 0) + note.bounds.x;
     else
-      return this.note.neume.bounds.x + this.note.bounds.right();
+      return (note.neume? note.neume.bounds.x : 0) + note.bounds.right();
   }
 }
