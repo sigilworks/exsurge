@@ -1010,10 +1010,14 @@ export class ChantLine extends ChantLayoutElement {
     if (startBrace !== null) {
       if(this.custos) {
         // if the next end brace is on the first note following the line break, simply use it with the custos
+        // Do the same if there is only an accidental between
         // otherwise, make a new end brace to work for this one, and a new start brace for the next line.
-        var nextNote = notations[lastIndex].notes && notations[lastIndex].notes[0];
-        if(nextNote && nextNote.braceEnd) {
-          this.custos.braceEnd = nextNote.braceEnd;
+        var nextNotation = notations[lastIndex];
+        var nextNote = nextNotation.notes && nextNotation.notes[0];
+        var nextNoteButOne = notations[lastIndex+1].notes && notations[lastIndex+1].notes[0];
+        var braceEnd = (nextNote && nextNote.braceEnd) || (nextNotation.isAccidental && nextNoteButOne && nextNoteButOne.braceEnd);
+        if(braceEnd) {
+          this.custos.braceEnd = braceEnd;
           this.handleEndBrace(ctxt, this.custos);
         } else {
           this.braceStart = startBrace
