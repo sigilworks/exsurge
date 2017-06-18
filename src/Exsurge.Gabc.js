@@ -1286,7 +1286,7 @@ export class Gabc {
       }
     }
 
-    if(this.needToEndBrace && !note.braceStart && !note.braceEnd) {
+    if(this.needToEndBrace && !note.braceStart && !note.braceEnd && !/[xy#]/.test(c)) {
       note.braceEnd = new Markings.BracePoint(note, this.needToEndBrace.isAbove, this.needToEndBrace.shape, this.needToEndBrace.attachment === Markings.BraceAttachment.Left? Markings.BraceAttachment.Right : Markings.BraceAttachment.Left);
       note.braceEnd.automatic = true;
       delete this.needToEndBrace;
