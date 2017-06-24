@@ -458,6 +458,8 @@ export class ChantScore {
     if (this.needsLayout === false)
       return; // nothing to do here!
 
+    ctxt.updateHyphenWidth();
+
     // setup the context
     ctxt.activeClef = this.startingClef;
     ctxt.notations = this.notations;
@@ -487,6 +489,15 @@ export class ChantScore {
         setTimeout(() => finishedCallback(), 0);
 
       return; // nothing to do here!
+    }
+
+    // check for sane value of hyphen width:
+    ctxt.updateHyphenWidth();
+    if(ctxt.hyphenWidth / ctxt.lyricTextSize > 0.6) {
+      setTimeout(() => {
+        this.performLayoutAsync(ctxt, finishedCallback);
+      }, 100);
+      return;
     }
 
     // setup the context

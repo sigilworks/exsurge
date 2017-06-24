@@ -405,6 +405,14 @@ export class ChantContext {
     return '<style>' + this.createStyleCss(this) +'</style>';
   }
 
+  updateHyphenWidth() {
+    // measure the size of a hyphen for the lyrics
+    var hyphen = new Lyric(this, this.syllableConnector, LyricType.SingleSyllable);
+    this.hyphenWidth = hyphen.bounds.width;
+
+    this.minLyricWordSpacing = this.hyphenWidth;
+  }
+
   setGlyphScaling(glyphScaling) {
     this.glyphScaling = glyphScaling; 
 
@@ -416,11 +424,7 @@ export class ChantContext {
     this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
     this.episemaLineWeight = this.neumeLineWeight; // of horizontal episemae
 
-    // measure the size of a hyphen for the lyrics
-    var hyphen = new Lyric(this, this.syllableConnector, LyricType.SingleSyllable);
-    this.hyphenWidth = hyphen.bounds.width;
-
-    this.minLyricWordSpacing = this.hyphenWidth;
+    this.updateHyphenWidth();
 
     this.intraNeumeSpacing = this.staffInterval / 2.0;
   }
