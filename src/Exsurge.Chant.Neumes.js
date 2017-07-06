@@ -522,8 +522,10 @@ export class Apostropha extends Neume {
     if (note.shape === NoteShape.Stropha)
       return GlyphCode.Stropha;
 
-    if (note.liquescent !== LiquescentType.None)
-      return GlyphCode.StrophaLiquescent;
+    if (note.liquescent & LiquescentType.Ascending)
+      return GlyphCode.PunctumQuadratumAscLiquescent;
+    else if (note.liquescent & LiquescentType.Descending)
+      return GlyphCode.PunctumQuadratumDesLiquescent;
 
     if (note.shapeModifiers & NoteShapeModifiers.Cavum)
       return GlyphCode.PunctumCavum;
