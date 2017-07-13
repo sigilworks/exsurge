@@ -1051,7 +1051,7 @@ export class ChantLine extends ChantLayoutElement {
     // irrespective of lyrics.
     curr.bounds.x = prev.bounds.right() + prev.trailingSpace;
 
-    if(curr.hasLyrics() && !prev.isDivider && !prev.isAccidental &&
+    if(curr.hasLyrics() && !prev.isDivider && !prev.isAccidental && this.numNotationsOnLine > 0 &&
         (curr.lyrics[0].lyricType === LyricType.SingleSyllable || curr.lyrics[0].lyricType === LyricType.BeginningSyllable)) {
       curr.bounds.x += ctxt.intraNeumeSpacing * ctxt.intraSyllabicMultiplier;
     }
