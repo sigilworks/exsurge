@@ -545,7 +545,12 @@ export class ChantLine extends ChantLayoutElement {
 
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
-      var fitsOnLine = this.positionNotationElement(ctxt, this.lastLyrics, prev, curr, actualRightBoundary);
+      var extraWidth = 0;
+      if(ctxt.condenseLineFactor && ctxt.condenseLineFactor > 0) {
+        this.findNeumesToJustify([]);
+        extraWidth = this.toJustify.length * ctxt.condenseLineFactor;
+      }
+      var fitsOnLine = this.positionNotationElement(ctxt, this.lastLyrics, prev, curr, actualRightBoundary, extraWidth);
       if (fitsOnLine === false) {
 
         // first check for elements that cannot begin a system: dividers and custodes
@@ -1038,8 +1043,8 @@ export class ChantLine extends ChantLayoutElement {
   // returns true if positioning was able to fit the neume before rightNotationBoundary.
   // returns false if cannot fit before given right margin.
   // fixme: if this returns false, shouldn't we set the connectors on prev to be activated?!
-  positionNotationElement(ctxt, prevLyrics, prev, curr, rightNotationBoundary) {
-
+  positionNotationElement(ctxt, prevLyrics, prev, curr, rightNotationBoundary, extraWidth) {
+    rightNotationBoundary += extraWidth || 0;
     var i;
 
     // To begin we just place the current notation right after the previous,
@@ -1133,7 +1138,7 @@ export class ChantLine extends ChantLayoutElement {
     } while(curr.lyrics.length > 1 && hasShifted && atLeastOneWithoutConnector);
 
     if (curr.bounds.right() + curr.trailingSpace < rightNotationBoundary &&
-        curr.lyrics[0].getRight() <= this.staffRight) {
+        curr.lyrics[0].getRight() <= this.staffRight + extraWidth) {
       if(prev.isAccidental) {
         // move the previous accidental up next to the current note:
         prev.bounds.x = curr.bounds.x - prev.bounds.width - prev.trailingSpace;

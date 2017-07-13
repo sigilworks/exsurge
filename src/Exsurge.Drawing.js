@@ -307,6 +307,9 @@ export class ChantContext {
     // max space to add between notations when justifying, in multiples of this.staffInterval
     this.maxExtraSpaceInStaffIntervals = 1;
 
+    // amount of space allowed to be taken away from any space that is allowed to add space when justifying, in multiples of staffLineWeight
+    this.condenseLineAmount = 0;
+
     // for keeping track of the clef
     this.activeClef = null;
 
@@ -423,6 +426,8 @@ export class ChantContext {
     this.neumeLineWeight = this.staffLineWeight; // the weight of connecting lines in the glyphs.
     this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
     this.episemaLineWeight = this.neumeLineWeight; // of horizontal episemae
+
+    this.condenseLineFactor = this.staffLineWeight * this.condenseLineAmount;
 
     this.updateHyphenWidth();
 
