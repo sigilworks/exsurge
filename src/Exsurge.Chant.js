@@ -472,8 +472,11 @@ export class ChantScore {
       this.annotation.recalculateMetrics(ctxt);
 
     for (var i = 0; i < this.notations.length; i++) {
-      this.notations[i].performLayout(ctxt);
-      ctxt.currNotationIndex++;
+      var notation = this.notations[i];
+      if(notation.needsLayout) {
+        ctxt.currNotationIndex = i;
+        notation.performLayout(ctxt);
+      }
     }
 
     this.needsLayout = false;
