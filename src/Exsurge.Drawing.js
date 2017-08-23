@@ -23,7 +23,7 @@
 // THE SOFTWARE.
 //
 
-import { Units, Pitch, Point, Rect, Margins, Size, Step } from 'Exsurge.Core'
+import { Units, Pitch, Point, Rect, Margins, Size, Step, getCssForProperties } from 'Exsurge.Core'
 import { Glyphs } from 'Exsurge.Glyphs'
 import { Latin } from 'Exsurge.Text'
 
@@ -1015,7 +1015,7 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
 
 var TextSpan = function(text, properties) {
   if (typeof properties === 'undefined' || properties === null)
-    properties = "";
+    properties = {};
 
   this.text = text;
   this.properties = properties;
@@ -1027,20 +1027,24 @@ var redMarkup = "^";
 var smallCapsMarkup = "%";
 
 var fontStyleDictionary = {
-  "*": 'font-weight:bold;',
-  "_": 'font-style:italic;',
-  "^": 'fill:#f00;', // SVG text color is set by the fill property
-  "%": "font-variant:small-caps;font-feature-settings:'smcp';-webkit-font-feature-settings:'smcp';"
-}
+  "*": {'font-weight':'bold'},
+  "_": {'font-style':'italic'},
+  "^": {'fill':'#f00'}, // SVG text color is set by the fill property
+  "%": {
+    "font-variant":"small-caps",
+    "font-feature-settings":"'smcp'",
+    "-webkit-font-feature-settings":"'smcp'"
+  }
+};
 
-function MarkupStackFrame(symbol, startIndex, properties) {
+function MarkupStackFrame(symbol, startIndex, properties = {}) {
   this.symbol = symbol;
   this.startIndex = startIndex;
   this.properties = properties;
 }
 
 MarkupStackFrame.createStackFrame = function(symbol, startIndex) {
-  return new MarkupStackFrame(symbol, startIndex, fontStyleDictionary[symbol] || "");
+  return new MarkupStackFrame(symbol, startIndex, fontStyleDictionary[symbol]);
 };
 
 
@@ -1099,12 +1103,12 @@ export class TextElement extends ChantLayoutElement {
 
       that.text += spanText;
 
-      var properties = "";
+      var properties = {};
       for (var i = 0; i < markupStack.length; i++)
-        properties += markupStack[i].properties;
+        Object.assign(properties, markupStack[i].properties);
 
       if (extraProperties)
-        properties = properties + extraProperties;
+        Object.assign(properties, extraProperties);
 
       that.spans.push(new TextSpan(spanText, properties));
     };
@@ -1118,7 +1122,10 @@ export class TextElement extends ChantLayoutElement {
 
       // non-matching symbols first
       if (match[1]) {
-        closeSpan(match[1] + ".", "font-family:'Exsurge Characters';fill:#f00;");
+        closeSpan(match[1] + ".", {
+          "font-family":"'Exsurge Characters'",
+          "fill":"#f00"
+        });
       } else if (markupStack.length === 0) {
         // otherwise we're dealing with matching markup delimeters
         // if this is our first markup frame, then just create an inline for preceding text and push the stack frame
@@ -1171,20 +1178,20 @@ export class TextElement extends ChantLayoutElement {
       var font = '',
           span = this.spans[i],
           myText = span.text.slice(0, length - subStringLength);
-      if(span.properties.indexOf('font-style:italic;') >= 0) font += 'italic ';
-      if(span.properties.indexOf("font-variant:small-caps;") >= 0) font += 'small-caps ';
-      if(span.properties.indexOf('font-weight:bold;') >= 0) font += 'bold ';
-      var match = span.properties.match(/(?:^|;)\s*font-size:([^;]+)(?:$|;)/);
-      if(match) {
-        font += match[1] + ' ';
+      if(span.properties['font-style'] === 'italic') font += 'italic ';
+      if(span.properties['font-variant'] === 'small-caps') font += 'small-caps ';
+      if(span.properties['font-weight'] === 'bold') font += 'bold ';
+      var fontSize = span.properties['font-size'];
+      if(fontSize) {
+        font += fontSize + ' ';
       } else {
         font += this.fontSize + 'px ';
       }
-      match = span.properties.match(/(?:^|;)\s*font-family:([^;]+)(?:$|;)/);
-      if(match) {
-        font += match[1];
+      var fontFamily = span.properties['font-family'];
+      if(fontFamily) {
+        font += fontFamily;
       } else {
-        font += this.fontFamily
+        font += this.fontFamily;
       }
       canvasCtxt.font = font;
       var metrics = canvasCtxt.measureText(myText, this.bounds.x, this.bounds.y);
@@ -1224,7 +1231,7 @@ export class TextElement extends ChantLayoutElement {
   }
 
   getExtraStyleProperties(ctxt) {
-    return "";
+    return {};
   }
 
   static escapeForTspan(string) {
@@ -1244,8 +1251,9 @@ export class TextElement extends ChantLayoutElement {
 
     canvasCtxt.font = this.fontSize + "px " + this.fontFamily;
 
-    for (var i = 0; i < this.spans.length; i++)
+    for (var i = 0; i < this.spans.length; i++) {
       canvasCtxt.fillText(this.spans[i].text, this.bounds.x, this.bounds.y);
+    }
   }
 
   createSvgNode(ctxt) {
@@ -1255,13 +1263,12 @@ export class TextElement extends ChantLayoutElement {
     for (var i = 0; i < this.spans.length; i++) {
       var options = {};
 
-      if (this.spans[i].properties)
-        options['style'] = this.spans[i].properties;
+      options['style'] = getCssForProperties(this.spans[i].properties);
 
       spans.push( QuickSvg.createNode('tspan', options, this.spans[i].text) );
     }
 
-    var styleProperties = this.getExtraStyleProperties(ctxt);
+    var styleProperties = getCssForProperties(this.getExtraStyleProperties(ctxt));
 
     return QuickSvg.createNode('text', {
       'source': this,
@@ -1282,13 +1289,12 @@ export class TextElement extends ChantLayoutElement {
     for (var i = 0; i < this.spans.length; i++) {
       var options = {};
 
-      if (this.spans[i].properties)
-        options['style'] = this.spans[i].properties;
+      options['style'] = getCssForProperties(this.spans[i].properties);
 
       spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(this.spans[i].text));
     }
 
-    var styleProperties = this.getExtraStyleProperties(ctxt);
+    var styleProperties = getCssForProperties(this.getExtraStyleProperties(ctxt));
 
     return QuickSvg.createFragment('text', {
       'source-index': this.sourceIndex,
@@ -1540,7 +1546,7 @@ export class Lyric extends TextElement {
     var props = super.getExtraStyleProperties();
 
     if (this.lyricType === LyricType.Directive && ctxt.autoColor === true)
-      props += "fill:#f00;";
+      props = Object.assign({}, props, {fill:'#f00'});
 
     return props;
   }

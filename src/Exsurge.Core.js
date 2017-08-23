@@ -326,3 +326,7 @@ export function generateRandomGuid() {
   }
   return s4() + s4();
 }
+
+export function getCssForProperties(properties) {
+  return Object.keys(properties).map(key => `${key}: ${properties[key]};`).join('');
+}
