@@ -149,6 +149,14 @@ export class HorizontalEpisema extends ChantLayoutElement {
     this.origin.y = 0;
   }
 
+  draw(ctxt) {
+    var canvasCtxt = ctxt.canvasCtxt;
+
+    canvasCtxt.fillStyle = ctxt.neumeLineColor;
+
+    canvasCtxt.fillRect(this.bounds.x, this.bounds.y, this.bounds.width, this.bounds.height);
+  }
+
   createSvgNode(ctxt) {
 
     return QuickSvg.createNode('rect', {

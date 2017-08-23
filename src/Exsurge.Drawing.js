@@ -490,7 +490,7 @@ export class ChantLayoutElement {
 
   // draws the element on an html5 canvas
   draw(ctxt) {
-
+    throw "ChantLayout Elements must implement draw(ctxt)";
   }
 
   // returns svg element
