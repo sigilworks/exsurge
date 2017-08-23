@@ -323,16 +323,9 @@ export class ChantContext {
     this.canvasCtxt = this.canvas.getContext("2d");
 
     // calculate the pixel ratio for drawing to a canvas
-    var dpr = window.devicePixelRatio || 1.0;
-    var bsr = this.canvasCtxt.webkitBackingStorePixelRatio ||
-              this.canvasCtxt.mozBackingStorePixelRatio ||
-              this.canvasCtxt.msBackingStorePixelRatio ||
-              this.canvasCtxt.oBackingStorePixelRatio ||
-              this.canvasCtxt.backingStorePixelRatio || 1.0;
+    this.pixelRatio = window.devicePixelRatio || 1.0;
 
-    this.pixelRatio = dpr / bsr;
-
-    this.canvasCtxt.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
+    //this.canvasCtxt.scale(this.pixelRatio, this.pixelRatio);
 
     if(textMeasuringStrategy === TextMeasuringStrategy.Svg) {
       this.svgTextMeasurer = QuickSvg.svg(0,0);

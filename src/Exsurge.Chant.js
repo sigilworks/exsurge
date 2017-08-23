@@ -587,6 +587,12 @@ export class ChantScore {
 
     canvasCtxt.clearRect(0, 0, ctxt.canvas.width, ctxt.canvas.height);
 
+    ctxt.canvas.width = this.bounds.width * ctxt.pixelRatio;
+    ctxt.canvas.height = this.bounds.height * ctxt.pixelRatio;
+
+    ctxt.canvas.style.width = this.bounds.width + 'px'
+    ctxt.canvas.style.height = this.bounds.height + 'px';
+    canvasCtxt.scale(ctxt.pixelRatio, ctxt.pixelRatio);
     canvasCtxt.translate(this.bounds.x, this.bounds.y);
 
     for (var i = 0; i < this.lines.length; i++)
