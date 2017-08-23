@@ -531,13 +531,9 @@ export class DividerLineVisualizer extends ChantLayoutElement {
   draw(ctxt) {
     var canvasCtxt = ctxt.canvasCtxt;
 
-    canvasCtxt.lineWidth = this.bounds.width;
-    canvasCtxt.strokeStyle = ctxt.dividerLineColor;
+    canvasCtxt.fillStyle = ctxt.dividerLineColor;
 
-    canvasCtxt.beginPath();
-    canvasCtxt.moveTo(this.bounds.x - this.origin.x, this.bounds.y);
-    canvasCtxt.lineTo(this.bounds.x - this.origin.x, this.bounds.y + this.bounds.height);
-    canvasCtxt.stroke();
+    canvasCtxt.fillRect(this.bounds.x, this.bounds.y, ctxt.dividerLineWeight, this.bounds.height);
   }
 
   createSvgNode(ctxt) {
@@ -610,19 +606,9 @@ export class NeumeLineVisualizer extends ChantLayoutElement {
   draw(ctxt) {
     var canvasCtxt = ctxt.canvasCtxt;
 
-    canvasCtxt.lineWidth = this.bounds.width;
-    canvasCtxt.strokeStyle = ctxt.neumeLineColor;
+    canvasCtxt.fillStyle = ctxt.neumeLineColor;
 
-    canvasCtxt.beginPath();
-    
-    // since the canvas context draws strokes centered on the path
-    // and neume lines are supposed to be draw left aligned,
-    // we need to offset the line by half the line width.
-    var x = this.bounds.x + this.bounds.width / 2;
-
-    canvasCtxt.moveTo(x, this.bounds.y);
-    canvasCtxt.lineTo(x, this.bounds.y + this.bounds.height);
-    canvasCtxt.stroke();
+    canvasCtxt.fillRect(this.bounds.x, this.bounds.y, ctxt.neumeLineWeight, this.bounds.height);
   }
 
   createSvgNode(ctxt) {
@@ -677,13 +663,8 @@ export class VirgaLineVisualizer extends ChantLayoutElement {
   draw(ctxt) {
     var canvasCtxt = ctxt.canvasCtxt;
 
-    canvasCtxt.lineWidth = this.bounds.width;
-    canvasCtxt.strokeStyle = ctxt.neumeLineColor;
-
-    canvasCtxt.beginPath();
-    canvasCtxt.moveTo(this.bounds.x, this.bounds.y);
-    canvasCtxt.lineTo(this.bounds.x, this.bounds.y + this.bounds.height);
-    canvasCtxt.stroke();
+    canvasCtxt.fillStyle = ctxt.neumeLineColor;
+    canvasCtxt.fillRect(this.bounds.x, this.bounds.y, ctxt.neumeLineWeight, this.bounds.height);
   }
 
   createSvgNode(ctxt) {

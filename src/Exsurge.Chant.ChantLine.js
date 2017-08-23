@@ -207,15 +207,14 @@ export class ChantLine extends ChantLayoutElement {
 
     canvasCtxt.translate(this.bounds.x, this.bounds.y);
 
-    // draw the chant lines
+    // draw the staff lines
     var i, x1 = this.staffLeft, x2 = this.staffRight, y;
-
-    canvasCtxt.lineWidth = Math.round(ctxt.staffLineWeight);
-    canvasCtxt.strokeStyle = ctxt.staffLineWeight;
+    canvasCtxt.lineWidth = ctxt.staffLineWeight;
+    canvasCtxt.strokeStyle = ctxt.staffLineColor;
 
     for (i = -3; i <= 3; i += 2) {
 
-      y = Math.round(ctxt.staffInterval * i) + 0.5;
+      y = ctxt.staffInterval * i;
 
       canvasCtxt.beginPath();
       canvasCtxt.moveTo(x1, y);
