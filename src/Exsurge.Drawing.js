@@ -1168,6 +1168,16 @@ export class TextElement extends ChantLayoutElement {
       closeSpan(text);
   }
 
+  getCanvasFontForProperties(properties = {}) {
+    var font = '';
+    if(properties['font-style'] === 'italic') font += 'italic ';
+    if(properties['font-variant'] === 'small-caps') font += 'small-caps ';
+    if(properties['font-weight'] === 'bold') font += 'bold ';
+    font += (properties['font-size'] || `${this.fontSize}px`) + ' ';
+    font += properties['font-family'] || this.fontFamily;
+    return font;
+  }
+
   measureSubstring(ctxt, length) {
     if(length === 0) return 0;
     if(!length) length = Infinity;
@@ -1175,25 +1185,9 @@ export class TextElement extends ChantLayoutElement {
     var width = 0;
     var subStringLength = 0;
     for (var i = 0; i < this.spans.length; i++) {
-      var font = '',
-          span = this.spans[i],
+      var span = this.spans[i],
           myText = span.text.slice(0, length - subStringLength);
-      if(span.properties['font-style'] === 'italic') font += 'italic ';
-      if(span.properties['font-variant'] === 'small-caps') font += 'small-caps ';
-      if(span.properties['font-weight'] === 'bold') font += 'bold ';
-      var fontSize = span.properties['font-size'];
-      if(fontSize) {
-        font += fontSize + ' ';
-      } else {
-        font += this.fontSize + 'px ';
-      }
-      var fontFamily = span.properties['font-family'];
-      if(fontFamily) {
-        font += fontFamily;
-      } else {
-        font += this.fontFamily;
-      }
-      canvasCtxt.font = font;
+      canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
       var metrics = canvasCtxt.measureText(myText, this.bounds.x, this.bounds.y);
       width += metrics.width;
       subStringLength += myText.length;
@@ -1249,10 +1243,12 @@ export class TextElement extends ChantLayoutElement {
     else
       canvasCtxt.textAlign = 'start';
 
-    canvasCtxt.font = this.fontSize + "px " + this.fontFamily;
-
     for (var i = 0; i < this.spans.length; i++) {
-      canvasCtxt.fillText(this.spans[i].text, this.bounds.x, this.bounds.y);
+      var span = this.spans[i];
+      var properties = Object.assign({}, this.getExtraStyleProperties(ctxt), span.properties);
+      canvasCtxt.font = this.getCanvasFontForProperties(properties);
+      canvasCtxt.fillStyle = properties.fill || '#000';
+      canvasCtxt.fillText(span.text, this.bounds.x, this.bounds.y);
     }
   }
 
