@@ -581,18 +581,13 @@ export class ChantScore {
       finishedCallback(this);
   }
 
-  draw(ctxt) {
+  draw(ctxt, scale = 1) {
 
     var canvasCtxt = ctxt.canvasCtxt;
 
     canvasCtxt.clearRect(0, 0, ctxt.canvas.width, ctxt.canvas.height);
 
-    ctxt.canvas.width = this.bounds.width * ctxt.pixelRatio;
-    ctxt.canvas.height = this.bounds.height * ctxt.pixelRatio;
-
-    ctxt.canvas.style.width = this.bounds.width + 'px'
-    ctxt.canvas.style.height = this.bounds.height + 'px';
-    canvasCtxt.scale(ctxt.pixelRatio, ctxt.pixelRatio);
+    ctxt.setCanvasSize(this.bounds.width, this.bounds.height, scale);
     canvasCtxt.translate(this.bounds.x, this.bounds.y);
 
     for (var i = 0; i < this.lines.length; i++)

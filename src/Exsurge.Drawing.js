@@ -471,13 +471,14 @@ export class ChantContext {
     return null;
   }
 
-  setCanvasSize(width, height) {
-    this.canvas.width = width * this.pixelRatio;
-    this.canvas.height = height * this.pixelRatio;
-    this.canvas.style.width = width + "px";
-    this.canvas.style.height = height + "px";
+  setCanvasSize(width, height, scale = 1) {
+    this.canvas.style.width = (width * scale) + "px";
+    this.canvas.style.height = (height * scale) + "px";
+    scale *= this.pixelRatio;
+    this.canvas.width = width * scale;
+    this.canvas.height = height * scale;
 
-    this.canvasCtxt.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
+    this.canvasCtxt.setTransform(scale, 0, 0, scale, 0, 0);
   }
 }
 
