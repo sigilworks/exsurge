@@ -283,13 +283,25 @@ export class ChantContext {
     this.lyricTextFont = "'Palatino Linotype', 'Book Antiqua', Palatino, serif";
     this.lyricTextColor = "#000";
 
+    this.rubricColor = "#d00";
     this.specialCharProperties = {
       "font-family":"'Exsurge Characters'",
-      "fill":"#f00"
+      "fill":this.rubricColor
     };
     this.textBeforeSpecialChar = '';
     this.textAfterSpecialChar = '.';
     this.specialCharText = char => char;
+
+    this.fontStyleDictionary = {
+      "*": {'font-weight':'bold'},
+      "_": {'font-style':'italic'},
+      "^": {'fill':this.rubricColor},
+      "%": {
+        "font-variant":"small-caps",
+        "font-feature-settings":"'smcp'",
+        "-webkit-font-feature-settings":"'smcp'"
+      }
+    };
 
     this.alTextSize = this.lyricTextSize;
     this.alTextFont = this.lyricTextFont;
@@ -384,6 +396,12 @@ export class ChantContext {
     this.autoColor = true;
 
     this.insertFontsInDoc();
+  }
+
+  setRubricColor(color) {
+    this.rubricColor = color;
+    this.specialCharProperties.fill = color;
+    this.fontStyleDictionary["^"].fill = color;
   }
 
   createStyleCss() {
@@ -1016,25 +1034,14 @@ var italicMarkup = "_";
 var redMarkup = "^";
 var smallCapsMarkup = "%";
 
-var fontStyleDictionary = {
-  "*": {'font-weight':'bold'},
-  "_": {'font-style':'italic'},
-  "^": {'fill':'#f00'}, // SVG text color is set by the fill property
-  "%": {
-    "font-variant":"small-caps",
-    "font-feature-settings":"'smcp'",
-    "-webkit-font-feature-settings":"'smcp'"
-  }
-};
-
 function MarkupStackFrame(symbol, startIndex, properties = {}) {
   this.symbol = symbol;
   this.startIndex = startIndex;
   this.properties = properties;
 }
 
-MarkupStackFrame.createStackFrame = function(symbol, startIndex) {
-  return new MarkupStackFrame(symbol, startIndex, fontStyleDictionary[symbol]);
+MarkupStackFrame.createStackFrame = function(ctxt, symbol, startIndex) {
+  return new MarkupStackFrame(symbol, startIndex, ctxt.fontStyleDictionary[symbol]);
 };
 
 
@@ -1119,7 +1126,7 @@ export class TextElement extends ChantLayoutElement {
         if (markupSymbol === '*' && !match[3]) // we are only strict with the asterisk, because there are cases when it needs to be displayed rather than count as a markup symbol
           continue;
         closeSpan(text.substring(spanStartIndex, match.index));
-        markupStack.push(MarkupStackFrame.createStackFrame(markupSymbol, match.index));
+        markupStack.push(MarkupStackFrame.createStackFrame(ctxt, markupSymbol, match.index));
       } else {
 
         if (markupStack[markupStack.length - 1].symbol === markupSymbol) {
@@ -1137,7 +1144,7 @@ export class TextElement extends ChantLayoutElement {
           if (markupSymbol === '*' && !match[3])
             continue;
           closeSpan(text.substring(spanStartIndex, match.index));
-          markupStack.push(MarkupStackFrame.createStackFrame(markupSymbol, match.index));
+          markupStack.push(MarkupStackFrame.createStackFrame(ctxt, markupSymbol, match.index));
         }
       }
 
@@ -1534,7 +1541,7 @@ export class Lyric extends TextElement {
     var props = super.getExtraStyleProperties();
 
     if (this.lyricType === LyricType.Directive && ctxt.autoColor === true)
-      props = Object.assign({}, props, {fill:'#f00'});
+      props = Object.assign({}, props, {fill: ctxt.rubricColor});
 
     return props;
   }
