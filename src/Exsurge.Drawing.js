@@ -283,6 +283,14 @@ export class ChantContext {
     this.lyricTextFont = "'Palatino Linotype', 'Book Antiqua', Palatino, serif";
     this.lyricTextColor = "#000";
 
+    this.specialCharProperties = {
+      "font-family":"'Exsurge Characters'",
+      "fill":"#f00"
+    };
+    this.textBeforeSpecialChar = '';
+    this.textAfterSpecialChar = '.';
+    this.specialCharText = char => char;
+
     this.alTextSize = this.lyricTextSize;
     this.alTextFont = this.lyricTextFont;
     this.alTextColor = this.lyricTextColor;
@@ -1103,10 +1111,7 @@ export class TextElement extends ChantLayoutElement {
 
       // non-matching symbols first
       if (match[1]) {
-        closeSpan(match[1] + ".", {
-          "font-family":"'Exsurge Characters'",
-          "fill":"#f00"
-        });
+        closeSpan(ctxt.textBeforeSpecialChar + ctxt.specialCharText(match[1]) + ctxt.textAfterSpecialChar, ctxt.specialCharProperties);
       } else if (markupStack.length === 0) {
         // otherwise we're dealing with matching markup delimeters
         // if this is our first markup frame, then just create an inline for preceding text and push the stack frame
@@ -1224,13 +1229,18 @@ export class TextElement extends ChantLayoutElement {
     else
       canvasCtxt.textAlign = 'start';
 
+    var translateWidth = 0;
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i];
       var properties = Object.assign({}, this.getExtraStyleProperties(ctxt), span.properties);
       canvasCtxt.font = this.getCanvasFontForProperties(properties);
       canvasCtxt.fillStyle = properties.fill || '#000';
       canvasCtxt.fillText(span.text, this.bounds.x, this.bounds.y);
+      var metrics = canvasCtxt.measureText(span.text, this.bounds.x, this.bounds.y);
+      translateWidth -= metrics.width;
+      canvasCtxt.translate(metrics.width, 0);
     }
+    canvasCtxt.translate(translateWidth, 0);
   }
 
   createSvgNode(ctxt) {
