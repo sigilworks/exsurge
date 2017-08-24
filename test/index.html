@@ -73,7 +73,7 @@
     // };
     //
 
-    var updateChant = function() {
+    function updateChant() {
       if (score) {
         exsurge.Gabc.updateMappingsFromSource(ctxt, score.mappings, gabcSource.value);
         score.updateNotations(ctxt);
@@ -86,16 +86,28 @@
       layoutChant();
     }
 
-    var layoutChant = function() {
-      // perform layout on the chant
-      score.performLayoutAsync(ctxt, function() {
-        score.layoutChantLines(ctxt, chantContainer.clientWidth, function() {
-          // render the score to svg code
-          while(chantContainer.firstChild) chantContainer.removeChild(chantContainer.firstChild);
-          drawSvg();
-          drawCanvas();
-        });
+    function afterLayout() {
+      score.layoutChantLines(ctxt, chantContainer.clientWidth, function() {
+        // render the score to svg code
+        while(chantContainer.firstChild) chantContainer.removeChild(chantContainer.firstChild);
+        drawSvg();
+        drawCanvas();
       });
+    }
+
+    function layoutChantSync() {
+      // perform layout on the chant
+      score.performLayout(ctxt);
+      afterLayout();
+    }
+
+    function layoutChantAsync() {
+      // perform layout on the chant
+      score.performLayoutAsync(ctxt, afterLayout);
+    }
+
+    function layoutChant() {
+      layoutChantAsync();
     }
 
     function drawSvg() {

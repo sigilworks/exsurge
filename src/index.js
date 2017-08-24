@@ -30,7 +30,7 @@ import { Gabc } from 'Exsurge.Gabc'
 
 // client side support
 
-if (typeof document !== 'undefined') {
+if (typeof document !== 'undefined' && document.registerElement) {
   var ChantVisualElementPrototype = Object.create(HTMLElement.prototype);
 
   ChantVisualElementPrototype.createdCallback = function() {
@@ -80,7 +80,6 @@ if (typeof document !== 'undefined') {
     
   }
 
-  document.registerElement = document.registerElement || function() {};
   // register the custom element
   document.registerElement('chant-visual', {
     prototype: ChantVisualElementPrototype
