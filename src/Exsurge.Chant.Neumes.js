@@ -448,8 +448,8 @@ export class Neume extends ChantNotationElement {
   }
   positionClivisMorae(firstNote, secondNote) {
     // 1. morae need to be lined up if both notes have morae
-    if (secondNote.morae.length) {
-      var morae = secondNote.morae;
+    var morae = firstNote.morae.concat(secondNote.morae);
+    if (morae.length) {
       if(morae.length > 1) morae[0].horizontalOffset += secondNote.bounds.right() - firstNote.bounds.right();
       if(firstNote.staffPosition - secondNote.staffPosition === 1 &&
           Math.abs(secondNote.staffPosition % 2) === 1) {
