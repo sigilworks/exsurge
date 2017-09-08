@@ -23,13 +23,13 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from 'Exsurge.Core'
-import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
-import { QuickSvg, ChantLayoutElement, ChantNotationElement, GlyphCode, GlyphVisualizer, Lyric, Annotation, DropCap } from 'Exsurge.Drawing'
-import { ChantLine } from 'Exsurge.Chant.ChantLine'
-import { AccidentalType } from 'Exsurge.Chant.Signs'
-import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema, BraceStart, BraceEnd } from 'Exsurge.Chant.Markings'
-import { Gabc } from 'Exsurge.Gabc'
+import * as Exsurge from './Exsurge.Core.js'
+import { Step, Pitch, Rect, Point, Margins } from './Exsurge.Core.js'
+import { QuickSvg, ChantLayoutElement, ChantNotationElement, GlyphCode, GlyphVisualizer, Lyric, Annotation, DropCap } from './Exsurge.Drawing.js'
+import { ChantLine } from './Exsurge.Chant.ChantLine.js'
+import { AccidentalType } from './Exsurge.Chant.Signs.js'
+import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema } from './Exsurge.Chant.Markings.js'
+import { Gabc } from './Exsurge.Gabc.js'
 
 export var LiquescentType = {
   None: 0,

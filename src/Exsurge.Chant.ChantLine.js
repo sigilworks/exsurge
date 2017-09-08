@@ -23,13 +23,13 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from 'Exsurge.Core'
-import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
-import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, LyricType, DropCap } from 'Exsurge.Drawing'
-import { ChantLineBreak, TextOnly, NoteShape } from 'Exsurge.Chant'
-import { Glyphs } from 'Exsurge.Glyphs'
-import { Custos, DoubleBar } from 'Exsurge.Chant.Signs'
-import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema, BraceShape, BracePoint, BraceAttachment } from 'Exsurge.Chant.Markings'
+import * as Exsurge from './Exsurge.Core.js'
+import { Step, Pitch, Rect, Point, Margins } from './Exsurge.Core.js'
+import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, LyricType, DropCap } from './Exsurge.Drawing.js'
+import { ChantLineBreak, TextOnly, NoteShape } from './Exsurge.Chant.js'
+import { Glyphs } from './Exsurge.Glyphs.js'
+import { Custos, DoubleBar } from './Exsurge.Chant.Signs.js'
+import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema, BraceShape, BracePoint, BraceAttachment } from './Exsurge.Chant.Markings.js'
 
 
 // a chant line represents one staff line on the page. ChantLines are created by the score

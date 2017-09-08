@@ -14,7 +14,7 @@
   <![endif]-->
 </head>
 
-<body onload="updateChant()" onresize="layoutChant()">
+<body onresize="layoutChant()">
 
   <h1>exsurge Test Page</h1>
 
@@ -29,9 +29,8 @@
   <div id="chant-canvas-container">
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/document-register-element/0.5.3/document-register-element.js">/* W3C Custom Elements */</script>
-  <script type="text/javascript" src="../dist/exsurge.js"></script>
-  <script type="text/javascript">
-
+  <script type="module">
+    import * as exsurge from '../src/index.js'
     /* testing exsurge */
     var ctxt = new exsurge.ChantContext();
 
@@ -78,7 +77,7 @@
         exsurge.Gabc.updateMappingsFromSource(ctxt, score.mappings, gabcSource.value);
         score.updateNotations(ctxt);
       } else {
-        mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabcSource.value);
+        var mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabcSource.value);
         score = new exsurge.ChantScore(ctxt, mappings, true);
         score.annotation = new exsurge.Annotation(ctxt, "%V%");
       }
@@ -117,6 +116,9 @@
     function drawCanvas() {
       score.draw(ctxt);
     }
+    window.layoutChant = layoutChant;
+
+    updateChant();
   </script>
 </body>
 </html>

@@ -24,12 +24,12 @@
 // THE SOFTWARE.
 //
 
-import { Units, Pitch, Point, Rect, Margins, Size, Step } from 'Exsurge.Core'
-import { LyricType, Lyric, LyricArray, AboveLinesText } from 'Exsurge.Drawing'
-import { Note, LiquescentType, NoteShape, NoteShapeModifiers, ChantMapping, ChantScore, ChantDocument, Clef, DoClef, FaClef, TextOnly, ChantLineBreak } from 'Exsurge.Chant'
-import * as Markings from 'Exsurge.Chant.Markings'
-import * as Signs from 'Exsurge.Chant.Signs'
-import * as Neumes from 'Exsurge.Chant.Neumes'
+import { Units, Pitch, Point, Rect, Margins, Size, Step } from './Exsurge.Core.js'
+import { LyricType, Lyric, LyricArray, AboveLinesText } from './Exsurge.Drawing.js'
+import { Note, LiquescentType, NoteShape, NoteShapeModifiers, ChantMapping, ChantScore, ChantDocument, Clef, DoClef, FaClef, TextOnly, ChantLineBreak } from './Exsurge.Chant.js'
+import * as Markings from './Exsurge.Chant.Markings.js'
+import * as Signs from './Exsurge.Chant.Signs.js'
+import * as Neumes from './Exsurge.Chant.Neumes.js'
 
 // reusable reg exps
 var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;

@@ -23,8 +23,8 @@
 // THE SOFTWARE.
 //
 
-import { Step } from 'Exsurge.Core'
-import { GlyphCode, GlyphVisualizer, DividerLineVisualizer, ChantNotationElement } from 'Exsurge.Drawing'
+import { Step } from './Exsurge.Core.js'
+import { GlyphCode, GlyphVisualizer, DividerLineVisualizer, ChantNotationElement } from './Exsurge.Drawing.js'
 
 /*
  *

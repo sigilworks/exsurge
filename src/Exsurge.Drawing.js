@@ -23,13 +23,14 @@
 // THE SOFTWARE.
 //
 
-import { Units, Pitch, Point, Rect, Margins, Size, Step, getCssForProperties } from 'Exsurge.Core'
-import { Glyphs } from 'Exsurge.Glyphs'
-import { Latin } from 'Exsurge.Text'
+import { Units, Pitch, Point, Rect, Margins, Size, Step, getCssForProperties } from './Exsurge.Core.js'
+import { Glyphs } from './Exsurge.Glyphs.js'
+import { Latin } from './Exsurge.Text.js'
 
 
 // load in the web font for special chant characters here:
-var __exsurgeCharactersFont = require("url?limit=30000!../assets/fonts/ExsurgeChar.otf");
+var require;
+var __exsurgeCharactersFont = require? require("url?limit=30000!../assets/fonts/ExsurgeChar.otf") : "../assets/fonts/ExsurgeChar.otf";
 
 
 export let GlyphCode = {

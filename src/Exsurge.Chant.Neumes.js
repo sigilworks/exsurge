@@ -23,12 +23,12 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from 'Exsurge.Core'
-import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
-import { QuickSvg, ChantLayoutElement, ChantNotationElement, GlyphCode, GlyphVisualizer, NeumeLineVisualizer, VirgaLineVisualizer, HorizontalEpisemaLineVisualizer, CurlyBraceVisualizer } from 'Exsurge.Drawing'
-import { Note, LiquescentType, NoteShape, NoteShapeModifiers } from 'Exsurge.Chant'
-import { MarkingPositionHint, HorizontalEpisema, Mora } from 'Exsurge.Chant.Markings'
-import { Glyphs } from 'Exsurge.Glyphs'
+import * as Exsurge from './Exsurge.Core.js'
+import { Step, Pitch, Rect, Point, Margins } from './Exsurge.Core.js'
+import { QuickSvg, ChantLayoutElement, ChantNotationElement, GlyphCode, GlyphVisualizer, NeumeLineVisualizer, VirgaLineVisualizer, CurlyBraceVisualizer } from './Exsurge.Drawing.js'
+import { Note, LiquescentType, NoteShape, NoteShapeModifiers } from './Exsurge.Chant.js'
+import { MarkingPositionHint, HorizontalEpisema, Mora } from './Exsurge.Chant.Markings.js'
+import { Glyphs } from './Exsurge.Glyphs.js'
 
 
 class NeumeBuilder {

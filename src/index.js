@@ -25,8 +25,8 @@
 
 'use strict';
 
-import { Annotation, ChantContext } from 'Exsurge.Drawing'
-import { Gabc } from 'Exsurge.Gabc'
+import { Annotation, ChantContext } from './Exsurge.Drawing.js'
+import { Gabc } from './Exsurge.Gabc.js'
 
 // client side support
 
@@ -86,13 +86,13 @@ if (typeof document !== 'undefined' && document.registerElement) {
   });
 }
 
-export * from 'Exsurge.Core'
-export * from 'Exsurge.Text'
-export * from 'Exsurge.Glyphs'
-export * from 'Exsurge.Drawing'
-export * from 'Exsurge.Chant'
-export * from 'Exsurge.Chant.Markings'
-export * from 'Exsurge.Chant.Signs'
-export * from 'Exsurge.Chant.Neumes'
-export * from 'Exsurge.Gabc'
+export * from './Exsurge.Core.js'
+export * from './Exsurge.Text.js'
+export * from './Exsurge.Glyphs.js'
+export * from './Exsurge.Drawing.js'
+export * from './Exsurge.Chant.js'
+export * from './Exsurge.Chant.Markings.js'
+export * from './Exsurge.Chant.Signs.js'
+export * from './Exsurge.Chant.Neumes.js'
+export * from './Exsurge.Gabc.js'
 

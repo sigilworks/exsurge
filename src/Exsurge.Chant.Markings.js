@@ -23,9 +23,9 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from 'Exsurge.Core'
-import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer } from 'Exsurge.Drawing'
-import { Note, NoteShape } from 'Exsurge.Chant'
+import * as Exsurge from './Exsurge.Core.js'
+import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer } from './Exsurge.Drawing.js'
+import { Note, NoteShape } from './Exsurge.Chant.js'
 
 
 // for positioning markings on notes

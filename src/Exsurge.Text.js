@@ -23,7 +23,7 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from 'Exsurge.Core'
+import * as Exsurge from './Exsurge.Core.js'
 
 /**
  * @class
