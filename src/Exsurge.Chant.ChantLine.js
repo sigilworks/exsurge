@@ -868,6 +868,10 @@ export class ChantLine extends ChantLayoutElement {
 
       if (staffPosition >= 5 || staffPosition <= -5) {
 
+        if(element.glyphVisualizer.glyphCode == "None") {
+          let i = element.neume.notes.indexOf(element);
+          element = element.neume.notes[i - 1] || element;
+        }
         var x1 = offsetX + element.bounds.x - ctxt.intraNeumeSpacing;
         var x2 = offsetX + element.bounds.x + element.bounds.width + ctxt.intraNeumeSpacing;
 
