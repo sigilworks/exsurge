@@ -292,6 +292,11 @@ export class ChantContext {
     this.textAfterSpecialChar = '.';
     this.specialCharText = char => char;
 
+    // var boldMarkup = "*";
+    // var italicMarkup = "_";
+    // var redMarkup = "^";
+    // var smallCapsMarkup = "%";
+
     this.fontStyleDictionary = {
       "*": {'font-weight':'bold'},
       "_": {'font-style':'italic'},
@@ -1028,11 +1033,6 @@ var TextSpan = function(text, properties) {
   this.text = text;
   this.properties = properties;
 };
-
-var boldMarkup = "*";
-var italicMarkup = "_";
-var redMarkup = "^";
-var smallCapsMarkup = "%";
 
 function MarkupStackFrame(symbol, startIndex, properties = {}) {
   this.symbol = symbol;

@@ -1055,7 +1055,6 @@ export class Gabc {
     note.pitch = pitch;
 
     var mark;
-    var j;
 
     var episemaNoteIndex = notes.length;
     var episemaNote = note;
@@ -1325,8 +1324,6 @@ export class Gabc {
     }
 
     var attachmentPoint = results[3] === '1' ? Markings.BraceAttachment.Left : Markings.BraceAttachment.Right;
-    var brace = null;
-    var type;
 
     if (results[4] === '{' || results[5])
       note.braceStart = new Markings.BracePoint(note, above, shape, attachmentPoint);

@@ -415,7 +415,6 @@ export class ChantLine extends ChantLayoutElement {
     // and q factor, .5 is normal, higher q = more expressive bracket 
     var q = 0.6;
 
-    var dx = -1;
     var len = x2 - x1;
 
     //Calculate Control Points of path,

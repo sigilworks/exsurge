@@ -188,9 +188,6 @@ class NeumeBuilder {
 
   withClivis(upper, lower) {
 
-    var line;
-
-    var upperGlyph;
     var lowerGlyph;
 
     if (upper.shape === NoteShape.Oriscus)
@@ -393,7 +390,7 @@ export class Neume extends ChantNotationElement {
     return new NeumeBuilder(ctxt, this);
   }
   positionEpisemata(note, position) {
-    var mark, i;
+    var i;
     for (i = 0; i < note.episemata.length; i++)
       if (note.episemata[i].positionHint === MarkingPositionHint.Default)
         note.episemata[i].positionHint = position;
@@ -728,7 +725,7 @@ export class PesQuassus extends Neume {
     var lower = this.notes[0];
     var upper = this.notes[1];
 
-    var lowerGlyph, upperGlyph;
+    var lowerGlyph;
 
     var lowerStaffPos = lower.staffPosition;
     var upperStaffPos = upper.staffPosition;

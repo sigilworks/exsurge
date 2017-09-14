@@ -42,8 +42,6 @@ export class Custos extends ChantNotationElement {
   performLayout(ctxt) {
     super.performLayout(ctxt);
 
-    var glyphCode;
-
     if (this.auto) {
 
       var neume = ctxt.findNextNeume();
