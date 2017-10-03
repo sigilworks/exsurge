@@ -858,18 +858,18 @@ export class ChantLine extends ChantLayoutElement {
 
     // an element needs to have a staffPosition property, as well as the standard
     // bounds property. so it could be a note, or it could be a custos
-    // offsetX and offsetY can be used to add to the position info for the element,
+    // offsetX can be used to add to the position info for the element,
     // useful in the case of notes.
-    var processElementForLedgerLine = (element, offsetX = 0, offsetY = 0) => {
+    var processElementForLedgerLine = (element, offsetX = 0) => {
 
       // do we need a ledger line for this note?
       var staffPosition = element.staffPosition;
 
       if (staffPosition >= 5 || staffPosition <= -5) {
 
-        if(element.glyphVisualizer.glyphCode === "None") {
-          let i = element.neume.notes.indexOf(element);
-          element = element.neume.notes[i - 1] || element;
+        if(element.neume) {
+          offsetX -= element.neume.bounds.x;
+          element = element.neume;
         }
         var x1 = offsetX + element.bounds.x - ctxt.intraNeumeSpacing;
         var x2 = offsetX + element.bounds.x + element.bounds.width + ctxt.intraNeumeSpacing;
@@ -940,7 +940,7 @@ export class ChantLine extends ChantLayoutElement {
       for (j = 0; j < neume.notes.length; j++) {
         var k, note = neume.notes[j];
 
-        processElementForLedgerLine(note, neume.bounds.x, neume.bounds.y);
+        processElementForLedgerLine(note, neume.bounds.x);
 
         // blend episemata as we're able
         if (note.episemata.length === 0)
