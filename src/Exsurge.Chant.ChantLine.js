@@ -1067,12 +1067,16 @@ export class ChantLine extends ChantLayoutElement {
       // if the lyric left is negative, then offset the neume appropriately
       for (i = 0; i < curr.lyrics.length; i++) {
 
-        curr.lyrics[i].setNeedsConnector(false); // we hope for the best!
+        let currLyric = curr.lyrics[i];
+        // we hope for the best!
+        // but always use a connector if the lyric has original text that was all used up for the drop cap.
+        let needsConnector = currLyric.allowsConnector() && currLyric.dropCap && currLyric.originalText && !currLyric.text;
+        currLyric.setNeedsConnector(needsConnector);
 
-        if (curr.lyrics[i].getLeft() < 0)
-          curr.bounds.x += -curr.lyrics[i].getLeft();
+        if (currLyric.getLeft() < 0)
+          curr.bounds.x += -currLyric.getLeft();
 
-        maxRight = Math.max(maxRight, curr.lyrics[i].getRight());
+        maxRight = Math.max(maxRight, currLyric.getRight());
       }
 
       if (maxRight > rightNotationBoundary)

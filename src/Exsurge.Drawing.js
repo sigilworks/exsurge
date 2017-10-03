@@ -1095,7 +1095,7 @@ export class TextElement extends ChantLayoutElement {
 
     var that = this;
     var closeSpan = function (spanText, extraProperties) {
-      if (spanText === "")
+      if (spanText === "" && !that.dropCap)
         return;
 
       that.text += spanText;
@@ -1447,6 +1447,10 @@ export class Lyric extends TextElement {
 
     if (this.text.length === 0) {
       // if we have no text to work with, then there's nothing to do!
+      // Unless it's a drop cap, in which case we center the connector:
+      if (this.dropCap && this.originalText) {
+        offset = ctxt.hyphenWidth / 2;
+      }
     } else if (this.centerStartIndex >= 0) {
       // if we have manually overriden the centering logic for this lyric,
       // then always use that.
@@ -1512,17 +1516,8 @@ export class Lyric extends TextElement {
     var dropCap = this.dropCap = new DropCap(ctxt, this.originalText.substring(0, 1), this.sourceIndex);
     this.sourceIndex++;
 
-    // if the dropcap is a single character syllable (vowel) that is the
-    // beginning of the word, then we use a hyphen in place of the lyric text
-    // and treat it as a single syllable.
-    if (this.originalText.length === 1) {
-      this.generateSpansFromText(ctxt, ctxt.syllableConnector);
-      this.centerStartIndex = -1;
-      this.lyricType = LyricType.SingleSyllable;
-    } else {
-      this.generateSpansFromText(ctxt, this.originalText.substring(1));
-      this.centerStartIndex--; // lost a letter, so adjust centering accordingly
-    }
+    this.generateSpansFromText(ctxt, this.originalText.substring(1));
+    this.centerStartIndex--; // lost a letter, so adjust centering accordingly
 
     return dropCap;
   }

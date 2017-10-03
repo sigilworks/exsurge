@@ -163,7 +163,7 @@ export class Gabc {
       if(index>0) sourceIndex = mappings[index-1].sourceIndex + mappings[index-1].source.length + 1;
       if (resultCode === '=') {
         var sourceIndexDiff = sourceIndex - mappings[index].sourceIndex;
-        // skip over ones that haven't changed, but updating the clef and source index as we go
+        // skip over ones that haven't changed, but updating the clef and source index (and pitch in case clef has changed) as we go
         for (j = 0; j < resultValues.length; j++, index++) {
           mapping = mappings[index];
           mapping.sourceIndex += sourceIndexDiff;
@@ -174,11 +174,12 @@ export class Gabc {
             if (mapping.notations[k].isClef)
               ctxt.activeClef = mappings[index].notations[k];
 
-            // update source index and automatic braces
+            // update source index, pitch, and automatic braces
             if(mapping.notations[k].notes) {
               for(l=0; l < mapping.notations[k].notes.length; ++l) {
                 let note = mapping.notations[k].notes[l];
                 note.sourceIndex += sourceIndexDiff;
+                note.pitch = ctxt.activeClef.staffPositionToPitch(note.staffPosition);
                 if(note.braceEnd && note.braceEnd.automatic) delete note.braceEnd;
                 if(this.needToEndBrace && !note.braceStart && !note.braceEnd) {
                   note.braceEnd = new Markings.BracePoint(note, this.needToEndBrace.isAbove, this.needToEndBrace.shape, this.needToEndBrace.attachment === Markings.BraceAttachment.Left? Markings.BraceAttachment.Right : Markings.BraceAttachment.Left);
