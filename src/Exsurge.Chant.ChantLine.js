@@ -856,23 +856,49 @@ export class ChantLine extends ChantLayoutElement {
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
+    var processNeumeForLedgerLine = (neume) => {
+      var staffPositions = neume.notes && neume.notes.map(n => n.staffPosition),
+          firstAbove = false,
+          needsAbove = false,
+          firstBelow = false,
+          needsBelow = false;
+
+      if (!neume.notes) return;
+
+      for (var i = 0; i < staffPositions.length; ++i) {
+        var staffPosition = staffPositions[i];
+        if (staffPosition >= 4) {
+          needsAbove = needsAbove || staffPosition >= 5;
+          if((needsAbove || firstAbove) === false) firstAbove = i;
+          if(staffPosition >= 5) continue;
+        } else if (staffPosition <= -4) {
+          needsBelow = needsBelow || staffPosition <= -5;
+          if((needsBelow || firstBelow) === false) firstBelow = i;
+          if(staffPosition <= -5) continue;
+        }
+        if (needsAbove || needsBelow) {
+          var endI = Math.abs(staffPosition) >= 4? i : i - 1;
+          processElementForLedgerLine(neume.notes[firstAbove || firstBelow || 0], neume.notes[endI], needsAbove? 5 : -5, neume.bounds.x);
+          firstAbove = firstBelow = needsAbove = needsBelow = false;
+        }
+      }
+      if (needsAbove || needsBelow) {
+        processElementForLedgerLine(neume.notes[firstAbove || firstBelow || 0], neume.notes[neume.notes.length - 1], needsAbove? 5 : -5, neume.bounds.x);
+      }
+    }
+
     // an element needs to have a staffPosition property, as well as the standard
     // bounds property. so it could be a note, or it could be a custos
     // offsetX can be used to add to the position info for the element,
     // useful in the case of notes.
-    var processElementForLedgerLine = (element, offsetX = 0) => {
+    var processElementForLedgerLine = (element, endElem = element, staffPosition = element.staffPosition, offsetX = 0) => {
 
       // do we need a ledger line for this note?
-      var staffPosition = element.staffPosition;
 
       if (staffPosition >= 5 || staffPosition <= -5) {
 
-        if(element.neume) {
-          offsetX -= element.neume.bounds.x;
-          element = element.neume;
-        }
         var x1 = offsetX + element.bounds.x - ctxt.intraNeumeSpacing;
-        var x2 = offsetX + element.bounds.x + element.bounds.width + ctxt.intraNeumeSpacing;
+        var x2 = offsetX + endElem.bounds.x + endElem.bounds.width + ctxt.intraNeumeSpacing;
 
         // round the staffPosition to the nearest line
         if (staffPosition > 0)
@@ -937,10 +963,10 @@ export class ChantLine extends ChantLayoutElement {
       if (!neume.isNeume)
         continue;
 
+      processNeumeForLedgerLine(neume);
+
       for (j = 0; j < neume.notes.length; j++) {
         var k, note = neume.notes[j];
-
-        processElementForLedgerLine(note, neume.bounds.x);
 
         // blend episemata as we're able
         if (note.episemata.length === 0)
