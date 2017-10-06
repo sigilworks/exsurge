@@ -25,6 +25,7 @@
 
 import * as Exsurge from 'Exsurge.Core'
 import { Step, Pitch, Rect, Point, Margins } from 'Exsurge.Core'
+import * as Neumes from 'Exsurge.Chant.Neumes'
 import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, LyricType, DropCap } from 'Exsurge.Drawing'
 import { ChantLineBreak, TextOnly, NoteShape } from 'Exsurge.Chant'
 import { Glyphs } from 'Exsurge.Glyphs'
@@ -873,6 +874,7 @@ export class ChantLine extends ChantLayoutElement {
           if(staffPosition >= 5) continue;
         } else if (staffPosition <= -4) {
           needsBelow = needsBelow || staffPosition <= -5;
+          if(needsBelow && neume.constructor === Neumes.Climacus) firstBelow = 0;
           if((needsBelow || firstBelow) === false) firstBelow = i;
           if(staffPosition <= -5) continue;
         }
