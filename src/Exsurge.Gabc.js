@@ -498,7 +498,7 @@ export class Gabc {
         case ";4":
         case ";5":
         case ";6":
-          addNotation(new Signs.DominicanBar(parseInt(atom[1])));
+          addNotation(new Signs.DominicanBar(parseInt(atom[1],10)));
           break;
         case ":":
           addNotation(new Signs.FullBar());
