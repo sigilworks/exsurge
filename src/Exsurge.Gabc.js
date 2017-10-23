@@ -34,7 +34,7 @@ import * as Neumes from 'Exsurge.Chant.Neumes'
 // reusable reg exps
 var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
 var __altRegex = /<alt>(.*?)<\/alt>/g;
-var __notationsRegex = /z0|z|Z|::|:|;[1-6]?|,|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
+var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
 
 // for the brace string inside of [ and ] in notation data
 // the capturing groups are:
@@ -498,6 +498,12 @@ export class Gabc {
         case ";4":
         case ";5":
         case ";6":
+        case ",1":
+        case ",2":
+        case ",3":
+        case ",4":
+        case ",5":
+        case ",6":
           addNotation(new Signs.DominicanBar(parseInt(atom[1],10)));
           break;
         case ":":
