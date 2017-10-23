@@ -154,6 +154,29 @@ export class FullBar extends Divider {
 }
 
 /*
+ * DominicanBar
+ */
+export class DominicanBar extends Divider {
+
+  constructor(staffPosition) {
+    super();
+    staffPosition--;
+    var parity = staffPosition % 2;
+    
+    this.staffPosition = staffPosition - (2 * parity);
+  }
+
+  performLayout(ctxt) {
+    super.performLayout(ctxt);
+    this.addVisualizer(new DividerLineVisualizer(ctxt, this.staffPosition - 3, this.staffPosition));
+
+    this.origin.x = this.bounds.width / 2;
+
+    this.finishLayout(ctxt);
+  }
+}
+
+/*
  * DoubleBar
  */
 export class DoubleBar extends Divider {
