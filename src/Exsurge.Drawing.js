@@ -313,6 +313,11 @@ export class ChantContext {
     this.alTextColor = this.lyricTextColor;
     this.alTextStyle = '_';
     
+    this.translationTextSize = this.lyricTextSize;
+    this.translationTextFont = this.lyricTextFont;
+    this.translationTextColor = this.lyricTextColor;
+    this.translationTextStyle = '_';
+    
     this.dropCapTextSize = 64;
     this.dropCapTextFont = this.lyricTextFont;
     this.dropCapTextColor = this.lyricTextColor;
@@ -403,6 +408,24 @@ export class ChantContext {
     this.insertFontsInDoc();
   }
 
+  setFont(font, size = 16) {
+    this.lyricTextSize = size;
+    this.lyricTextFont = font;
+
+    this.alTextSize = size;
+    this.alTextFont = font;
+    
+    this.translationTextSize = size;
+    this.translationTextFont = font;
+    
+    this.dropCapTextSize = size * 4;
+    this.dropCapTextFont = font;
+    
+    this.annotationTextSize = size * 2 / 3;
+    this.annotationTextFont = font;
+
+  }
+
   setRubricColor(color) {
     this.rubricColor = color;
     this.specialCharProperties.fill = color;
@@ -410,7 +433,7 @@ export class ChantContext {
   }
 
   createStyleCss() {
-    var textStyles = ['lyric', 'aboveLinesText', 'dropCap', 'annotation'];
+    var textStyles = ['lyric', 'aboveLinesText', 'translation', 'dropCap', 'annotation'];
     var style = '';
     for(var i=0; i < textStyles.length; ++i) {
       var key = i === 1? 'al' : textStyles[i],
@@ -1580,6 +1603,22 @@ export class AboveLinesText extends TextElement {
   }
 }
 
+export class TranslationText extends TextElement {
+
+  /**
+   * @param {String} text
+   */
+  constructor(ctxt, text, sourceIndex) {
+    super(ctxt, (ctxt.translationTextStyle || '') + text, ctxt.translationTextFont, ctxt.translationTextSize, 'start', sourceIndex);
+
+    this.padding = ctxt.staffInterval / 2;
+  }
+
+  getCssClasses() {
+    return "translation " + super.getCssClasses();
+  }
+}
+
 export class DropCap extends TextElement {
 
   /**
@@ -1778,6 +1817,10 @@ export class ChantNotationElement extends ChantLayoutElement {
     if(this.alText)
       for (i = 0; i < this.alText.length; i++)
         this.alText[i].recalculateMetrics(ctxt);
+
+    if(this.translationText)
+      for (i = 0; i < this.translationText.length; i++)
+        this.translationText[i].recalculateMetrics(ctxt);
   }
 
   // some subclasses have internal dependencies on other notations (for example,
@@ -1811,6 +1854,14 @@ export class ChantNotationElement extends ChantLayoutElement {
     for (i = 0; i < this.lyrics.length; i++)
       this.lyrics[i].draw(ctxt);
 
+    if(this.translationText)
+      for (i = 0; i < this.translationText.length; i++)
+        this.translationText[i].draw(ctxt);
+
+    if(this.alText)
+      for (i = 0; i < this.alText.length; i++)
+        this.alText[i].draw(ctxt);
+
     canvasCtxt.translate(-this.bounds.x, 0);
   }
 
@@ -1825,6 +1876,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (i = 0; i < this.lyrics.length; i++)
       inner.push( this.lyrics[i].createSvgNode(ctxt) );
+
+    if(this.translationText)
+      for (i = 0; i < this.translationText.length; i++)
+        inner.push( this.translationText[i].createSvgNode(ctxt) );
 
     if(this.alText)
       for (i = 0; i < this.alText.length; i++)
@@ -1846,6 +1901,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (i = 0; i < this.lyrics.length; i++)
       inner += this.lyrics[i].createSvgFragment(ctxt);
+
+    if(this.translationText)
+      for (i = 0; i < this.translationText.length; i++)
+        inner += this.translationText[i].createSvgFragment(ctxt);
 
     if(this.alText)
       for (i = 0; i < this.alText.length; i++)

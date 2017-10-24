@@ -97,6 +97,10 @@ export class ChantLine extends ChantLayoutElement {
     this.altLineBaseline = 0;
     this.numAltLines = 0;
 
+    this.translationLineHeight = 0;
+    this.translationLineBaseline = 0;
+    this.numTranslationLines = 0;
+
     for (i = this.notationsStartIndex; i < lastIndex; i++) {
       notation = notations[i];
 
@@ -113,6 +117,12 @@ export class ChantLine extends ChantLayoutElement {
         if(notation.alText[0].bounds.height > this.altLineHeight) this.altLineHeight = notation.alText[0].bounds.height;
         if(notation.alText[0].origin.y > this.altLineBaseline) this.altLineBaseline = notation.alText[0].origin.y;
         if(notation.alText.length > this.numAltLines) this.numAltLines = notation.alText.length;        
+      }
+
+      if(this.numTranslationLines === 0 && notation.translationText) {
+        if(notation.translationText[0].bounds.height > this.translationLineHeight) this.translationLineHeight = notation.translationText[0].bounds.height;
+        if(notation.translationText[0].origin.y > this.translationLineBaseline) this.translationLineBaseline = notation.translationText[0].origin.y;
+        if(notation.translationText.length > this.numTranslationLines) this.numTranslationLines = notation.translationText.length;        
       }
     }
 
@@ -132,6 +142,13 @@ export class ChantLine extends ChantLayoutElement {
       for (var j = 0; j < notation.lyrics.length; j++) {
         notation.lyrics[j].bounds.y = offset + this.lyricLineBaseline;
         offset += this.lyricLineHeight;
+      }
+
+      if(notation.translationText) {
+        for (j = 0; j < notation.translationText.length; j++) {
+          notation.translationText[j].bounds.y = offset + this.translationLineBaseline;
+          offset += this.translationLineHeight;
+        }
       }
 
       if(notation.alText) {
@@ -157,7 +174,7 @@ export class ChantLine extends ChantLayoutElement {
       if (this.score.dropCap !== null) {
 
         var dropCapY;
-        dropCapY = this.notationBounds.y + this.notationBounds.height + this.lyricLineBaseline + (this.altLineHeight * this.numAltLines) - (this.altLineHeight * this.numAltLines);
+        dropCapY = this.notationBounds.y + this.notationBounds.height + this.lyricLineBaseline;
 
         // drop caps and annotations are drawn from their center, so aligning them
         // horizontally is as easy as this.staffLeft / 2
@@ -189,7 +206,7 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // add up the lyric line heights to get the total height of the chant line
-    this.notationBounds.height += Math.max(ctxt.minSpaceBelowStaff * ctxt.staffInterval, (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines));
+    this.notationBounds.height += Math.max(ctxt.minSpaceBelowStaff * ctxt.staffInterval, (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines) + (this.translationLineHeight * this.numTranslationLines));
     var totalHeight = this.notationBounds.height;
     this.notationBounds.y -= this.altLineHeight * this.numAltLines;
 

@@ -25,7 +25,7 @@
 //
 
 import { Units, Pitch, Point, Rect, Margins, Size, Step } from 'Exsurge.Core'
-import { LyricType, Lyric, LyricArray, AboveLinesText } from 'Exsurge.Drawing'
+import { LyricType, Lyric, LyricArray, AboveLinesText, TranslationText } from 'Exsurge.Drawing'
 import { Note, LiquescentType, NoteShape, NoteShapeModifiers, ChantMapping, ChantScore, ChantDocument, Clef, DoClef, FaClef, TextOnly, ChantLineBreak } from 'Exsurge.Chant'
 import * as Markings from 'Exsurge.Chant.Markings'
 import * as Signs from 'Exsurge.Chant.Signs'
@@ -34,6 +34,7 @@ import * as Neumes from 'Exsurge.Chant.Neumes'
 // reusable reg exps
 var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
 var __altRegex = /<alt>(.*?)<\/alt>/g;
+var __translationRegex = /\[(alt:)?(.*?)\]/g
 var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
 
 // for the brace string inside of [ and ] in notation data
@@ -270,7 +271,8 @@ export class Gabc {
       var match = matches[j];
 
       var lyricText = match[1].replace(/^\s+/,'').replace(/~/g,' ');
-      var alText = lyricText.match(__altRegex);
+      var alText = [];
+      var translationText = [];
       var notationData = match[2];
 
       // new words reset the accidentals, per the Solesmes style (see LU xviij)
@@ -286,19 +288,32 @@ export class Gabc {
       for (var k = 0; k < items.length; ++k)
         notations.push(items[k]);
 
-      if (alText) {
-        for(var i = 0; i < alText.length; ++i) {
-          var index = lyricText.indexOf(alText[i]);
-          lyricText = lyricText.slice(0,index) + lyricText.slice(index + alText[i].length);
-          alText[i] = makeAlText(alText[i].slice(5,-6), sourceIndex+index+5); // trim <alt> and </alt>
-        }
+      var m = __altRegex.exec();
+      while ((m = __altRegex.exec(lyricText))) {
+        var index = m.index;
+        lyricText = lyricText.slice(0,index) + lyricText.slice(index + m[0].length);
+        alText.push(makeAlText(m[1], sourceIndex+index+5));
+        __altRegex.exec();
       }
-      if (lyricText === '' && !alText)
+
+      m = __translationRegex.exec();
+      while ((m = __translationRegex.exec(lyricText))) {
+        var index = m.index;
+        lyricText = lyricText.slice(0,index) + lyricText.slice(index + m[0].length);
+        index += sourceIndex + 1
+        if(m[1]) {
+          alText.push(new AboveLinesText(ctxt, m[2], index + m[1].length));
+        } else {
+          translationText.push(new TranslationText(ctxt, m[2], index));
+        }
+        __translationRegex.exec();
+      }
+      if (lyricText === '' && alText.length === 0)
         continue;
 
       // add the lyrics and/or alText to the first notation that makes sense...
       var notationWithLyrics = null;
-      for (i = 0; i < items.length; i++) {
+      for (var i = 0; i < items.length; i++) {
         var cne = items[i];
 
         if (cne.isAccidental || cne.constructor === Signs.Custos)
@@ -311,8 +326,11 @@ export class Gabc {
       if (notationWithLyrics === null)
         return notations;
     
-      if (alText)
+      if (alText.length)
         notationWithLyrics.alText = alText;
+
+      if (translationText.length)
+        notationWithLyrics.translationText = translationText;
 
       if (lyricText === '')
         continue;
