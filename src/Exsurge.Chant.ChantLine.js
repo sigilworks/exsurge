@@ -954,6 +954,14 @@ export class ChantLine extends ChantLayoutElement {
     var startBrace = null;
     var minY = Number.MAX_VALUE, maxY = Number.MIN_VALUE; // for braces
 
+    var positionNonLyricText = (text, neume, rightX) => {
+      text.bounds.x = neume.hasLyrics()? Math.min(...neume.lyrics.map(l => l.bounds.x)) : 0;
+      if (rightX) text.bounds.x = (text.bounds.x + rightX - text.bounds.width) / 2;
+      var beyondStaffRight = neume.bounds.x + text.bounds.right() - this.staffRight;
+      if (beyondStaffRight > 0)
+        text.bounds.x -= beyondStaffRight;
+    }
+
     // make a final pass over all of the notes to add any necessary
     // ledger lines and to smooth out episemata
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
@@ -971,10 +979,21 @@ export class ChantLine extends ChantLayoutElement {
       // if the AboveLinesText would extend beyond the right edge of the staff, right align it instead
       if (neume.alText) {
         for (var j = 0; j < neume.alText.length; j++) {
-          neume.alText[j].bounds.x = neume.hasLyrics()? neume.lyrics[j].bounds.x : 0;
-          var beyondStaffRight = neume.bounds.x + neume.alText[j].bounds.right() - this.staffRight;
-          if (beyondStaffRight > 0)
-            neume.alText[j].bounds.x -= beyondStaffRight;
+          positionNonLyricText(neume.alText[j], neume);
+        }
+      }
+
+      // set up horizontal position of translations
+      if (neume.translationText) {
+        for (j = 0; j < neume.translationText.length; j++) {
+          var text = neume.translationText[j];
+          if(text.endNeume) {
+            var rightX = text.endNeume.hasLyrics()? text.endNeume.bounds.x + Math.max(...text.endNeume.lyrics.map(l => l.bounds.right())) : text.endNeume.bounds.right();
+            rightX -= neume.bounds.x;
+            positionNonLyricText(text, neume, rightX);
+          } else {
+            positionNonLyricText(text, neume);
+          }
         }
       }
 

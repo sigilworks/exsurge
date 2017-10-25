@@ -1609,7 +1609,14 @@ export class TranslationText extends TextElement {
    * @param {String} text
    */
   constructor(ctxt, text, sourceIndex) {
-    super(ctxt, (ctxt.translationTextStyle || '') + text, ctxt.translationTextFont, ctxt.translationTextSize, 'start', sourceIndex);
+    var anchor = 'start';
+    if(text === '/') {
+      text = '';
+      anchor = 'end';
+    } else {
+      text = (ctxt.translationTextStyle || '') + text;
+    }
+    super(ctxt, text, ctxt.translationTextFont, ctxt.translationTextSize, anchor, sourceIndex);
 
     this.padding = ctxt.staffInterval / 2;
   }

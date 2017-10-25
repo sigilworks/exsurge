@@ -160,6 +160,7 @@ export class Gabc {
 
       var resultCode = results[i][0];
       var resultValues = results[i][1];
+      var lastTranslationNeumes = [];
 
       if(index>0) sourceIndex = mappings[index-1].sourceIndex + mappings[index-1].source.length + 1;
       if (resultCode === '=') {
@@ -169,16 +170,17 @@ export class Gabc {
           mapping = mappings[index];
           mapping.sourceIndex += sourceIndexDiff;
           for (k = 0; k < mapping.notations.length; k++) {
+            var curNotation = mapping.notations[k];
             // notify the notation that its dependencies are no longer valid
-            mapping.notations[k].resetDependencies();
+            curNotation.resetDependencies();
 
-            if (mapping.notations[k].isClef)
+            if (curNotation.isClef)
               ctxt.activeClef = mappings[index].notations[k];
 
             // update source index, pitch, and automatic braces
-            if(mapping.notations[k].notes) {
-              for(l=0; l < mapping.notations[k].notes.length; ++l) {
-                let note = mapping.notations[k].notes[l];
+            if(curNotation.notes) {
+              for(l=0; l < curNotation.notes.length; ++l) {
+                let note = curNotation.notes[l];
                 note.sourceIndex += sourceIndexDiff;
                 note.pitch = ctxt.activeClef.staffPositionToPitch(note.staffPosition);
                 if(note.braceEnd && note.braceEnd.automatic) delete note.braceEnd;
@@ -191,13 +193,25 @@ export class Gabc {
                 }
               }
             }
-            if(sourceIndexDiff) {
-              for(l=0; l < mapping.notations[k].lyrics.length; ++l) {
-                mapping.notations[k].lyrics[l].sourceIndex += sourceIndexDiff;
+            if(curNotation.translationText) {
+              for(l=0; l < curNotation.translationText.length; ++l) {
+                var transText = curNotation.translationText[l];
+                delete transText.endNeume;
+                curNotation.translationText[l].sourceIndex += sourceIndexDiff;
+                if(transText.textAnchor === 'end' && lastTranslationNeumes[0]) {
+                  var lastTranslationText = lastTranslationNeumes[0].translationText[l];
+                  if(lastTranslationText) lastTranslationText.endNeume = curNotation;
+                }
               }
-              if(mapping.notations[k].alText) {
-                for(l=0; l < mapping.notations[k].alText.length; ++l) {
-                  mapping.notations[k].alText[l].sourceIndex += sourceIndexDiff;
+              lastTranslationNeumes[0] = curNotation;
+            }
+            if(sourceIndexDiff) {
+              for(l=0; l < curNotation.lyrics.length; ++l) {
+                curNotation.lyrics[l].sourceIndex += sourceIndexDiff;
+              }
+              if(curNotation.alText) {
+                for(l=0; l < curNotation.alText.length; ++l) {
+                  curNotation.alText[l].sourceIndex += sourceIndexDiff;
                 }  
               }
             }
@@ -211,7 +225,7 @@ export class Gabc {
         // insert new ones
         for (j = 0; j < resultValues.length; j++) {
           wordLength = resultValues[j].length + 1;
-          mapping = this.createMappingFromWord(ctxt, resultValues[j], sourceIndex);
+          mapping = this.createMappingFromWord(ctxt, resultValues[j], sourceIndex, lastTranslationNeumes);
 
           for (k = 0; k < mapping.notations.length; k++)
             if (mapping.notations[k].isClef)
@@ -233,7 +247,8 @@ export class Gabc {
   static createMappingsFromWords(ctxt, words) {
     var mappings = [];
     var sourceIndex = 0,
-        wordLength = 0;
+        wordLength = 0,
+        lastTranslationNeumes = [];
 
     for (var i = 0; i < words.length; i++) {
       sourceIndex += wordLength;
@@ -243,7 +258,7 @@ export class Gabc {
       if (word === '')
         continue;
 
-      var mapping = this.createMappingFromWord(ctxt, word, sourceIndex);
+      var mapping = this.createMappingFromWord(ctxt, word, sourceIndex, lastTranslationNeumes);
 
       if (mapping)
         mappings.push(mapping);
@@ -255,7 +270,7 @@ export class Gabc {
   // takes a gabc word (like those returned by splitWords below) and returns
   // a ChantMapping object that contains the gabc word source text as well
   // as the generated notations.
-  static createMappingFromWord(ctxt, word, sourceIndex) {
+  static createMappingFromWord(ctxt, word, sourceIndex, lastTranslationNeumes) {
 
     var matches = [];
     var notations = [];
@@ -329,8 +344,17 @@ export class Gabc {
       if (alText.length)
         notationWithLyrics.alText = alText;
 
-      if (translationText.length)
+      if (translationText.length) {
         notationWithLyrics.translationText = translationText;
+        for(i=0; i < translationText.length; ++i) {
+          var transText = translationText[i];
+          if(transText.textAnchor === 'end' && lastTranslationNeumes[0]) {
+            var lastTranslationText = lastTranslationNeumes[0].translationText[i];
+            if(lastTranslationText) lastTranslationText.endNeume = notationWithLyrics;
+          }
+        }
+        lastTranslationNeumes[0] = notationWithLyrics;
+      }
 
       if (lyricText === '')
         continue;
