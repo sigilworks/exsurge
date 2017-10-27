@@ -305,7 +305,7 @@ export class Gabc {
 
       var m = __altRegex.exec();
       while ((m = __altRegex.exec(lyricText))) {
-        var index = m.index;
+        let index = m.index;
         lyricText = lyricText.slice(0,index) + lyricText.slice(index + m[0].length);
         alText.push(makeAlText(m[1], sourceIndex+index+5));
         __altRegex.exec();
@@ -313,7 +313,7 @@ export class Gabc {
 
       m = __translationRegex.exec();
       while ((m = __translationRegex.exec(lyricText))) {
-        var index = m.index;
+        let index = m.index;
         lyricText = lyricText.slice(0,index) + lyricText.slice(index + m[0].length);
         index += sourceIndex + 1
         if(m[1]) {
