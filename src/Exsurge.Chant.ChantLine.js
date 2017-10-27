@@ -891,7 +891,6 @@ export class ChantLine extends ChantLayoutElement {
           if(staffPosition >= 5) continue;
         } else if (staffPosition <= -4) {
           needsBelow = needsBelow || staffPosition <= -5;
-          if(needsBelow && neume.constructor === Neumes.Climacus) firstBelow = 0;
           if((needsBelow || firstBelow) === false) firstBelow = i;
           if(staffPosition <= -5) continue;
         }
