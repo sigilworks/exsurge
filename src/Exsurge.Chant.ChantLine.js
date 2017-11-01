@@ -531,6 +531,7 @@ export class ChantLine extends ChantLayoutElement {
 
     // estimate how much space we have available to us
     var rightNotationBoundary = this.staffRight - Glyphs.CustosLong.bounds.width * ctxt.glyphScaling; // possible custos on the line
+    var lastTranslationTextWithEndNeume = null;
 
     // iterate through the notations, fittng what we can on this line
     var i, j, lastNotationIndex = notations.length - 1;
@@ -575,6 +576,12 @@ export class ChantLine extends ChantLayoutElement {
           this.numNotationsOnLine--;
         }
 
+        if (lastTranslationTextWithEndNeume) {
+          console.info(notations[i-1], lastTranslationTextWithEndNeume);
+          // need to go back to before the last translation text start:
+
+        }
+
         // check if the prev elements want to be kept with this one
         for (j = i - 1; j > this.notationsStartIndex; j--) {
           var cne = notations[j];
@@ -582,6 +589,15 @@ export class ChantLine extends ChantLayoutElement {
 
           // curr is the first notation on the next line
           // cne is the last notation on the previous line
+
+          // don't let a line break occur in the middle of a translation
+          if (lastTranslationTextWithEndNeume) {
+            this.numNotationsOnLine--;
+            if (cne === lastTranslationTextWithEndNeume) {
+              lastTranslationTextWithEndNeume = null;
+            }
+            continue;
+          }
 
           // force any notations starting with a quilisma to be kept with the previous notation:
           if(curr && curr.notes && curr.notes[0].shape === NoteShape.Quilisma) {
@@ -652,6 +668,12 @@ export class ChantLine extends ChantLayoutElement {
 
       if (curr.hasLyrics())
         LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
+
+      if (lastTranslationTextWithEndNeume && curr === lastTranslationTextWithEndNeume.translationText[0].endNeume) {
+        lastTranslationTextWithEndNeume = null;
+      } else if (curr.translationText && curr.translationText.length && curr.translationText[0].endNeume) {
+        lastTranslationTextWithEndNeume = curr;
+      }
 
       curr.chantLine = this;
       this.numNotationsOnLine++;
