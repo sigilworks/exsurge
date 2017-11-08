@@ -107,19 +107,19 @@ export class ChantLine extends ChantLayoutElement {
       this.notationBounds.union(notation.bounds);
 
       // keep track of lyric line offsets
-      if(this.numLyricLines === 0 && notation.hasLyrics()) {
+      if(this.numLyricLines < notation.lyrics.length) {
         if(notation.lyrics[0].bounds.height > this.lyricLineHeight) this.lyricLineHeight = notation.lyrics[0].bounds.height;
         if(notation.lyrics[0].origin.y > this.lyricLineBaseline) this.lyricLineBaseline = notation.lyrics[0].origin.y;
         if(notation.lyrics.length > this.numLyricLines) this.numLyricLines = notation.lyrics.length;
       }
 
-      if(this.numAltLines === 0 && notation.alText) {
+      if(notation.alText && this.numAltLines < notation.alText.length) {
         if(notation.alText[0].bounds.height > this.altLineHeight) this.altLineHeight = notation.alText[0].bounds.height;
         if(notation.alText[0].origin.y > this.altLineBaseline) this.altLineBaseline = notation.alText[0].origin.y;
         if(notation.alText.length > this.numAltLines) this.numAltLines = notation.alText.length;        
       }
 
-      if(this.numTranslationLines === 0 && notation.translationText) {
+      if(notation.translationText && this.numTranslationLines < notation.translationText.length) {
         if(notation.translationText[0].bounds.height > this.translationLineHeight) this.translationLineHeight = notation.translationText[0].bounds.height;
         if(notation.translationText[0].origin.y > this.translationLineBaseline) this.translationLineBaseline = notation.translationText[0].origin.y;
         if(notation.translationText.length > this.numTranslationLines) this.numTranslationLines = notation.translationText.length;        
