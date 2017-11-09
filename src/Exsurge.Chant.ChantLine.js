@@ -897,23 +897,24 @@ export class ChantLine extends ChantLayoutElement {
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
     var processNeumeForLedgerLine = (neume) => {
-      var staffPositions = neume.notes && neume.notes.map(n => n.staffPosition),
-          firstAbove = false,
+      var firstAbove = false,
           needsAbove = false,
           firstBelow = false,
-          needsBelow = false;
+          needsBelow = false,
+          isPorrectus = false;
 
       if (!neume.notes) return;
 
-      for (var i = 0; i < staffPositions.length; ++i) {
-        var staffPosition = staffPositions[i];
+      for (var i = 0; i < neume.notes.length; ++i) {
+        var note = neume.notes[i];
+        var staffPosition = note.staffPosition;
         if (staffPosition >= 4) {
           needsAbove = needsAbove || staffPosition >= 5;
-          if((needsAbove || firstAbove) === false) firstAbove = i;
+          if(firstAbove === false) firstAbove = isPorrectus? i - 1 : i;
           if(staffPosition >= 5) continue;
         } else if (staffPosition <= -4) {
           needsBelow = needsBelow || staffPosition <= -5;
-          if((needsBelow || firstBelow) === false) firstBelow = i;
+          if(firstBelow === false) firstBelow = isPorrectus? i - 1 : i;
           if(staffPosition <= -5) continue;
         }
         if (needsAbove || needsBelow) {
@@ -921,6 +922,7 @@ export class ChantLine extends ChantLayoutElement {
           processElementForLedgerLine(neume.notes[firstAbove || firstBelow || 0], neume.notes[endI], needsAbove? 5 : -5, neume.bounds.x);
           firstAbove = firstBelow = needsAbove = needsBelow = false;
         }
+        isPorrectus = /^Porrectus\d$/.test(note.glyphVisualizer.glyphCode);
       }
       if (needsAbove || needsBelow) {
         processElementForLedgerLine(neume.notes[firstAbove || firstBelow || 0], neume.notes[neume.notes.length - 1], needsAbove? 5 : -5, neume.bounds.x);
