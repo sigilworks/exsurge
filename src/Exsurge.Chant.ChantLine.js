@@ -107,7 +107,7 @@ export class ChantLine extends ChantLayoutElement {
       this.notationBounds.union(notation.bounds);
 
       // keep track of lyric line offsets
-      if(this.numLyricLines < notation.lyrics.length || (this.numLyricLines > 0 && (this.lyricLineHeight * this.lyricLineBaseline === 0))) {
+      if(notation.lyrics.length && (this.numLyricLines < notation.lyrics.length || (this.numLyricLines > 0 && (this.lyricLineHeight * this.lyricLineBaseline === 0)))) {
         if(notation.lyrics[0].bounds.height > this.lyricLineHeight) this.lyricLineHeight = notation.lyrics[0].bounds.height;
         if(notation.lyrics[0].origin.y > this.lyricLineBaseline) this.lyricLineBaseline = notation.lyrics[0].origin.y;
         if(notation.lyrics.length > this.numLyricLines) this.numLyricLines = notation.lyrics.length;
@@ -1170,6 +1170,10 @@ export class ChantLine extends ChantLayoutElement {
         return false;
       else
         return true;
+    } else {
+      if (!curr.hasLyrics()) {
+        curr.bounds.x = Math.max(curr.bounds.x, prevLyrics[0].getRight());
+      }
     }
 
     // if the curr notation has no lyrics, then simply check whether there is enough room

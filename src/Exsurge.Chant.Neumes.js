@@ -45,7 +45,7 @@ class NeumeBuilder {
   // used to start a hanging line on the left of the next note
   lineFrom(note) {
     var previousNotation = this.ctxt.notations[this.ctxt.currNotationIndex - 1];
-    if(this.x === 0 && previousNotation && previousNotation.trailingSpace === 0) {
+    if(this.x === 0 && previousNotation && previousNotation.notes && previousNotation.trailingSpace === 0) {
       this.lastNote = previousNotation.notes.slice(-1)[0];
       this.minX = -this.ctxt.neumeLineWeight;
     } else {
