@@ -1138,7 +1138,15 @@ export class ChantLine extends ChantLayoutElement {
 
     // To begin we just place the current notation right after the previous,
     // irrespective of lyrics.
-    curr.bounds.x = prev.bounds.right() + prev.trailingSpace;
+    curr.bounds.x = prev.bounds.right();
+    if (curr.constructor === TextOnly) {
+      // We transfer over the trailing space from the previous neume if the current neume is text only,
+      // so that the text only neume has a better chance at not needing a connector.
+      curr.trailingSpace = prev.trailingSpace;
+      if (curr.hasLyrics()) curr.trailingSpace -= curr.lyrics[0].bounds.width;
+    } else {
+      curr.bounds.x += prev.trailingSpace;
+    }
 
     if(curr.hasLyrics() && !prev.isDivider && !prev.isAccidental && this.numNotationsOnLine > 0 &&
         (curr.lyrics[0].lyricType === LyricType.SingleSyllable || curr.lyrics[0].lyricType === LyricType.BeginningSyllable)) {
