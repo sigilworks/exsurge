@@ -29,8 +29,7 @@ import { Latin } from './Exsurge.Text.js'
 
 
 // load in the web font for special chant characters here:
-var require;
-var __exsurgeCharactersFont = require? require("url?limit=30000!../assets/fonts/ExsurgeChar.otf") : "../assets/fonts/ExsurgeChar.otf";
+var __exsurgeCharactersFont = require("url?limit=30000!../assets/fonts/ExsurgeChar.otf")
 
 
 export let GlyphCode = {
