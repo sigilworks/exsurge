@@ -293,6 +293,11 @@ export class ChantContext {
     this.textAfterSpecialChar = '.';
     this.specialCharText = char => char;
 
+    // var boldMarkup = "*";
+    // var italicMarkup = "_";
+    // var redMarkup = "^";
+    // var smallCapsMarkup = "%";
+
     this.fontStyleDictionary = {
       "*": {'font-weight':'bold'},
       "_": {'font-style':'italic'},
@@ -308,6 +313,11 @@ export class ChantContext {
     this.alTextFont = this.lyricTextFont;
     this.alTextColor = this.lyricTextColor;
     this.alTextStyle = '_';
+    
+    this.translationTextSize = this.lyricTextSize;
+    this.translationTextFont = this.lyricTextFont;
+    this.translationTextColor = this.lyricTextColor;
+    this.translationTextStyle = '_';
     
     this.dropCapTextSize = 64;
     this.dropCapTextFont = this.lyricTextFont;
@@ -399,6 +409,24 @@ export class ChantContext {
     this.insertFontsInDoc();
   }
 
+  setFont(font, size = 16) {
+    this.lyricTextSize = size;
+    this.lyricTextFont = font;
+
+    this.alTextSize = size;
+    this.alTextFont = font;
+    
+    this.translationTextSize = size;
+    this.translationTextFont = font;
+    
+    this.dropCapTextSize = size * 4;
+    this.dropCapTextFont = font;
+    
+    this.annotationTextSize = size * 2 / 3;
+    this.annotationTextFont = font;
+
+  }
+
   setRubricColor(color) {
     this.rubricColor = color;
     this.specialCharProperties.fill = color;
@@ -406,7 +434,7 @@ export class ChantContext {
   }
 
   createStyleCss() {
-    var textStyles = ['lyric', 'aboveLinesText', 'dropCap', 'annotation'];
+    var textStyles = ['lyric', 'aboveLinesText', 'translation', 'dropCap', 'annotation'];
     var style = '';
     for(var i=0; i < textStyles.length; ++i) {
       var key = i === 1? 'al' : textStyles[i],
@@ -1030,11 +1058,6 @@ var TextSpan = function(text, properties) {
   this.properties = properties;
 };
 
-var boldMarkup = "*";
-var italicMarkup = "_";
-var redMarkup = "^";
-var smallCapsMarkup = "%";
-
 function MarkupStackFrame(symbol, startIndex, properties = {}) {
   this.symbol = symbol;
   this.startIndex = startIndex;
@@ -1096,7 +1119,7 @@ export class TextElement extends ChantLayoutElement {
 
     var that = this;
     var closeSpan = function (spanText, extraProperties) {
-      if (spanText === "")
+      if (spanText === "" && !that.dropCap)
         return;
 
       that.text += spanText;
@@ -1448,6 +1471,10 @@ export class Lyric extends TextElement {
 
     if (this.text.length === 0) {
       // if we have no text to work with, then there's nothing to do!
+      // Unless it's a drop cap, in which case we center the connector:
+      if (this.dropCap && this.originalText) {
+        offset = ctxt.hyphenWidth / 2;
+      }
     } else if (this.centerStartIndex >= 0) {
       // if we have manually overriden the centering logic for this lyric,
       // then always use that.
@@ -1513,17 +1540,8 @@ export class Lyric extends TextElement {
     var dropCap = this.dropCap = new DropCap(ctxt, this.originalText.substring(0, 1), this.sourceIndex);
     this.sourceIndex++;
 
-    // if the dropcap is a single character syllable (vowel) that is the
-    // beginning of the word, then we use a hyphen in place of the lyric text
-    // and treat it as a single syllable.
-    if (this.originalText.length === 1) {
-      this.generateSpansFromText(ctxt, ctxt.syllableConnector);
-      this.centerStartIndex = -1;
-      this.lyricType = LyricType.SingleSyllable;
-    } else {
-      this.generateSpansFromText(ctxt, this.originalText.substring(1));
-      this.centerStartIndex--; // lost a letter, so adjust centering accordingly
-    }
+    this.generateSpansFromText(ctxt, this.originalText.substring(1));
+    this.centerStartIndex--; // lost a letter, so adjust centering accordingly
 
     return dropCap;
   }
@@ -1583,6 +1601,29 @@ export class AboveLinesText extends TextElement {
 
   getCssClasses() {
     return "aboveLinesText " + super.getCssClasses();
+  }
+}
+
+export class TranslationText extends TextElement {
+
+  /**
+   * @param {String} text
+   */
+  constructor(ctxt, text, sourceIndex) {
+    var anchor = 'start';
+    if(text === '/') {
+      text = '';
+      anchor = 'end';
+    } else {
+      text = (ctxt.translationTextStyle || '') + text;
+    }
+    super(ctxt, text, ctxt.translationTextFont, ctxt.translationTextSize, anchor, sourceIndex);
+
+    this.padding = ctxt.staffInterval / 2;
+  }
+
+  getCssClasses() {
+    return "translation " + super.getCssClasses();
   }
 }
 
@@ -1784,6 +1825,10 @@ export class ChantNotationElement extends ChantLayoutElement {
     if(this.alText)
       for (i = 0; i < this.alText.length; i++)
         this.alText[i].recalculateMetrics(ctxt);
+
+    if(this.translationText)
+      for (i = 0; i < this.translationText.length; i++)
+        this.translationText[i].recalculateMetrics(ctxt);
   }
 
   // some subclasses have internal dependencies on other notations (for example,
@@ -1817,6 +1862,14 @@ export class ChantNotationElement extends ChantLayoutElement {
     for (i = 0; i < this.lyrics.length; i++)
       this.lyrics[i].draw(ctxt);
 
+    if(this.translationText)
+      for (i = 0; i < this.translationText.length; i++)
+        this.translationText[i].draw(ctxt);
+
+    if(this.alText)
+      for (i = 0; i < this.alText.length; i++)
+        this.alText[i].draw(ctxt);
+
     canvasCtxt.translate(-this.bounds.x, 0);
   }
 
@@ -1831,6 +1884,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (i = 0; i < this.lyrics.length; i++)
       inner.push( this.lyrics[i].createSvgNode(ctxt) );
+
+    if(this.translationText)
+      for (i = 0; i < this.translationText.length; i++)
+        inner.push( this.translationText[i].createSvgNode(ctxt) );
 
     if(this.alText)
       for (i = 0; i < this.alText.length; i++)
@@ -1852,6 +1909,10 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     for (i = 0; i < this.lyrics.length; i++)
       inner += this.lyrics[i].createSvgFragment(ctxt);
+
+    if(this.translationText)
+      for (i = 0; i < this.translationText.length; i++)
+        inner += this.translationText[i].createSvgFragment(ctxt);
 
     if(this.alText)
       for (i = 0; i < this.alText.length; i++)

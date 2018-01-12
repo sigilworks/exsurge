@@ -42,8 +42,6 @@ export class Custos extends ChantNotationElement {
   performLayout(ctxt) {
     super.performLayout(ctxt);
 
-    var glyphCode;
-
     if (this.auto) {
 
       var neume = ctxt.findNextNeume();
@@ -148,6 +146,29 @@ export class FullBar extends Divider {
     super.performLayout(ctxt);
     
     this.addVisualizer(new DividerLineVisualizer(ctxt, -3, 3));
+
+    this.origin.x = this.bounds.width / 2;
+
+    this.finishLayout(ctxt);
+  }
+}
+
+/*
+ * DominicanBar
+ */
+export class DominicanBar extends Divider {
+
+  constructor(staffPosition) {
+    super();
+    staffPosition--;
+    var parity = staffPosition % 2;
+    
+    this.staffPosition = staffPosition - (2 * parity);
+  }
+
+  performLayout(ctxt) {
+    super.performLayout(ctxt);
+    this.addVisualizer(new DividerLineVisualizer(ctxt, this.staffPosition - 3, this.staffPosition));
 
     this.origin.x = this.bounds.width / 2;
 

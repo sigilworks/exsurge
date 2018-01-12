@@ -25,7 +25,7 @@
 //
 
 import { Units, Pitch, Point, Rect, Margins, Size, Step } from './Exsurge.Core.js'
-import { LyricType, Lyric, LyricArray, AboveLinesText } from './Exsurge.Drawing.js'
+import { LyricType, Lyric, LyricArray, AboveLinesText, TranslationText } from './Exsurge.Drawing.js'
 import { Note, LiquescentType, NoteShape, NoteShapeModifiers, ChantMapping, ChantScore, ChantDocument, Clef, DoClef, FaClef, TextOnly, ChantLineBreak } from './Exsurge.Chant.js'
 import * as Markings from './Exsurge.Chant.Markings.js'
 import * as Signs from './Exsurge.Chant.Signs.js'
@@ -34,7 +34,8 @@ import * as Neumes from './Exsurge.Chant.Neumes.js'
 // reusable reg exps
 var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
 var __altRegex = /<alt>(.*?)<\/alt>/g;
-var __notationsRegex = /z0|z|Z|::|:|;|,|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
+var __translationRegex = /\[(alt:)?(.*?)\]/g
+var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
 
 // for the brace string inside of [ and ] in notation data
 // the capturing groups are:
@@ -159,26 +160,29 @@ export class Gabc {
 
       var resultCode = results[i][0];
       var resultValues = results[i][1];
+      var lastTranslationNeumes = [];
 
       if(index>0) sourceIndex = mappings[index-1].sourceIndex + mappings[index-1].source.length + 1;
       if (resultCode === '=') {
         var sourceIndexDiff = sourceIndex - mappings[index].sourceIndex;
-        // skip over ones that haven't changed, but updating the clef and source index as we go
+        // skip over ones that haven't changed, but updating the clef and source index (and pitch in case clef has changed) as we go
         for (j = 0; j < resultValues.length; j++, index++) {
           mapping = mappings[index];
           mapping.sourceIndex += sourceIndexDiff;
           for (k = 0; k < mapping.notations.length; k++) {
+            var curNotation = mapping.notations[k];
             // notify the notation that its dependencies are no longer valid
-            mapping.notations[k].resetDependencies();
+            curNotation.resetDependencies();
 
-            if (mapping.notations[k].isClef)
+            if (curNotation.isClef)
               ctxt.activeClef = mappings[index].notations[k];
 
-            // update source index and automatic braces
-            if(mapping.notations[k].notes) {
-              for(l=0; l < mapping.notations[k].notes.length; ++l) {
-                let note = mapping.notations[k].notes[l];
+            // update source index, pitch, and automatic braces
+            if(curNotation.notes) {
+              for(l=0; l < curNotation.notes.length; ++l) {
+                let note = curNotation.notes[l];
                 note.sourceIndex += sourceIndexDiff;
+                note.pitch = ctxt.activeClef.staffPositionToPitch(note.staffPosition);
                 if(note.braceEnd && note.braceEnd.automatic) delete note.braceEnd;
                 if(this.needToEndBrace && !note.braceStart && !note.braceEnd) {
                   note.braceEnd = new Markings.BracePoint(note, this.needToEndBrace.isAbove, this.needToEndBrace.shape, this.needToEndBrace.attachment === Markings.BraceAttachment.Left? Markings.BraceAttachment.Right : Markings.BraceAttachment.Left);
@@ -189,13 +193,25 @@ export class Gabc {
                 }
               }
             }
-            if(sourceIndexDiff) {
-              for(l=0; l < mapping.notations[k].lyrics.length; ++l) {
-                mapping.notations[k].lyrics[l].sourceIndex += sourceIndexDiff;
+            if(curNotation.translationText) {
+              for(l=0; l < curNotation.translationText.length; ++l) {
+                var transText = curNotation.translationText[l];
+                delete transText.endNeume;
+                curNotation.translationText[l].sourceIndex += sourceIndexDiff;
+                if(transText.textAnchor === 'end' && lastTranslationNeumes[0]) {
+                  var lastTranslationText = lastTranslationNeumes[0].translationText[l];
+                  if(lastTranslationText) lastTranslationText.endNeume = curNotation;
+                }
               }
-              if(mapping.notations[k].alText) {
-                for(l=0; l < mapping.notations[k].alText.length; ++l) {
-                  mapping.notations[k].alText[l].sourceIndex += sourceIndexDiff;
+              lastTranslationNeumes[0] = curNotation;
+            }
+            if(sourceIndexDiff) {
+              for(l=0; l < curNotation.lyrics.length; ++l) {
+                curNotation.lyrics[l].sourceIndex += sourceIndexDiff;
+              }
+              if(curNotation.alText) {
+                for(l=0; l < curNotation.alText.length; ++l) {
+                  curNotation.alText[l].sourceIndex += sourceIndexDiff;
                 }  
               }
             }
@@ -209,7 +225,7 @@ export class Gabc {
         // insert new ones
         for (j = 0; j < resultValues.length; j++) {
           wordLength = resultValues[j].length + 1;
-          mapping = this.createMappingFromWord(ctxt, resultValues[j], sourceIndex);
+          mapping = this.createMappingFromWord(ctxt, resultValues[j], sourceIndex, lastTranslationNeumes);
 
           for (k = 0; k < mapping.notations.length; k++)
             if (mapping.notations[k].isClef)
@@ -231,7 +247,8 @@ export class Gabc {
   static createMappingsFromWords(ctxt, words) {
     var mappings = [];
     var sourceIndex = 0,
-        wordLength = 0;
+        wordLength = 0,
+        lastTranslationNeumes = [];
 
     for (var i = 0; i < words.length; i++) {
       sourceIndex += wordLength;
@@ -241,7 +258,7 @@ export class Gabc {
       if (word === '')
         continue;
 
-      var mapping = this.createMappingFromWord(ctxt, word, sourceIndex);
+      var mapping = this.createMappingFromWord(ctxt, word, sourceIndex, lastTranslationNeumes);
 
       if (mapping)
         mappings.push(mapping);
@@ -253,7 +270,7 @@ export class Gabc {
   // takes a gabc word (like those returned by splitWords below) and returns
   // a ChantMapping object that contains the gabc word source text as well
   // as the generated notations.
-  static createMappingFromWord(ctxt, word, sourceIndex) {
+  static createMappingFromWord(ctxt, word, sourceIndex, lastTranslationNeumes) {
 
     var matches = [];
     var notations = [];
@@ -269,7 +286,8 @@ export class Gabc {
       var match = matches[j];
 
       var lyricText = match[1].replace(/^\s+/,'').replace(/~/g,' ');
-      var alText = lyricText.match(__altRegex);
+      var alText = [];
+      var translationText = [];
       var notationData = match[2];
 
       // new words reset the accidentals, per the Solesmes style (see LU xviij)
@@ -285,19 +303,32 @@ export class Gabc {
       for (var k = 0; k < items.length; ++k)
         notations.push(items[k]);
 
-      if (alText) {
-        for(var i = 0; i < alText.length; ++i) {
-          var index = lyricText.indexOf(alText[i]);
-          lyricText = lyricText.slice(0,index) + lyricText.slice(index + alText[i].length);
-          alText[i] = makeAlText(alText[i].slice(5,-6), sourceIndex+index+5); // trim <alt> and </alt>
-        }
+      var m = __altRegex.exec();
+      while ((m = __altRegex.exec(lyricText))) {
+        let index = m.index;
+        lyricText = lyricText.slice(0,index) + lyricText.slice(index + m[0].length);
+        alText.push(makeAlText(m[1], sourceIndex+index+5));
+        __altRegex.exec();
       }
-      if (lyricText === '' && !alText)
+
+      m = __translationRegex.exec();
+      while ((m = __translationRegex.exec(lyricText))) {
+        let index = m.index;
+        lyricText = lyricText.slice(0,index) + lyricText.slice(index + m[0].length);
+        index += sourceIndex + 1
+        if(m[1]) {
+          alText.push(new AboveLinesText(ctxt, m[2], index + m[1].length));
+        } else {
+          translationText.push(new TranslationText(ctxt, m[2], index));
+        }
+        __translationRegex.exec();
+      }
+      if (lyricText === '' && alText.length === 0)
         continue;
 
       // add the lyrics and/or alText to the first notation that makes sense...
       var notationWithLyrics = null;
-      for (i = 0; i < items.length; i++) {
+      for (var i = 0; i < items.length; i++) {
         var cne = items[i];
 
         if (cne.isAccidental || cne.constructor === Signs.Custos)
@@ -310,8 +341,20 @@ export class Gabc {
       if (notationWithLyrics === null)
         return notations;
     
-      if (alText)
+      if (alText.length)
         notationWithLyrics.alText = alText;
+
+      if (translationText.length) {
+        notationWithLyrics.translationText = translationText;
+        for(i=0; i < translationText.length; ++i) {
+          var transText = translationText[i];
+          if(transText.textAnchor === 'end' && lastTranslationNeumes[0]) {
+            var lastTranslationText = lastTranslationNeumes[0].translationText[i];
+            if(lastTranslationText) lastTranslationText.endNeume = notationWithLyrics;
+          }
+        }
+        lastTranslationNeumes[0] = notationWithLyrics;
+      }
 
       if (lyricText === '')
         continue;
@@ -490,6 +533,20 @@ export class Gabc {
           break;
         case ";":
           addNotation(new Signs.HalfBar());
+          break;
+        case ";1":
+        case ";2":
+        case ";3":
+        case ";4":
+        case ";5":
+        case ";6":
+        case ",1":
+        case ",2":
+        case ",3":
+        case ",4":
+        case ",5":
+        case ",6":
+          addNotation(new Signs.DominicanBar(parseInt(atom[1],10)));
           break;
         case ":":
           addNotation(new Signs.FullBar());
@@ -1055,7 +1112,6 @@ export class Gabc {
     note.pitch = pitch;
 
     var mark;
-    var j;
 
     var episemaNoteIndex = notes.length;
     var episemaNote = note;
@@ -1325,8 +1381,6 @@ export class Gabc {
     }
 
     var attachmentPoint = results[3] === '1' ? Markings.BraceAttachment.Left : Markings.BraceAttachment.Right;
-    var brace = null;
-    var type;
 
     if (results[4] === '{' || results[5])
       note.braceStart = new Markings.BracePoint(note, above, shape, attachmentPoint);

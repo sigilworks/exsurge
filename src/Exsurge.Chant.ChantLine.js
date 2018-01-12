@@ -25,6 +25,7 @@
 
 import * as Exsurge from './Exsurge.Core.js'
 import { Step, Pitch, Rect, Point, Margins } from './Exsurge.Core.js'
+import * as Neumes from './Exsurge.Chant.Neumes.js'
 import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, LyricType, DropCap } from './Exsurge.Drawing.js'
 import { ChantLineBreak, TextOnly, NoteShape } from './Exsurge.Chant.js'
 import { Glyphs } from './Exsurge.Glyphs.js'
@@ -96,22 +97,32 @@ export class ChantLine extends ChantLayoutElement {
     this.altLineBaseline = 0;
     this.numAltLines = 0;
 
+    this.translationLineHeight = 0;
+    this.translationLineBaseline = 0;
+    this.numTranslationLines = 0;
+
     for (i = this.notationsStartIndex; i < lastIndex; i++) {
       notation = notations[i];
 
       this.notationBounds.union(notation.bounds);
 
       // keep track of lyric line offsets
-      if(this.numLyricLines === 0 && notation.hasLyrics()) {
+      if(notation.lyrics.length && (this.numLyricLines < notation.lyrics.length || (this.numLyricLines > 0 && (this.lyricLineHeight * this.lyricLineBaseline === 0)))) {
         if(notation.lyrics[0].bounds.height > this.lyricLineHeight) this.lyricLineHeight = notation.lyrics[0].bounds.height;
         if(notation.lyrics[0].origin.y > this.lyricLineBaseline) this.lyricLineBaseline = notation.lyrics[0].origin.y;
         if(notation.lyrics.length > this.numLyricLines) this.numLyricLines = notation.lyrics.length;
       }
 
-      if(this.numAltLines === 0 && notation.alText) {
+      if(notation.alText && this.numAltLines < notation.alText.length) {
         if(notation.alText[0].bounds.height > this.altLineHeight) this.altLineHeight = notation.alText[0].bounds.height;
         if(notation.alText[0].origin.y > this.altLineBaseline) this.altLineBaseline = notation.alText[0].origin.y;
         if(notation.alText.length > this.numAltLines) this.numAltLines = notation.alText.length;        
+      }
+
+      if(notation.translationText && this.numTranslationLines < notation.translationText.length) {
+        if(notation.translationText[0].bounds.height > this.translationLineHeight) this.translationLineHeight = notation.translationText[0].bounds.height;
+        if(notation.translationText[0].origin.y > this.translationLineBaseline) this.translationLineBaseline = notation.translationText[0].origin.y;
+        if(notation.translationText.length > this.numTranslationLines) this.numTranslationLines = notation.translationText.length;        
       }
     }
 
@@ -131,6 +142,13 @@ export class ChantLine extends ChantLayoutElement {
       for (var j = 0; j < notation.lyrics.length; j++) {
         notation.lyrics[j].bounds.y = offset + this.lyricLineBaseline;
         offset += this.lyricLineHeight;
+      }
+
+      if(notation.translationText) {
+        for (j = 0; j < notation.translationText.length; j++) {
+          notation.translationText[j].bounds.y = offset + this.translationLineBaseline;
+          offset += this.translationLineHeight;
+        }
       }
 
       if(notation.alText) {
@@ -156,7 +174,7 @@ export class ChantLine extends ChantLayoutElement {
       if (this.score.dropCap !== null) {
 
         var dropCapY;
-        dropCapY = this.notationBounds.y + this.notationBounds.height + this.lyricLineBaseline + (this.altLineHeight * this.numAltLines) - (this.altLineHeight * this.numAltLines);
+        dropCapY = this.notationBounds.y + this.notationBounds.height + this.lyricLineBaseline;
 
         // drop caps and annotations are drawn from their center, so aligning them
         // horizontally is as easy as this.staffLeft / 2
@@ -188,7 +206,7 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // add up the lyric line heights to get the total height of the chant line
-    this.notationBounds.height += Math.max(ctxt.minSpaceBelowStaff * ctxt.staffInterval, (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines));
+    this.notationBounds.height += Math.max(ctxt.minSpaceBelowStaff * ctxt.staffInterval, (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines) + (this.translationLineHeight * this.numTranslationLines));
     var totalHeight = this.notationBounds.height;
     this.notationBounds.y -= this.altLineHeight * this.numAltLines;
 
@@ -415,7 +433,6 @@ export class ChantLine extends ChantLayoutElement {
     // and q factor, .5 is normal, higher q = more expressive bracket 
     var q = 0.6;
 
-    var dx = -1;
     var len = x2 - x1;
 
     //Calculate Control Points of path,
@@ -514,6 +531,7 @@ export class ChantLine extends ChantLayoutElement {
 
     // estimate how much space we have available to us
     var rightNotationBoundary = this.staffRight - Glyphs.CustosLong.bounds.width * ctxt.glyphScaling; // possible custos on the line
+    var lastTranslationTextWithEndNeume = null;
 
     // iterate through the notations, fittng what we can on this line
     var i, j, lastNotationIndex = notations.length - 1;
@@ -558,6 +576,12 @@ export class ChantLine extends ChantLayoutElement {
           this.numNotationsOnLine--;
         }
 
+        if (lastTranslationTextWithEndNeume) {
+          console.info(notations[i-1], lastTranslationTextWithEndNeume);
+          // need to go back to before the last translation text start:
+
+        }
+
         // check if the prev elements want to be kept with this one
         for (j = i - 1; j > this.notationsStartIndex; j--) {
           var cne = notations[j];
@@ -565,6 +589,15 @@ export class ChantLine extends ChantLayoutElement {
 
           // curr is the first notation on the next line
           // cne is the last notation on the previous line
+
+          // don't let a line break occur in the middle of a translation
+          if (lastTranslationTextWithEndNeume) {
+            this.numNotationsOnLine--;
+            if (cne === lastTranslationTextWithEndNeume) {
+              lastTranslationTextWithEndNeume = null;
+            }
+            continue;
+          }
 
           // force any notations starting with a quilisma to be kept with the previous notation:
           if(curr && curr.notes && curr.notes[0].shape === NoteShape.Quilisma) {
@@ -635,6 +668,12 @@ export class ChantLine extends ChantLayoutElement {
 
       if (curr.hasLyrics())
         LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
+
+      if (lastTranslationTextWithEndNeume && curr === lastTranslationTextWithEndNeume.translationText[0].endNeume) {
+        lastTranslationTextWithEndNeume = null;
+      } else if (curr.translationText && curr.translationText.length && curr.translationText[0].endNeume) {
+        lastTranslationTextWithEndNeume = curr;
+      }
 
       curr.chantLine = this;
       this.numNotationsOnLine++;
@@ -857,19 +896,51 @@ export class ChantLine extends ChantLayoutElement {
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
+    var processNeumeForLedgerLine = (neume) => {
+      var firstAbove = false,
+          needsAbove = false,
+          firstBelow = false,
+          needsBelow = false,
+          isPorrectus = false;
+
+      if (!neume.notes) return;
+
+      for (var i = 0; i < neume.notes.length; ++i) {
+        var note = neume.notes[i];
+        var staffPosition = note.staffPosition;
+        if (staffPosition >= 4) {
+          needsAbove = needsAbove || staffPosition >= 5;
+          if(firstAbove === false) firstAbove = isPorrectus? i - 1 : i;
+          if(staffPosition >= 5) continue;
+        } else if (staffPosition <= -4) {
+          needsBelow = needsBelow || staffPosition <= -5;
+          if(firstBelow === false) firstBelow = isPorrectus? i - 1 : i;
+          if(staffPosition <= -5) continue;
+        }
+        if (needsAbove || needsBelow) {
+          var endI = Math.abs(staffPosition) >= 4? i : i - 1;
+          processElementForLedgerLine(neume.notes[firstAbove || firstBelow || 0], neume.notes[endI], needsAbove? 5 : -5, neume.bounds.x);
+          firstAbove = firstBelow = needsAbove = needsBelow = false;
+        }
+        isPorrectus = /^Porrectus\d$/.test(note.glyphVisualizer.glyphCode);
+      }
+      if (needsAbove || needsBelow) {
+        processElementForLedgerLine(neume.notes[firstAbove || firstBelow || 0], neume.notes[neume.notes.length - 1], needsAbove? 5 : -5, neume.bounds.x);
+      }
+    }
+
     // an element needs to have a staffPosition property, as well as the standard
     // bounds property. so it could be a note, or it could be a custos
-    // offsetX and offsetY can be used to add to the position info for the element,
+    // offsetX can be used to add to the position info for the element,
     // useful in the case of notes.
-    var processElementForLedgerLine = (element, offsetX = 0, offsetY = 0) => {
+    var processElementForLedgerLine = (element, endElem = element, staffPosition = element.staffPosition, offsetX = 0) => {
 
       // do we need a ledger line for this note?
-      var staffPosition = element.staffPosition;
 
       if (staffPosition >= 5 || staffPosition <= -5) {
 
         var x1 = offsetX + element.bounds.x - ctxt.intraNeumeSpacing;
-        var x2 = offsetX + element.bounds.x + element.bounds.width + ctxt.intraNeumeSpacing;
+        var x2 = offsetX + endElem.bounds.x + endElem.bounds.width + ctxt.intraNeumeSpacing;
 
         // round the staffPosition to the nearest line
         if (staffPosition > 0)
@@ -906,6 +977,14 @@ export class ChantLine extends ChantLayoutElement {
     var startBrace = null;
     var minY = Number.MAX_VALUE, maxY = Number.MIN_VALUE; // for braces
 
+    var positionNonLyricText = (text, neume, rightX) => {
+      text.bounds.x = neume.hasLyrics()? Math.min(...neume.lyrics.map(l => l.bounds.x)) : 0;
+      if (rightX) text.bounds.x = (text.bounds.x + rightX - text.bounds.width) / 2;
+      var beyondStaffRight = neume.bounds.x + text.bounds.right() - this.staffRight;
+      if (beyondStaffRight > 0)
+        text.bounds.x -= beyondStaffRight;
+    }
+
     // make a final pass over all of the notes to add any necessary
     // ledger lines and to smooth out episemata
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
@@ -923,10 +1002,21 @@ export class ChantLine extends ChantLayoutElement {
       // if the AboveLinesText would extend beyond the right edge of the staff, right align it instead
       if (neume.alText) {
         for (var j = 0; j < neume.alText.length; j++) {
-          neume.alText[j].bounds.x = neume.hasLyrics()? neume.lyrics[j].bounds.x : 0;
-          var beyondStaffRight = neume.bounds.x + neume.alText[j].bounds.right() - this.staffRight;
-          if (beyondStaffRight > 0)
-            neume.alText[j].bounds.x -= beyondStaffRight;
+          positionNonLyricText(neume.alText[j], neume);
+        }
+      }
+
+      // set up horizontal position of translations
+      if (neume.translationText) {
+        for (j = 0; j < neume.translationText.length; j++) {
+          var text = neume.translationText[j];
+          if(text.endNeume) {
+            var rightX = text.endNeume.hasLyrics()? text.endNeume.bounds.x + Math.max(...text.endNeume.lyrics.map(l => l.bounds.right())) : text.endNeume.bounds.right();
+            rightX -= neume.bounds.x;
+            positionNonLyricText(text, neume, rightX);
+          } else {
+            positionNonLyricText(text, neume);
+          }
         }
       }
 
@@ -934,10 +1024,10 @@ export class ChantLine extends ChantLayoutElement {
       if (!neume.isNeume)
         continue;
 
+      processNeumeForLedgerLine(neume);
+
       for (j = 0; j < neume.notes.length; j++) {
         var k, note = neume.notes[j];
-
-        processElementForLedgerLine(note, neume.bounds.x, neume.bounds.y);
 
         // blend episemata as we're able
         if (note.episemata.length === 0)
@@ -1048,7 +1138,15 @@ export class ChantLine extends ChantLayoutElement {
 
     // To begin we just place the current notation right after the previous,
     // irrespective of lyrics.
-    curr.bounds.x = prev.bounds.right() + prev.trailingSpace;
+    curr.bounds.x = prev.bounds.right();
+    if (curr.constructor === TextOnly) {
+      // We transfer over the trailing space from the previous neume if the current neume is text only,
+      // so that the text only neume has a better chance at not needing a connector.
+      curr.trailingSpace = prev.trailingSpace;
+      if (curr.hasLyrics()) curr.trailingSpace -= curr.lyrics[0].bounds.width;
+    } else {
+      curr.bounds.x += prev.trailingSpace;
+    }
 
     if(curr.hasLyrics() && !prev.isDivider && !prev.isAccidental && this.numNotationsOnLine > 0 &&
         (curr.lyrics[0].lyricType === LyricType.SingleSyllable || curr.lyrics[0].lyricType === LyricType.BeginningSyllable)) {
@@ -1064,18 +1162,26 @@ export class ChantLine extends ChantLayoutElement {
       // if the lyric left is negative, then offset the neume appropriately
       for (i = 0; i < curr.lyrics.length; i++) {
 
-        curr.lyrics[i].setNeedsConnector(false); // we hope for the best!
+        let currLyric = curr.lyrics[i];
+        // we hope for the best!
+        // but always use a connector if the lyric has original text that was all used up for the drop cap.
+        let needsConnector = currLyric.allowsConnector() && currLyric.dropCap && currLyric.originalText && !currLyric.text;
+        currLyric.setNeedsConnector(needsConnector);
 
-        if (curr.lyrics[i].getLeft() < 0)
-          curr.bounds.x += -curr.lyrics[i].getLeft();
+        if (currLyric.getLeft() < 0)
+          curr.bounds.x += -currLyric.getLeft();
 
-        maxRight = Math.max(maxRight, curr.lyrics[i].getRight());
+        maxRight = Math.max(maxRight, currLyric.getRight());
       }
 
       if (maxRight > rightNotationBoundary)
         return false;
       else
         return true;
+    } else {
+      if (!curr.hasLyrics()) {
+        curr.bounds.x = Math.max(curr.bounds.x, prevLyrics[0].getRight());
+      }
     }
 
     // if the curr notation has no lyrics, then simply check whether there is enough room

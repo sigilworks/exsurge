@@ -36,10 +36,7 @@ if (typeof document !== 'undefined' && document.registerElement) {
   ChantVisualElementPrototype.createdCallback = function() {
     var ctxt = new ChantContext();
     
-    ctxt.lyricTextFont = "'Crimson Text', serif";
-    ctxt.lyricTextSize *= 1.2;
-    ctxt.dropCapTextFont = ctxt.lyricTextFont;
-    ctxt.annotationTextFont = ctxt.lyricTextFont;
+    ctxt.setFont("'Crimson Text', serif", 19.2);
 
     var useDropCap = true;
     var useDropCapAttr = this.getAttribute("use-drop-cap");

@@ -45,7 +45,7 @@ class NeumeBuilder {
   // used to start a hanging line on the left of the next note
   lineFrom(note) {
     var previousNotation = this.ctxt.notations[this.ctxt.currNotationIndex - 1];
-    if(this.x === 0 && previousNotation && previousNotation.trailingSpace === 0) {
+    if(this.x === 0 && previousNotation && previousNotation.notes && previousNotation.trailingSpace === 0) {
       this.lastNote = previousNotation.notes.slice(-1)[0];
       this.minX = -this.ctxt.neumeLineWeight;
     } else {
@@ -188,9 +188,6 @@ class NeumeBuilder {
 
   withClivis(upper, lower) {
 
-    var line;
-
-    var upperGlyph;
     var lowerGlyph;
 
     if (upper.shape === NoteShape.Oriscus)
@@ -393,7 +390,7 @@ export class Neume extends ChantNotationElement {
     return new NeumeBuilder(ctxt, this);
   }
   positionEpisemata(note, position) {
-    var mark, i;
+    var i;
     for (i = 0; i < note.episemata.length; i++)
       if (note.episemata[i].positionHint === MarkingPositionHint.Default)
         note.episemata[i].positionHint = position;
@@ -449,7 +446,7 @@ export class Neume extends ChantNotationElement {
   positionClivisMorae(firstNote, secondNote) {
     // 1. morae need to be lined up if both notes have morae
     var morae = firstNote.morae.concat(secondNote.morae);
-    if (morae.length) {
+    if (secondNote.morae.length) {
       if(morae.length > 1) morae[0].horizontalOffset += secondNote.bounds.right() - firstNote.bounds.right();
       if(firstNote.staffPosition - secondNote.staffPosition === 1 &&
           Math.abs(secondNote.staffPosition % 2) === 1) {
@@ -728,7 +725,7 @@ export class PesQuassus extends Neume {
     var lower = this.notes[0];
     var upper = this.notes[1];
 
-    var lowerGlyph, upperGlyph;
+    var lowerGlyph;
 
     var lowerStaffPos = lower.staffPosition;
     var upperStaffPos = upper.staffPosition;

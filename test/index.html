@@ -37,8 +37,7 @@
     // ctxt.specialCharProperties['font-family'] = "'Versiculum'";
     // ctxt.specialCharText = char => char.toLowerCase();
     
-    ctxt.lyricTextFont = "'Crimson Text', serif";
-    ctxt.lyricTextSize *= 1.2;
+    ctxt.setFont("'Crimson Text', serif", 19.2);
     ctxt.dropCapTextFont = ctxt.lyricTextFont;
     ctxt.annotationTextFont = ctxt.lyricTextFont;
     ctxt.textMeasuringStrategy = exsurge.TextMeasuringStrategy.Canvas;
@@ -72,7 +71,7 @@
     // };
     //
 
-    function updateChant() {
+    window.updateChant = function() {
       if (score) {
         exsurge.Gabc.updateMappingsFromSource(ctxt, score.mappings, gabcSource.value);
         score.updateNotations(ctxt);

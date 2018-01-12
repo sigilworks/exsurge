@@ -303,6 +303,7 @@ export class TextOnly extends ChantNotationElement {
 
   constructor() {
     super();
+    this.trailingSpace = 0;
   }
 
   performLayout(ctxt) {
