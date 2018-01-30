@@ -1182,7 +1182,7 @@ export class ChantLine extends ChantLayoutElement {
       else
         return true;
     } else {
-      if (!curr.hasLyrics()) {
+      if (!prev.constructor === TextOnly && !curr.hasLyrics()) {
         curr.bounds.x = Math.max(curr.bounds.x, prevLyrics[0].getRight());
       }
     }
