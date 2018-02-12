@@ -276,6 +276,7 @@ export class ChantContext {
 
     this.textMeasuringStrategy = textMeasuringStrategy;
     this.defs = {};
+    this.makeDefs = [];
     this.defsNode = QuickSvg.createNode('defs');
 
     // font styles
@@ -480,9 +481,11 @@ export class ChantContext {
 
     this.intraNeumeSpacing = this.staffInterval / 2.0;
 
-    this.defs = {};
     while(this.defsNode.firstChild)
         this.defsNode.removeChild(this.defsNode.firstChild);
+    for(var i = 0; i < this.makeDefs.length; ++i) {
+      this.makeDefs[i]();
+    }
   }
 
   calculateHeightFromStaffPosition(staffPosition) {
@@ -775,20 +778,24 @@ export class GlyphVisualizer extends ChantLayoutElement {
 
     // if this glyph hasn't been used yet, then load it up in the defs section for sharing
     if (!ctxt.defs.hasOwnProperty(this.glyphCode)) {
-      var glyphSrc = this.glyph.svgSrc;
+      var makeDef = () => {
+        var glyphSrc = this.glyph.svgSrc;
 
-      // create the ref
-      ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', {
-        id: this.glyphCode,
-        'class': 'glyph',
-        transform: 'scale(' + ctxt.glyphScaling + ')'
-      }, glyphSrc);
+        // create the ref
+        ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', {
+          id: this.glyphCode,
+          'class': 'glyph',
+          transform: 'scale(' + ctxt.glyphScaling + ')'
+        }, glyphSrc);
 
-      ctxt.defsNode.appendChild( QuickSvg.createNode('g', {
-        id: this.glyphCode,
-        'class': 'glyph',
-        transform: 'scale(' + ctxt.glyphScaling + ')'
-      }, QuickSvg.nodesForGlyph(this.glyph)));
+        ctxt.defsNode.appendChild( QuickSvg.createNode('g', {
+          id: this.glyphCode,
+          'class': 'glyph',
+          transform: 'scale(' + ctxt.glyphScaling + ')'
+        }, QuickSvg.nodesForGlyph(this.glyph)));
+      };
+      makeDef();
+      ctxt.makeDefs.push(makeDef);
     }
 
     this.align = this.glyph.align;
