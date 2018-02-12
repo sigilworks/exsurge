@@ -1072,13 +1072,10 @@ export class Gabc {
     if (neumes.length > 0) {
       if (finalTrailingSpace >= 0) {
         neumes[neumes.length - 1].trailingSpace = finalTrailingSpace;
+        neumes[neumes.length - 1].keepWithNext = true;
 
-        if (finalTrailingSpace > ctxt.intraNeumeSpacing)
-          neumes[neumes.length - 1].keepWithNext = false;
-        else if (finalTrailingSpace === ctxt.intraNeumeSpacing)
+        if (finalTrailingSpace >= ctxt.intraNeumeSpacing)
           neumes[neumes.length - 1].allowLineBreakBeforeNext = neumes[neumes.length - 1].keepWithNext = true;
-        else
-          neumes[neumes.length - 1].keepWithNext = true;
       }
     }
 
