@@ -479,6 +479,10 @@ export class ChantContext {
     this.updateHyphenWidth();
 
     this.intraNeumeSpacing = this.staffInterval / 2.0;
+
+    this.defs = {};
+    while(this.defsNode.firstChild)
+        this.defsNode.removeChild(this.defsNode.firstChild);
   }
 
   calculateHeightFromStaffPosition(staffPosition) {
