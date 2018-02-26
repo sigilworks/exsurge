@@ -700,8 +700,12 @@ export class ChantLine extends ChantLayoutElement {
           ctxt.currNotationIndex = i - 1; // make sure the context knows where the custos is
           this.custos.performLayout(ctxt);
 
-          // Put the custos at the very end of the line
-          this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
+          if (this.justify) {
+            // Put the custos at the very end of the line
+            this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
+          } else {
+            this.custos.bounds.x = curr.bounds.x;
+          }
           // nothing more to see here...
           break;
         }
