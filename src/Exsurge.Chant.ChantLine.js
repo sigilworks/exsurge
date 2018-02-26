@@ -687,6 +687,12 @@ export class ChantLine extends ChantLayoutElement {
         if (this.justify) this.findNeumesToJustify(prevLyrics);
         break;
       }
+
+      if(curr.constructor === Custos) {
+        this.custos = curr;
+      } else if(curr.isNeume) {
+        this.custos = null;
+      }
     }
 
     if(!this.custos) {
@@ -1151,7 +1157,7 @@ export class ChantLine extends ChantLayoutElement {
       // so that the text only neume has a better chance at not needing a connector.
       curr.trailingSpace = prev.trailingSpace;
       if (curr.hasLyrics()) curr.trailingSpace -= curr.lyrics[0].bounds.width;
-    } else {
+    } else if (curr.constructor !== ChantLineBreak) {
       curr.bounds.x += prev.trailingSpace;
     }
 
