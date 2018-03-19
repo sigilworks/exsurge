@@ -339,7 +339,7 @@ export class Gabc {
       }
 
       if (notationWithLyrics === null)
-        return notations;
+        return new ChantMapping(word, notations, sourceIndex);
     
       if (alText.length)
         notationWithLyrics.alText = alText;

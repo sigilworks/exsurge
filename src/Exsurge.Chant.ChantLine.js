@@ -599,8 +599,8 @@ export class ChantLine extends ChantLayoutElement {
             continue;
           }
 
-          // force any notations starting with a quilisma to be kept with the previous notation:
-          if(curr && curr.notes && curr.notes[0].shape === NoteShape.Quilisma) {
+          // force any notations starting with a quilisma or inclinatum (diamond) to be kept with the previous notation:
+          if(curr && curr.notes && (curr.notes[0].shape === NoteShape.Quilisma || curr.notes[0].shape === NoteShape.Inclinatum)) {
             this.numNotationsOnLine--;
             continue;
           }
