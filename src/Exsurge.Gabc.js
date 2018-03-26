@@ -331,7 +331,7 @@ export class Gabc {
       for (var i = 0; i < items.length; i++) {
         var cne = items[i];
 
-        if (cne.isAccidental || cne.constructor === Signs.Custos)
+        if (cne.isAccidental && i + 1 < items.length)
           continue;
 
         notationWithLyrics = cne
@@ -361,8 +361,8 @@ export class Gabc {
 
       var proposedLyricType;
       
-      // if it's not a neume or a TextOnly notation, then make the lyrics a directive
-      if (!cne.isNeume && cne.constructor !== TextOnly)
+      // if it's not a neume, then make the lyrics a directive
+      if (!cne.isNeume)
         proposedLyricType = LyricType.Directive;
       // otherwise trye to guess the lyricType for the first lyric anyway
       else if (currSyllable === 0 && j === (matches.length - 1))
