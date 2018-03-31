@@ -777,7 +777,7 @@ export class ChantLine extends ChantLayoutElement {
     var prev,
         curr = null,
         lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
-    for (var i = this.notationsStartIndex; i <= lastIndex; i++) {
+    for (var i = this.notationsStartIndex; i < lastIndex; i++) {
 
       prev = curr;
       curr = this.score.notations[i];
@@ -797,7 +797,7 @@ export class ChantLine extends ChantLayoutElement {
       if (curr.constructor === ChantLineBreak)
         continue;
 
-      if (curr === this.custos)
+      if (curr === this.custos && !curr.hasLyrics())
         continue;
 
       if (i === 0 && this.score.useDropCap && curr.hasLyrics())
@@ -806,7 +806,8 @@ export class ChantLine extends ChantLayoutElement {
       // otherwise, we can add space before this element
       this.toJustify.push(curr);
     }
-    return prev;
+    LyricArray.mergeIn(prevLyrics, curr.lyrics);
+    return curr;
   }
 
   justifyElements() {
@@ -828,8 +829,14 @@ export class ChantLine extends ChantLayoutElement {
         extraSpace = this.staffRight - (last.bounds.right() + last.trailingSpace);  
     }
 
-    if (this.custos)
-      extraSpace -= this.custos.bounds.width + this.custos.leadingSpace;
+    if (this.custos) {
+      if (this.custos.hasLyrics()) {
+        extraSpace = this.staffRight - LyricArray.getRight(this.custos.lyrics);
+      } else {
+        extraSpace -= this.custos.bounds.width
+      }
+      extraSpace -= this.custos.leadingSpace;
+    }
 
     if (extraSpace === 0)
       return;
@@ -845,8 +852,13 @@ export class ChantLine extends ChantLayoutElement {
 
       curr = notations[i];
 
-      if (curr === this.custos)
+      if (curr === this.custos) {
+        if (curr.hasLyrics()) {
+          curr.bounds.x = Math.min(curr.bounds.x + (this.staffRight - LyricArray.getRight(curr.lyrics)), this.staffRight - curr.bounds.width);
+          offset += increment
+        }
         continue;
+      }
 
       if (toJustifyIndex < toJustify.length && toJustify[toJustifyIndex] === curr) {
         offset += increment;
