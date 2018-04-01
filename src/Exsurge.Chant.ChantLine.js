@@ -806,7 +806,7 @@ export class ChantLine extends ChantLayoutElement {
       // otherwise, we can add space before this element
       this.toJustify.push(curr);
     }
-    LyricArray.mergeIn(prevLyrics, curr.lyrics);
+    if (curr !== null) LyricArray.mergeIn(prevLyrics, curr.lyrics);
     return curr;
   }
 
