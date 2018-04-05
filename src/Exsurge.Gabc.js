@@ -361,8 +361,8 @@ export class Gabc {
 
       var proposedLyricType;
       
-      // if it's not a neume, then make the lyrics a directive
-      if (!cne.isNeume)
+      // if it's not a neume or a TextOnly notation, then make the lyrics a directive
+      if (!cne.isNeume && cne.constructor !== TextOnly)
         proposedLyricType = LyricType.Directive;
       // otherwise trye to guess the lyricType for the first lyric anyway
       else if (currSyllable === 0 && j === (matches.length - 1))
