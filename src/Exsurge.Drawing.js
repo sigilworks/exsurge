@@ -1112,7 +1112,7 @@ export class TextElement extends ChantLayoutElement {
   }
 
   generateSpansFromText(ctxt, text) {
-
+    text = text.replace(/\s+/g,' ');
     this.text = "";
     this.spans = [];
 
@@ -1211,17 +1211,22 @@ export class TextElement extends ChantLayoutElement {
     if(!length) length = Infinity;
     var canvasCtxt = ctxt.canvasCtxt;
     var width = 0;
+    var widths = [];
     var subStringLength = 0;
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i],
           myText = span.text.slice(0, length - subStringLength);
+      if(span.properties.newLine) {
+        widths.push(width);
+        width = 0;
+      }
       canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
       var metrics = canvasCtxt.measureText(myText, this.bounds.x, this.bounds.y);
       width += metrics.width;
       subStringLength += myText.length;
       if(subStringLength === length) break;
     }
-    return width;
+    return Math.max(width, ...widths);
   }
 
   recalculateMetrics(ctxt) {
@@ -1230,7 +1235,7 @@ export class TextElement extends ChantLayoutElement {
     this.bounds.y = 0;
 
     this.origin.x = 0;
-  
+
     if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
       while(ctxt.svgTextMeasurer.firstChild)
         ctxt.svgTextMeasurer.removeChild(ctxt.svgTextMeasurer.firstChild);
@@ -1242,10 +1247,53 @@ export class TextElement extends ChantLayoutElement {
       this.bounds.height = bbox.height;
       this.origin.y = -bbox.y; // offset to baseline from top
     } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
+      var numLines = this.spans.reduce((r,i) => (r + (i.properties.newLine? 1 : 0)), 1);
       this.bounds.width = this.measureSubstring(ctxt);
-      this.bounds.height = this.fontSize * 1.2;
+      this.bounds.height = this.fontSize * (numLines + 0.2);
       this.origin.y = this.fontSize;
     }
+  }
+
+  setMaxWidth(ctxt, maxWidth) {
+    if(this.lastMaxWidth && this.lastMaxWidth != maxWidth) {
+      // replace newlines with spaces
+      this.spans.forEach(span => (span.properties.newLine && (delete span.properties.newLine, span.text = ' ' + span.text)));
+      this.recalculateMetrics(ctxt);
+    }
+    if (this.bounds.width > maxWidth) {
+      var lastWidth = 0,
+          lastMatch = null,
+          regex = /\s+|$/g,
+          match;
+      while((match=regex.exec(this.text))) {
+        var width = this.measureSubstring(ctxt, match.index);
+        if(width > maxWidth && lastMatch) {
+          var spanIndex = 0,
+              length = 0;
+          while(length < lastMatch.index && spanIndex < this.spans.length) {
+            length += this.spans[spanIndex++].text.length;
+          }
+          if(length > lastMatch.index) {
+            length -= this.spans[--spanIndex].text.length;
+          }
+          var splitSpan = this.spans[spanIndex],
+              textLeft = splitSpan.text.slice(0, lastMatch.index - length),
+              textRight = splitSpan.text.slice(lastMatch.index + lastMatch[0].length - length),
+              newSpans = [];
+          if(textLeft) newSpans.push(new TextSpan(textLeft, splitSpan.properties));
+          if(textRight) newSpans.push(new TextSpan(textRight, { ...splitSpan.properties, newLine: true }));
+          this.spans.splice(spanIndex, 1, ...newSpans);
+          if(match.index == this.text.length || this.measureSubstring(ctxt) <= maxWidth) break;
+          width = 0;
+          match = null;
+        }
+        lastWidth = width;
+        lastMatch = match;
+      }
+
+      this.recalculateMetrics(ctxt);
+    }
+    this.lastMaxWidth = maxWidth;
   }
 
   getCssClasses() {
@@ -1271,9 +1319,15 @@ export class TextElement extends ChantLayoutElement {
     else
       canvasCtxt.textAlign = 'start';
 
-    var translateWidth = 0;
+    var translateWidth = 0,
+        translateHeight = 0;
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i];
+      if(span.properties.newLine) {
+        canvasCtxt.translate(translateWidth, this.fontSize);
+        translateWidth = 0;
+        translateHeight -= this.fontSize;
+      }
       var properties = Object.assign({}, this.getExtraStyleProperties(ctxt), span.properties);
       canvasCtxt.font = this.getCanvasFontForProperties(properties);
       canvasCtxt.fillStyle = properties.fill || '#000';
@@ -1282,7 +1336,7 @@ export class TextElement extends ChantLayoutElement {
       translateWidth -= metrics.width;
       canvasCtxt.translate(metrics.width, 0);
     }
-    canvasCtxt.translate(translateWidth, 0);
+    canvasCtxt.translate(translateWidth, translateHeight);
   }
 
   createSvgNode(ctxt) {
@@ -1293,6 +1347,10 @@ export class TextElement extends ChantLayoutElement {
       var options = {};
 
       options['style'] = getCssForProperties(this.spans[i].properties);
+      if(this.spans[i].properties.newLine) {
+        options.dy = '1em';
+        options.x = this.bounds.x;
+      }
 
       spans.push( QuickSvg.createNode('tspan', options, this.spans[i].text) );
     }
@@ -1319,6 +1377,10 @@ export class TextElement extends ChantLayoutElement {
       var options = {};
 
       options['style'] = getCssForProperties(this.spans[i].properties);
+      if(this.spans[i].properties.newLine) {
+        options.dy = '1em';
+        options.x = this.bounds.x;
+      }
 
       spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(this.spans[i].text));
     }

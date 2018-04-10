@@ -1003,11 +1003,16 @@ export class ChantLine extends ChantLayoutElement {
     var minY = Number.MAX_VALUE, maxY = Number.MIN_VALUE; // for braces
 
     var positionNonLyricText = (text, neume, rightX) => {
+      text.setMaxWidth(ctxt, this.staffRight);
       text.bounds.x = neume.hasLyrics()? Math.min(...neume.lyrics.map(l => l.bounds.x)) : 0;
       if (rightX) text.bounds.x = (text.bounds.x + rightX - text.bounds.width) / 2;
       var beyondStaffRight = neume.bounds.x + text.bounds.right() - this.staffRight;
-      if (beyondStaffRight > 0)
+      if (beyondStaffRight > 0) {
         text.bounds.x -= beyondStaffRight;
+      }
+      if (neume.bounds.x + text.bounds.x < 0) {
+        text.bounds.x = -neume.bounds.x;
+      }
     }
 
     // make a final pass over all of the notes to add any necessary
