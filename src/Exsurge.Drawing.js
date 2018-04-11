@@ -1255,7 +1255,7 @@ export class TextElement extends ChantLayoutElement {
   }
 
   setMaxWidth(ctxt, maxWidth) {
-    if(this.lastMaxWidth && this.lastMaxWidth != maxWidth) {
+    if(this.lastMaxWidth && this.lastMaxWidth !== maxWidth) {
       // replace newlines with spaces
       this.spans.forEach(span => (span.properties.newLine && (delete span.properties.newLine, span.text = ' ' + span.text)));
       this.recalculateMetrics(ctxt);
@@ -1281,9 +1281,9 @@ export class TextElement extends ChantLayoutElement {
               textRight = splitSpan.text.slice(lastMatch.index + lastMatch[0].length - length),
               newSpans = [];
           if(textLeft) newSpans.push(new TextSpan(textLeft, splitSpan.properties));
-          if(textRight) newSpans.push(new TextSpan(textRight, { ...splitSpan.properties, newLine: true }));
+          if(textRight) newSpans.push(new TextSpan(textRight, Object.assign({}, splitSpan.properties, { newLine: true })));
           this.spans.splice(spanIndex, 1, ...newSpans);
-          if(match.index == this.text.length || this.measureSubstring(ctxt) <= maxWidth) break;
+          if(match.index === this.text.length || this.measureSubstring(ctxt) <= maxWidth) break;
           width = 0;
           match = null;
         }
