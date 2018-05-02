@@ -797,14 +797,12 @@ export class GlyphVisualizer extends ChantLayoutElement {
         // create the ref
         ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', {
           id: this.glyphCode,
-          'class': 'glyph',
-          transform: 'scale(' + ctxt.glyphScaling + ')'
+          'class': 'glyph'
         }, QuickSvg.svgFragmentForGlyph(this.glyph));
 
         ctxt.defsNode.appendChild( QuickSvg.createNode('g', {
           id: this.glyphCode,
-          'class': 'glyph',
-          transform: 'scale(' + ctxt.glyphScaling + ')'
+          'class': 'glyph'
         }, QuickSvg.nodesForGlyph(this.glyph)));
       };
       makeDef();
@@ -849,8 +847,9 @@ export class GlyphVisualizer extends ChantLayoutElement {
       source: source,
       'source-index': source.sourceIndex,
       'xlink:href': '#' + this.glyphCode,
-      x: this.bounds.x + this.origin.x,
-      y: this.bounds.y + this.origin.y
+      x: (this.bounds.x + this.origin.x) / ctxt.glyphScaling,
+      y: (this.bounds.y + this.origin.y) / ctxt.glyphScaling,
+      transform: 'scale(' + ctxt.glyphScaling + ')'
     });
   }
 
@@ -858,8 +857,9 @@ export class GlyphVisualizer extends ChantLayoutElement {
     return QuickSvg.createFragment('use', {
       'source-index': source.sourceIndex,
       'xlink:href': '#' + this.glyphCode,
-      x: this.bounds.x + this.origin.x,
-      y: this.bounds.y + this.origin.y
+      x: (this.bounds.x + this.origin.x) / ctxt.glyphScaling,
+      y: (this.bounds.y + this.origin.y) / ctxt.glyphScaling,
+      transform: 'scale(' + ctxt.glyphScaling + ')'
     });
   }
 }
