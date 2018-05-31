@@ -782,7 +782,7 @@ export class ChantLine extends ChantLayoutElement {
       prev = curr;
       curr = this.score.notations[i];
 
-      if (!curr)
+      if (!curr || !prev)
         continue;
 
       if (prev !== null) {
