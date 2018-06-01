@@ -819,29 +819,19 @@ export class ChantLine extends ChantLayoutElement {
 
     // first step of justification is to determine how much space we have to use up
     var extraSpace = 0;
-
-    if (this.numNotationsOnLine > 0) {
-      var last = notations[lastIndex - 1];
-
-      if (this.lastLyrics.length)
-        extraSpace = this.staffRight - Math.max(LyricArray.getRight(this.lastLyrics), last.bounds.right() + last.trailingSpace);
-      else
-        extraSpace = this.staffRight - (last.bounds.right() + last.trailingSpace);  
-    }
+    var last = notations[lastIndex - 1];
+    var lastRightNeume = last? last.bounds.right() + last.trailingSpace : 0;
+    var lastRightLyric = this.lastLyrics.length? LyricArray.getRight(this.lastLyrics) : 0;
 
     if (this.custos) {
+      lastRightNeume += this.custos.bounds.width + this.custos.leadingSpace;
       if (this.custos.hasLyrics()) {
-        extraSpace = this.staffRight - LyricArray.getRight(this.custos.lyrics);
-      } else {
-        extraSpace -= this.custos.bounds.width
+        lastRightLyric = LyricArray.getRight(this.custos.lyrics);
       }
-      extraSpace -= this.custos.leadingSpace;
     }
+    extraSpace = this.staffRight - Math.max(lastRightLyric, lastRightNeume);
 
-    if (extraSpace === 0)
-      return;
-
-    if (toJustify.length === 0)
+    if (extraSpace < 0.5 || toJustify.length === 0)
       return;
 
     var curr = null;
