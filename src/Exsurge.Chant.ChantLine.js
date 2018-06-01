@@ -539,6 +539,11 @@ export class ChantLine extends ChantLayoutElement {
     if (curr.hasLyrics())
       LyricArray.mergeIn(this.lastLyrics, curr.lyrics);
 
+    // if we already have a start brace on the context, we must be continuing it from the previous system.
+    if (ctxt.lastStartBrace && !ctxt.lastStartBrace.note) {
+      ctxt.lastStartBrace.note = this.startingClef;
+    }
+
     for (i = newElementStart; i <= lastNotationIndex; i++) {
 
       prev = curr;
@@ -859,24 +864,22 @@ export class ChantLine extends ChantLayoutElement {
     }
   }
 
-  handleEndBrace(ctxt, note) {
+  handleEndBrace(ctxt, note, i) {
     var startBrace = ctxt.lastStartBrace;
     if(!startBrace) return;
     // calculate the y value of the brace by iterating over all notations
     // under/over the brace.
-    var y, k, i;
+    var y;
+    var k = startBrace.notationIndex;
+    var notations = this.score.notations;
     var dy = ctxt.intraNeumeSpacing / 2; // some safe space between brace and notes.
-    if (startBrace.isAbove) {
-      y = ctxt.calculateHeightFromStaffPosition(4);
-      for (k = startBrace.notationIndex; k <= i; k++)
-        y = Math.min(y, notations[k].bounds.y - dy);
-    } else {
-      y = ctxt.calculateHeightFromStaffPosition(-4);
-      for (k = startBrace.notationIndex; k <= i; k++)
-        y = Math.max(y, notations[k].bounds.y + dy);
-    }
+    var startNote = startBrace.note;
 
-    var startNote = startBrace.note || this.startingClef;
+    if (startBrace.isAbove) {
+      y = Math.min(ctxt.calculateHeightFromStaffPosition(4), ...[startNote,note].concat(notations.slice(k,i+1)).map(n => n.bounds.y - dy));
+    } else {
+      y = Math.max(ctxt.calculateHeightFromStaffPosition(-4), ...[startNote,note].concat(notations.slice(k,i+1)).map(n => n.bounds.bottom() + dy));
+    }
 
     var addAcuteAccent = false;
 
@@ -1103,19 +1106,11 @@ export class ChantLine extends ChantLayoutElement {
           }
         }
 
-        if(note.braceEnd) this.handleEndBrace(ctxt, note);
+        if (note.braceEnd) this.handleEndBrace(ctxt, note, i);
 
         if (note.braceStart) {
           ctxt.lastStartBrace = startBrace = note.braceStart;
           startBrace.notationIndex = i;
-        }
-
-        // update the active brace y position if there is one
-        if (startBrace !== null) {
-          if (startBrace.isAbove)
-            startBrace.bounds.y = Math.min(startBrace.bounds.y, note.bounds.y);
-          else
-            startBrace.bounds.y = Math.max(startBrace.bounds.y, note.bounds.bottom());
         }
       }
     }
@@ -1128,16 +1123,18 @@ export class ChantLine extends ChantLayoutElement {
         // otherwise, make a new end brace to work for this one, and a new start brace for the next line.
         var nextNotation = notations[lastIndex];
         var nextNote = nextNotation.notes && nextNotation.notes[0];
-        var nextNoteButOne = notations[lastIndex+1].notes && notations[lastIndex+1].notes[0];
+        var nextNotationButOne = notations[lastIndex+1];
+        var nextNoteButOne = nextNotationButOne && nextNotationButOne.notes && nextNotationButOne.notes[0];
         var braceEnd = (nextNote && nextNote.braceEnd) || (nextNotation.isAccidental && nextNoteButOne && nextNoteButOne.braceEnd);
         if(braceEnd) {
           this.custos.braceEnd = braceEnd;
-          this.handleEndBrace(ctxt, this.custos);
+          this.handleEndBrace(ctxt, this.custos, i);
         } else {
           this.braceStart = startBrace
           this.custos.braceEnd = new BracePoint(this.custos, startBrace.isAbove, startBrace.shape, BraceAttachment.Right);
-          this.handleEndBrace(ctxt, this.custos);
+          this.handleEndBrace(ctxt, this.custos, i - 1);
           ctxt.lastStartBrace = new BracePoint(null, startBrace.isAbove, startBrace.shape, BraceAttachment.Left);
+          ctxt.lastStartBrace.notationIndex = i;
         }
       }
     }
