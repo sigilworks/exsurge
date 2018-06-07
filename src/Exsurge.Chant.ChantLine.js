@@ -836,7 +836,7 @@ export class ChantLine extends ChantLayoutElement {
     }
     extraSpace = this.staffRight - Math.max(lastRightLyric, lastRightNeume);
 
-    if (extraSpace < 0.5 || toJustify.length === 0)
+    if (Math.abs(extraSpace) < 0.5 || toJustify.length === 0)
       return;
 
     var curr = null;
