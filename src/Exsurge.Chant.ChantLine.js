@@ -1161,7 +1161,7 @@ export class ChantLine extends ChantLayoutElement {
       // so that the text only neume has a better chance at not needing a connector.
       curr.trailingSpace = prev.trailingSpace;
       if (curr.hasLyrics()) curr.trailingSpace -= curr.lyrics[0].bounds.width;
-    } else if (curr.constructor !== ChantLineBreak) {
+    } else {
       curr.bounds.x += prev.trailingSpace;
     }
 
