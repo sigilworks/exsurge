@@ -446,20 +446,27 @@ export class Gabc {
 
   static makeLyric(ctxt, text, lyricType, notation, sourceIndex) {
 
-    if (text.length > 1 && text[text.length - 1] === '-') {
-      if (lyricType === LyricType.EndingSyllable)
-        lyricType = LyricType.MiddleSyllable;
-      else if (lyricType === LyricType.SingleSyllable)
-        lyricType = LyricType.BeginningSyllable;
-
-      text = text.substring(0, text.length - 1);
-    }
-
     var elides = false;
-    if (text.length > 1 && text[text.length - 1] === '_') {
-      // must be an elision
-      elides = true;
-      text = text.substring(0, text.length - 1);
+    if (text.length > 1) {
+      if (text[text.length - 1] === '-') {
+        if (lyricType === LyricType.EndingSyllable)
+          lyricType = LyricType.MiddleSyllable;
+        else if (lyricType === LyricType.SingleSyllable)
+          lyricType = LyricType.BeginningSyllable;
+
+        text = text.slice(0, -1);
+      } else if (text[text.length - 1] === ' ') {
+        if (lyricType === LyricType.MiddleSyllable)
+          lyricType = LyricType.EndingSyllable;
+        else if (lyricType === LyricType.BeginningSyllable)
+          lyricType = LyricType.SingleSyllable;
+
+        text = text.slice(0, -1)
+      } else if (text[text.length - 1] === '_') {
+        // must be an elision
+        elides = true;
+        text = text.slice(0, -1);
+      }
     }
 
     if (text.match(/^(?:[*†]+|i+j|\d+)\.?$/))
