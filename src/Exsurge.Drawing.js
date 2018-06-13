@@ -459,9 +459,10 @@ export class ChantContext {
   updateHyphenWidth() {
     // measure the size of a hyphen for the lyrics
     var hyphen = new Lyric(this, this.syllableConnector, LyricType.SingleSyllable);
+    var multiplier = (this.minLyricWordSpacing / (this.hyphenWidth || this.minLyricWordSpacing)) || 1;
     this.hyphenWidth = hyphen.bounds.width;
 
-    this.minLyricWordSpacing = this.hyphenWidth;
+    this.minLyricWordSpacing = multiplier * this.hyphenWidth;
   }
 
   setGlyphScaling(glyphScaling) {
