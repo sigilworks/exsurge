@@ -1232,7 +1232,7 @@ export class ChantLine extends ChantLayoutElement {
           if (prevLyricRight + ctxt.minLyricWordSpacing > currLyricLeft) {
             // push the current element over a bit.
             curr.bounds.x += prevLyricRight + ctxt.minLyricWordSpacing - currLyricLeft;
-            hasShifted = true;
+            hasShifted = prevLyricRight + ctxt.minLyricWordSpacing - currLyricLeft > 0.5;
           }
         } else {
           // we may need a connector yet...
@@ -1246,18 +1246,36 @@ export class ChantLine extends ChantLayoutElement {
             hasShifted = prevLyricRight - currLyricLeft > 0.5;
           } else {
             // bummer, looks like we couldn't merge the syllables together. Better add a connector...
+            if(ctxt.minLyricWordSpacing < ctxt.hyphenWidth) {
+              var spaceBetweenSyls = currLyricLeft - prevLyricRight;
+              if(spaceBetweenSyls < ctxt.hyphenWidth) {
+                var minHyphenWidth = prevLyrics.length > 1? ctxt.intraNeumeSpacing : ctxt.minLyricWordSpacing;
+                // we might not need to shift the syllable, but we do want to shrink the hyphen...
+                prevLyrics[i].setConnectorWidth(Math.max(minHyphenWidth, spaceBetweenSyls));
+              }
+            }
             prevLyrics[i].setNeedsConnector(true);
             prevLyricRight = prevLyrics[i].getRight();
 
-            if (prevLyricRight > currLyricLeft) {
+            if (prevLyricRight + 0.1 > currLyricLeft) {
               curr.bounds.x += prevLyricRight - currLyricLeft;
-              hasShifted = true;
+              hasShifted = prevLyricRight - currLyricLeft > 0.5;
             }
           }
         }
    
       }
     } while(curr.lyrics.length > 1 && hasShifted && atLeastOneWithoutConnector);
+
+    for (i = Math.min(curr.lyrics.length, prevLyrics.length) - 1; i >= 0; i--) {
+      if(prevLyrics[i].needsConnector && prevLyrics[i].connectorWidth) {
+        currLyricLeft = curr.lyrics[i].getLeft();
+        prevLyricRight = prevLyrics[i].getRight() - prevLyrics[i].connectorWidth;
+        spaceBetweenSyls = currLyricLeft - prevLyricRight;
+        if(spaceBetweenSyls >= ctxt.hyphenWidth) spaceBetweenSyls = 0;
+        prevLyrics[i].setConnectorWidth(spaceBetweenSyls);
+      }
+    }
 
     if (curr.bounds.right() + curr.trailingSpace < rightNotationBoundary &&
         curr.lyrics[0].getRight() <= this.staffRight + extraWidth) {

@@ -1332,7 +1332,7 @@ export class TextElement extends ChantLayoutElement {
       var properties = Object.assign({}, this.getExtraStyleProperties(ctxt), span.properties);
       canvasCtxt.font = this.getCanvasFontForProperties(properties);
       canvasCtxt.fillStyle = properties.fill || '#000';
-      canvasCtxt.fillText(span.text, this.bounds.x, this.bounds.y);
+      canvasCtxt.fillText(span.text, this.bounds.x, this.bounds.y, span.properties.textLength || undefined);
       var metrics = canvasCtxt.measureText(span.text, this.bounds.x, this.bounds.y);
       translateWidth -= metrics.width;
       canvasCtxt.translate(metrics.width, 0);
@@ -1351,6 +1351,11 @@ export class TextElement extends ChantLayoutElement {
       if(this.spans[i].properties.newLine) {
         options.dy = '1em';
         options.x = this.bounds.x;
+      }
+      if(this.spans[i].properties.textLength) {
+        options.textLength = this.spans[i].properties.textLength;
+        options.lengthAdjust = "spacingAndGlyphs";
+        options.y = this.bounds.y;
       }
 
       spans.push( QuickSvg.createNode('tspan', options, this.spans[i].text) );
@@ -1487,29 +1492,34 @@ export class Lyric extends TextElement {
   setNeedsConnector(needs) {
     if (needs === true) {
       this.needsConnector = true;
-      this.bounds.width = this.widthWithConnector;
+      this.bounds.width = this.widthWithoutConnector + this.getConnectorWidth();
 
-      if (this.spans.length > 0)
-        this.spans[this.spans.length - 1].text = this.lastSpanTextWithConnector;
+      if (this.spans.length > 0 && this.spans[this.spans.length - 1] !== this.connectorSpan)
+        this.spans.push(this.connectorSpan)
     } else {
+      this.connectorWidth = 0;
       this.needsConnector = false;
       this.bounds.width = this.widthWithoutConnector;
 
-      if (this.spans.length > 0)
-        this.spans[this.spans.length - 1].text = this.lastSpanText;
+      var span = this.spans.pop();
+      if (span !== this.connectorSpan)
+        this.spans.push(span);
     }
+  }
+
+  setConnectorWidth(width) {
+    this.connectorWidth = width;
+    this.connectorSpan.properties.textLength = width;
+    if (this.needsConnector)
+      this.bounds.width = this.widthWithoutConnector + this.getConnectorWidth();
+  }
+
+  getConnectorWidth() {
+    return this.connectorWidth || this.defaultConnectorWidth;
   }
 
   generateSpansFromText(ctxt, text) {
     super.generateSpansFromText(ctxt, text);
-
-    if (this.spans.length > 0) {
-      this.lastSpanText = this.spans[this.spans.length - 1].text;
-      this.lastSpanTextWithConnector = this.lastSpanText + ctxt.syllableConnector;
-    } else {
-      this.lastSpanText = "";
-      this.lastSpanTextWithConnector = "";
-    }
   }
 
   getLeft() {
@@ -1524,9 +1534,10 @@ export class Lyric extends TextElement {
     super.recalculateMetrics(ctxt);
 
     this.widthWithoutConnector = this.bounds.width;
-    this.textWithConnector = this.text + ctxt.syllableConnector;
+    this.connectorSpan = new TextSpan(ctxt.syllableConnector);
 
-    this.widthWithConnector = this.bounds.width + ctxt.hyphenWidth;
+    this.connectorWidth = 0;
+    this.defaultConnectorWidth = ctxt.hyphenWidth;
 
     var activeLanguage = this.language || ctxt.defaultLanguage;
 
@@ -1639,24 +1650,10 @@ export class Lyric extends TextElement {
   }
 
   createSvgNode(ctxt) {
-    if (this.spans.length > 0) {
-      if (this.needsConnector)
-        this.spans[this.spans.length - 1].text = this.lastSpanTextWithConnector;
-      else
-        this.spans[this.spans.length - 1].text = this.lastSpanText;
-    }
-
     return super.createSvgNode(ctxt);
   }
 
   createSvgFragment(ctxt) {
-    if (this.spans.length > 0) {
-      if (this.needsConnector)
-        this.spans[this.spans.length - 1].text = this.lastSpanTextWithConnector;
-      else
-        this.spans[this.spans.length - 1].text = this.lastSpanText;
-    }
-
     return super.createSvgFragment(ctxt);
   }
 }
