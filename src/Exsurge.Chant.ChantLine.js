@@ -689,7 +689,6 @@ export class ChantLine extends ChantLayoutElement {
       // line breaks are a special case indicating to stop processing here
       if (curr.constructor === ChantLineBreak && width > 0) {
         this.justify = curr.justify;
-        if (this.justify) this.findNeumesToJustify(prevLyrics);
         break;
       }
 
