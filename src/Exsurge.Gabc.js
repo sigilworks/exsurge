@@ -296,12 +296,12 @@ export class Gabc {
         ctxt.activeClef.resetAccidentals();      
 
       var items = this.parseNotations(ctxt, notationData, sourceIndex + match.index + match[1].length + 1);
+      items[0].firstOfSyllable = true;
 
       if (items.length === 0)
         continue;
 
-      for (var k = 0; k < items.length; ++k)
-        notations.push(items[k]);
+      notations.push(...items);
 
       var m = __altRegex.exec();
       while ((m = __altRegex.exec(lyricText))) {
@@ -376,7 +376,7 @@ export class Gabc {
 
       currSyllable++;
 
-      var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType, notationWithLyrics, sourceIndex + match.index);
+      var lyrics = this.createSyllableLyrics(ctxt, lyricText, proposedLyricType, notationWithLyrics, items, sourceIndex + match.index);
 
       if (lyrics === null || lyrics.length === 0)
         continue;
@@ -388,7 +388,7 @@ export class Gabc {
   }
 
   // returns an array of lyrics (an array because each syllable can have multiple lyrics)
-  static createSyllableLyrics(ctxt, text, proposedLyricType, notation, sourceIndex) {
+  static createSyllableLyrics(ctxt, text, proposedLyricType, notation, notations, sourceIndex) {
 
     var lyrics = [];
 
@@ -430,7 +430,7 @@ export class Gabc {
           centerStartIndex = -1; // if there's no closing bracket, don't enable centering
       }
 
-      var lyric = this.makeLyric(ctxt, lyricText, proposedLyricType, notation, sourceIndex);
+      var lyric = this.makeLyric(ctxt, lyricText, proposedLyricType, notation, notations, sourceIndex);
 
       // if we have manual lyric centering, then set it now
       if (centerStartIndex >= 0) {
@@ -444,7 +444,7 @@ export class Gabc {
     return lyrics;
   }
 
-  static makeLyric(ctxt, text, lyricType, notation, sourceIndex) {
+  static makeLyric(ctxt, text, lyricType, notation, notations, sourceIndex) {
 
     var elides = false;
     if (text.length > 1) {
@@ -472,7 +472,7 @@ export class Gabc {
     if (text.match(/^(?:[*†]+|i+j|\d+)\.?$/))
       lyricType = LyricType.Directive;
 
-    var lyric = new Lyric(ctxt, text, lyricType, notation, sourceIndex);
+    var lyric = new Lyric(ctxt, text, lyricType, notation, notations, sourceIndex);
     lyric.elidesToNext = elides;
 
     return lyric;

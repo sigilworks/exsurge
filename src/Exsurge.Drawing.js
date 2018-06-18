@@ -322,10 +322,12 @@ export class ChantContext {
     this.dropCapTextSize = 64;
     this.dropCapTextFont = this.lyricTextFont;
     this.dropCapTextColor = this.lyricTextColor;
+    this.dropCapPadding = 1; // minimum padding on either side of drop cap in staffIntervals
     
     this.annotationTextSize = 13;
     this.annotationTextFont = this.lyricTextFont;
     this.annotationTextColor = this.lyricTextColor;
+    this.annotationPadding = 1;  // minimum padding on either side of annotation in staffIntervals
 
     this.minLedgerSeparation = 2; // multiple of staffInterval
     this.minSpaceAboveStaff = 1; // multiple of staffInterval
@@ -396,11 +398,9 @@ export class ChantContext {
     // would be normally allowed.
     //
     // condensing tolerance is a percentage value (0.0-1.0, inclusive) that indicates
-    // how much the default spacing can shrink. E.g., a value of 0.80 allows the layout
+    // how much the default spacing can shrink. E.g., a value of 0.20 allows the layout
     // engine to separate two glyphs by only 80% of the normal inter-neume spacing value.
-    //
-    // fixme: condensing tolerance is not implemented yet!
-    this.condensingTolerance = 0.9;
+    this.condensingTolerance = 0.3;
 
     // if auto color is true, then exsurge tries to automatically colorize
     // some elements of the chant (directives become rubric color, etc.)
@@ -1456,7 +1456,7 @@ export var LyricArray = {
 };
 
 export class Lyric extends TextElement {
-  constructor(ctxt, text, lyricType, notation, sourceIndex) {
+  constructor(ctxt, text, lyricType, notation, notations, sourceIndex) {
     super(ctxt, (ctxt.lyricTextStyle || '') + text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start', sourceIndex);
 
     // save the original text in case we need to later use the lyric
@@ -1464,6 +1464,7 @@ export class Lyric extends TextElement {
     this.originalText = text;
 
     this.notation = notation;
+    this.notations = notations;
 
     if (typeof lyricType === 'undefined' || lyricType === null || lyricType === "")
       this.lyricType = LyricType.SingleSyllable;
@@ -1705,7 +1706,7 @@ export class DropCap extends TextElement {
   constructor(ctxt, text, sourceIndex) {
     super(ctxt, text, (ctxt.dropCapTextStyle || '') + ctxt.dropCapTextFont, ctxt.dropCapTextSize, 'middle', sourceIndex);
 
-    this.padding = ctxt.staffInterval * 2;
+    this.padding = ctxt.staffInterval * ctxt.dropCapPadding;
   }
 
   getCssClasses() {
@@ -1720,7 +1721,7 @@ export class Annotation extends TextElement {
    */
   constructor(ctxt, text) {
     super(ctxt, (ctxt.annotationTextStyle || '') + text, ctxt.annotationTextFont, ctxt.annotationTextSize, 'middle');
-    this.padding = ctxt.staffInterval;
+    this.padding = ctxt.staffInterval * ctxt.annotationPadding;
     this.dominantBaseline = 'hanging'; // so that annotations can be aligned at the top.
   }
 
