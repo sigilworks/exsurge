@@ -1162,7 +1162,7 @@ export class ChantLine extends ChantLayoutElement {
   // returns false if cannot fit before given right margin.
   // fixme: if this returns false, shouldn't we set the connectors on prev to be activated?!
   positionNotationElement(ctxt, prevLyrics, prev, curr, rightNotationBoundary, condensableSpaces = []) {
-    if(!condensableSpaces.sum) condensableSpaces.sum = 0;
+    if(!condensableSpaces.hasOwnProperty('sum')) condensableSpaces.sum = 0;
     var i, space = { notation: curr };
 
     // To begin we just place the current notation right after the previous,
