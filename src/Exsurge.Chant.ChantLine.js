@@ -646,9 +646,7 @@ export class ChantLine extends ChantLayoutElement {
             extraSpace -= Glyphs.CustosLong.bounds.width * ctxt.glyphScaling;
 
             if(extraSpace / this.toJustify.length > ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals) {
-              notations.slice(this.notationsStartIndex + this.numNotationsOnLine, this.notationsStartIndex + this.maxNumNotationsOnLine).forEach(curr => {
-                LyricArray.mergeIn(prevLyrics, curr.lyrics);
-              });
+              LyricArray.mergeInArray(prevLyrics, notations.slice(this.notationsStartIndex + this.numNotationsOnLine, this.notationsStartIndex + this.maxNumNotationsOnLine));
               this.numNotationsOnLine = this.maxNumNotationsOnLine;
               delete this.maxNumNotationsOnLine;
             }

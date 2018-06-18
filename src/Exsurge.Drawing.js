@@ -1447,6 +1447,12 @@ export var LyricArray = {
     }
   },
 
+  mergeInArray: function(lyricArray, notations) {
+    for (var i = 0; i < notations.length; ++i) {
+      this.mergeIn(lyricArray, notations[i].lyrics);
+    }
+  },
+
   setNotation: function(lyricArray, notation) {
     notation.lyrics = lyricArray;
     for(var i=0; i<lyricArray.length; ++i) {
