@@ -470,6 +470,7 @@ export class ChantLine extends ChantLayoutElement {
     this.numNotationsOnLine = 0;
 
     this.staffLeft = 0;
+    this.paddingLeft = 0;
 
     if (width > 0)
       this.staffRight = width;
@@ -489,6 +490,7 @@ export class ChantLine extends ChantLayoutElement {
         padding = Math.max(padding, this.score.annotation.bounds.width + this.score.annotation.padding * 4);
 
       this.staffLeft += padding;
+      this.paddingLeft = (padding - this.score.dropCap.bounds.width) / 2;
     } else {
       prev = notations[newElementStart - 1];
       if(prev.constructor === DoubleBar && prev.hasLyrics() && (prev.lyrics.length > 1 || !prev.lyrics[0].text.match(/^(i\.?)+j\.?/))) {
@@ -1183,9 +1185,10 @@ export class ChantLine extends ChantLayoutElement {
         // but always use a connector if the lyric has original text that was all used up for the drop cap.
         let needsConnector = currLyric.allowsConnector() && currLyric.dropCap && currLyric.originalText && !currLyric.text;
         currLyric.setNeedsConnector(needsConnector);
+        let minLeft = this.staffLeft - this.paddingLeft;
 
-        if (currLyric.getLeft() < 0)
-          curr.bounds.x += -currLyric.getLeft();
+        if (currLyric.getLeft() < minLeft)
+          curr.bounds.x -= currLyric.getLeft() - minLeft;
 
         maxRight = Math.max(maxRight, currLyric.getRight());
       }
