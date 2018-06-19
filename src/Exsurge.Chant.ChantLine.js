@@ -632,24 +632,11 @@ export class ChantLine extends ChantLayoutElement {
         if(this.maxNumNotationsOnLine) {
           // Check whether we should squeeze some extra notations on the line to avoid too much space after justification:
           // Check how much space we would have without the extra notations
-          var extraSpace = this.staffRight;
-
-          if (this.numNotationsOnLine > 0) {
-            var last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
-                
-
-            if (prevLyrics.length)
-              extraSpace -= Math.max(LyricArray.getRight(prevLyrics), last.bounds.right() + last.trailingSpace);
-            else
-              extraSpace -= (last.bounds.right() + last.trailingSpace);
-
-            extraSpace -= Glyphs.CustosLong.bounds.width * ctxt.glyphScaling;
-
-            if(extraSpace / this.toJustify.length > ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals) {
-              LyricArray.mergeInArray(prevLyrics, notations.slice(this.notationsStartIndex + this.numNotationsOnLine, this.notationsStartIndex + this.maxNumNotationsOnLine));
-              this.numNotationsOnLine = this.maxNumNotationsOnLine;
-              delete this.maxNumNotationsOnLine;
-            }
+          var extraSpace = this.getWhitespaceOnRight(ctxt);
+          if(extraSpace / this.toJustify.length > ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals) {
+            LyricArray.mergeInArray(prevLyrics, notations.slice(this.notationsStartIndex + this.numNotationsOnLine, this.notationsStartIndex + this.maxNumNotationsOnLine));
+            this.numNotationsOnLine = this.maxNumNotationsOnLine;
+            delete this.maxNumNotationsOnLine;
           }
         }
 
@@ -732,7 +719,7 @@ export class ChantLine extends ChantLayoutElement {
 
     // if the provided width is less than zero, then set the width of the line
     // based on the last notation
-    last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
+    var last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
     if (width <= 0) {
       this.staffRight = last.bounds.right();
       this.justify = false;
@@ -813,15 +800,9 @@ export class ChantLine extends ChantLayoutElement {
     return curr;
   }
 
-  justifyElements(doJustify, condensableSpaces) {
-
-    var i;
-    var toJustify = this.toJustify || [];
+  getWhitespaceOnRight(ctxt) {
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
-
-    // first step of justification is to determine how much space we have to use up
-    var extraSpace = 0;
     var last = notations[lastIndex - 1];
     var lastRightNeume = last? last.bounds.right() + last.trailingSpace : 0;
     var lastRightLyric = this.lastLyrics.length? LyricArray.getRight(this.lastLyrics) : 0;
@@ -831,8 +812,21 @@ export class ChantLine extends ChantLayoutElement {
       if (this.custos.hasLyrics()) {
         lastRightLyric = LyricArray.getRight(this.custos.lyrics);
       }
+    } else if (ctxt && lastIndex < notations.length) {
+      lastRightNeume += Glyphs.CustosLong.bounds.width * ctxt.glyphScaling;
     }
-    extraSpace = this.staffRight - Math.max(lastRightLyric, lastRightNeume);
+    return this.staffRight - Math.max(lastRightLyric, lastRightNeume);
+  }
+
+  justifyElements(doJustify, condensableSpaces) {
+
+    var i;
+    var toJustify = this.toJustify || [];
+    var notations = this.score.notations;
+    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
+
+    // first step of justification is to determine how much space we have to use up
+    var extraSpace = this.getWhitespaceOnRight();
 
     if (Math.abs(extraSpace) < 0.5 || (extraSpace > 0 && ((doJustify && toJustify.length === 0) || !doJustify)))
       return;
@@ -1247,6 +1241,7 @@ export class ChantLine extends ChantLayoutElement {
           prevLyricRight = prevLyrics[i].getRight();
           let notationI = condensableSpaces.map(s => s.notation).lastIndexOf(prevLyrics[i].notation);
           condensableSpacesSincePrevLyric = condensableSpaces.slice(notationI);
+          condensableSpacesSincePrevLyric.sum = condensableSpacesSincePrevLyric.map(s => s.condensable).reduce((a,b) => a+b, 0);
         }
 
         curr.lyrics[i].setNeedsConnector(false); // we hope for the best!
@@ -1264,12 +1259,21 @@ export class ChantLine extends ChantLayoutElement {
           }
         } else {
           // we may need a connector yet...
-          if (prevLyricRight + 0.1 > currLyricLeft) {
+          if ((prevLyricRight + 0.1) > (currLyricLeft - condensableSpacesSincePrevLyric.sum - space.condensable)) {
             // in this case, the lyric elements actually overlap.
             // so nope, no connector needed. instead, we just place the lyrics together
             // fixme: for better text layout, we could actually use the kerning values
             // between the prev and curr lyric elements!
             let shift = prevLyricRight - currLyricLeft;
+            if(shift < 0.1) {
+              // in this case, the spacing needs to be condensed in the neumes since the last lyric...
+              let multiplier = shift / (condensableSpacesSincePrevLyric.sum + space.condensable);
+              let offset = 0;
+              condensableSpacesSincePrevLyric.forEach(s => {
+                offset += multiplier * s.condensable;
+                s.notation.bounds.x += offset;
+              });
+            }
             curr.bounds.x += shift;
             condensableSpaceSincePrevLyric = 0;
             atLeastOneWithoutConnector = true;
@@ -1299,14 +1303,13 @@ export class ChantLine extends ChantLayoutElement {
         }
 
         if(condensableSpaceSincePrevLyric !== null) {
-          let currentSpace = condensableSpacesSincePrevLyric.map(s => s.condensable).reduce((a,b) => a+b, 0)
-          if(condensableSpaceSincePrevLyric < (currentSpace + space.condensable)) {
+          if(condensableSpaceSincePrevLyric < (condensableSpacesSincePrevLyric.sum + space.condensable)) {
             let numSpaces = condensableSpacesSincePrevLyric.length + 1;
             space.condensable = condensableSpaceSincePrevLyric / numSpaces;
-            if(currentSpace) {
+            if(condensableSpacesSincePrevLyric.sum) {
               condensableSpaceSincePrevLyric -= space.condensable;
               condensableSpacesSincePrevLyric.forEach(space => {
-                space.condensable = condensableSpaceSincePrevLyric * (space.condensable / currentSpace);
+                space.condensable = condensableSpaceSincePrevLyric * (space.condensable / condensableSpacesSincePrevLyric.sum);
               });
               condensableSpaces.sum = condensableSpaces.map(s => s.condensable).reduce((a,b) => a+b, 0);
             }
