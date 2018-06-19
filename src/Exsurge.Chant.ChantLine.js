@@ -491,7 +491,8 @@ export class ChantLine extends ChantLayoutElement {
         padding = Math.max(padding, this.score.annotation.bounds.width + this.score.annotation.padding * 2);
 
       this.staffLeft += padding;
-      this.paddingLeft = (padding - this.score.dropCap.bounds.width) / 2;
+      if (this.score.dropCap !== null)
+        this.paddingLeft = (padding - this.score.dropCap.bounds.width) / 2;
     } else {
       prev = notations[newElementStart - 1];
       if(prev.constructor === DoubleBar && prev.hasLyrics() && (prev.lyrics.length > 1 || !prev.lyrics[0].text.match(/^(i\.?)+j\.?/))) {
@@ -1265,7 +1266,7 @@ export class ChantLine extends ChantLayoutElement {
             // fixme: for better text layout, we could actually use the kerning values
             // between the prev and curr lyric elements!
             let shift = prevLyricRight - currLyricLeft;
-            if(shift < 0.1) {
+            if(shift < -0.1) {
               // in this case, the spacing needs to be condensed in the neumes since the last lyric...
               let multiplier = shift / (condensableSpacesSincePrevLyric.sum + space.condensable);
               let offset = 0;
