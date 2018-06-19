@@ -1334,10 +1334,13 @@ export class ChantLine extends ChantLayoutElement {
         curr.lyrics[0].getRight() <= this.staffRight + condensableSpaces.sum + space.condensable) {
       if(prev.isAccidental) {
         // move the previous accidental up next to the current note:
-        prev.bounds.x = curr.bounds.x - prev.bounds.width - prev.trailingSpace;
-        let lastCondensable = condensableSpaces[condensableSpaces.length - 1];
-        condensableSpaces.sum -= lastCondensable.condensable
-        lastCondensable.condensable = 0;
+        let shift = (curr.bounds.x - prev.bounds.width - prev.trailingSpace) - prev.bounds.x;
+        prev.bounds.x += shift;
+        if(Math.abs(shift) > 0.1) {
+          let lastCondensable = condensableSpaces[condensableSpaces.length - 1];
+          condensableSpaces.sum -= lastCondensable.condensable;
+          lastCondensable.condensable = 0;
+        }
       }
       condensableSpaces.push(space);
       condensableSpaces.sum += space.condensable;
