@@ -465,7 +465,7 @@ export class ChantLine extends ChantLayoutElement {
   buildFromChantNotationIndex(ctxt, newElementStart, width) {
 
     // todo: reset / clear the children we have in case they have data
-    var notations = this.score.notations, beginningLyrics = null, prev = null, prevLyrics = [];
+    var notations = this.score.notations, beginningLyrics = null, prev = null, prevNeume = null, prevLyrics = [];
     var condensableSpaces = [];
     this.notationsStartIndex = newElementStart;
     this.numNotationsOnLine = 0;
@@ -551,6 +551,9 @@ export class ChantLine extends ChantLayoutElement {
     for (i = newElementStart; i <= lastNotationIndex; i++) {
 
       prev = curr;
+      if (curr.constructor != TextOnly)
+        prevNeume = curr;
+
       curr = notations[i];
       
       var actualRightBoundary;
@@ -575,7 +578,7 @@ export class ChantLine extends ChantLayoutElement {
 
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
-      var fitsOnLine = !forceBreak && this.positionNotationElement(ctxt, this.lastLyrics, prev, curr, actualRightBoundary, condensableSpaces);
+      var fitsOnLine = !forceBreak && this.positionNotationElement(ctxt, this.lastLyrics, prevNeume, curr, actualRightBoundary, condensableSpaces);
       if (fitsOnLine === false) {
 
         // first check for elements that cannot begin a system: dividers and custodes
@@ -744,10 +747,25 @@ export class ChantLine extends ChantLayoutElement {
       curr = this.score.notations[i];
 
       if (curr && curr.isDivider) {
-        var prev = this.score.notations[i - 1];
-        var next = (i + 1 === lastIndex)? this.custos : this.score.notations[i + 1];
+        var j = 1;
+        var prev = this.score.notations[i - j];
+        var next = (i + j === lastIndex)? this.custos : this.score.notations[i + j];
         if (prev === next && next === this.custos) {
           prev = this.score.notations[i - 2];
+        } else {
+          while (next.constructor == TextOnly) {
+            j++;
+            next = (i + j === lastIndex)? this.custos : this.score.notations[i + j];
+          }
+          j = 1;
+          while (prev.constructor == TextOnly) {
+            j++;
+            if(i - j < this.notationsStartIndex) {
+              prev = null;
+              break;
+            }
+            prev = this.score.notations[i - j];
+          }
         }
         if (prev && next) {
           var oldBoundsX = curr.bounds.x;

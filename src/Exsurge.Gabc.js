@@ -296,7 +296,7 @@ export class Gabc {
         ctxt.activeClef.resetAccidentals();      
 
       var items = this.parseNotations(ctxt, notationData, sourceIndex + match.index + match[1].length + 1);
-      items[0].firstOfSyllable = true;
+      items[0].firstOfSyllable = !!lyricText;
 
       if (items.length === 0)
         continue;
