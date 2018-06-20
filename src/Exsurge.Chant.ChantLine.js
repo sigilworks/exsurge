@@ -753,12 +753,12 @@ export class ChantLine extends ChantLayoutElement {
         if (prev === next && next === this.custos) {
           prev = this.score.notations[i - 2];
         } else {
-          while (next.constructor === TextOnly) {
+          while (next && next.constructor === TextOnly) {
             j++;
             next = (i + j === lastIndex)? this.custos : this.score.notations[i + j];
           }
           j = 1;
-          while (prev.constructor === TextOnly) {
+          while (prev && prev.constructor === TextOnly) {
             j++;
             if(i - j < this.notationsStartIndex) {
               prev = null;
