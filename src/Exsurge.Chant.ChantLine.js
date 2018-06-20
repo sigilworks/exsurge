@@ -551,7 +551,7 @@ export class ChantLine extends ChantLayoutElement {
     for (i = newElementStart; i <= lastNotationIndex; i++) {
 
       prev = curr;
-      if (curr.constructor != TextOnly)
+      if (curr.constructor !== TextOnly)
         prevNeume = curr;
 
       curr = notations[i];
@@ -753,12 +753,12 @@ export class ChantLine extends ChantLayoutElement {
         if (prev === next && next === this.custos) {
           prev = this.score.notations[i - 2];
         } else {
-          while (next.constructor == TextOnly) {
+          while (next.constructor === TextOnly) {
             j++;
             next = (i + j === lastIndex)? this.custos : this.score.notations[i + j];
           }
           j = 1;
-          while (prev.constructor == TextOnly) {
+          while (prev.constructor === TextOnly) {
             j++;
             if(i - j < this.notationsStartIndex) {
               prev = null;
@@ -772,7 +772,7 @@ export class ChantLine extends ChantLayoutElement {
           curr.bounds.x = (prev.bounds.right() + next.bounds.x - curr.bounds.width) / 2;
           if(curr.hasLyrics()) {
             var offset = oldBoundsX - curr.bounds.x;
-            for(var j = curr.lyrics.length - 1; j >= 0; j--) {
+            for(j = curr.lyrics.length - 1; j >= 0; j--) {
               curr.lyrics[j].bounds.x += offset;
             }
           }
