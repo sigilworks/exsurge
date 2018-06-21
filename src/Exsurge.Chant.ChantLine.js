@@ -83,6 +83,7 @@ export class ChantLine extends ChantLayoutElement {
     // as well as the bounds of each text track we will use
     var i;
     var notations = this.score.notations;
+    var lastNeumeIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
     var notation = null;
 
@@ -101,7 +102,7 @@ export class ChantLine extends ChantLayoutElement {
     this.translationLineBaseline = 0;
     this.numTranslationLines = 0;
 
-    for (i = this.notationsStartIndex; i < lastIndex; i++) {
+    for (i = this.notationsStartIndex; i < lastNeumeIndex; i++) {
       notation = notations[i];
 
       this.notationBounds.union(notation.bounds);
@@ -134,7 +135,7 @@ export class ChantLine extends ChantLayoutElement {
       this.notationBounds.union(this.braces[i].bounds);
 
     // finalize the lyrics placement
-    for (i = this.notationsStartIndex; i < lastIndex; i++) {
+    for (i = this.notationsStartIndex; i < lastNeumeIndex; i++) {
       notation = notations[i];
 
       var offset = this.notationBounds.y + this.notationBounds.height;
@@ -158,6 +159,26 @@ export class ChantLine extends ChantLayoutElement {
           notation.alText[j].bounds.y = offset + this.altLineBaseline;
         }
       }
+    }
+
+    // handle placement of extra TextOnly elements:
+    this.extraTextOnlyHeight = 0;
+    if(this.extraTextOnlyIndex !== null) {
+      let lastLyrics = null;
+      let xOffset = 0;
+      offset = this.notationBounds.y + this.notationBounds.height + (this.numLyricLines - 1) * this.lyricLineHeight;
+      for (i = this.extraTextOnlyIndex; i < lastIndex; i++) {
+        notation = notations[i];
+        for (j = 0; j < notation.lyrics.length; j++) {
+          lastLyrics = notation.lyrics[j];
+          if(lastLyrics.lineWidth) {
+            xOffset = this.staffRight - lastLyrics.lineWidth;
+          }
+          lastLyrics.bounds.y = lastLyrics.origin.y + offset + this.lyricLineBaseline;
+          lastLyrics.bounds.x += xOffset;
+        }
+      }
+      this.extraTextOnlyHeight = lastLyrics.origin.y;
     }
 
     if(this.startingClef.hasLyrics()) {
@@ -206,7 +227,7 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // add up the lyric line heights to get the total height of the chant line
-    this.notationBounds.height += Math.max(ctxt.minSpaceBelowStaff * ctxt.staffInterval, (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines) + (this.translationLineHeight * this.numTranslationLines));
+    this.notationBounds.height += Math.max(ctxt.minSpaceBelowStaff * ctxt.staffInterval, (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines) + (this.translationLineHeight * this.numTranslationLines) + this.extraTextOnlyHeight);
     var totalHeight = this.notationBounds.height;
     this.notationBounds.y -= this.altLineHeight * this.numAltLines;
 
@@ -473,6 +494,8 @@ export class ChantLine extends ChantLayoutElement {
     this.staffLeft = 0;
     this.paddingLeft = 0;
 
+    this.extraTextOnlyIndex = null;
+
     if (width > 0)
       this.staffRight = width;
     else
@@ -551,7 +574,7 @@ export class ChantLine extends ChantLayoutElement {
     for (i = newElementStart; i <= lastNotationIndex; i++) {
 
       prev = curr;
-      if (curr.constructor !== TextOnly)
+      if (curr.constructor !== TextOnly || this.extraTextOnlyIndex !== null)
         prevNeume = curr;
 
       curr = notations[i];
@@ -574,12 +597,33 @@ export class ChantLine extends ChantLayoutElement {
 
       // First check if we're already beyond the rightNotationBoundary (due to condensing that hasn't yet happened) and have a good element to end with
       // but if we have 2 or fewer elements, we'll go ahead and try for them anyway.
-      var forceBreak = (lastNotationIndex - i > 1 && !prev.keepWithNext && prev.bounds.right() >= rightNotationBoundary);
+      var forceBreak = (lastNotationIndex - i > 1 && !prevNeume.keepWithNext && prevNeume.bounds.right() >= rightNotationBoundary);
+
+      // also force a break if we've run into extra TextOnly elements, but the current notation is not a TextOnly and has lyrics
+      forceBreak = forceBreak || (this.extraTextOnlyIndex !== null && curr.constructor !== TextOnly && curr.constructor !== ChantLineBreak && curr.constructor !== Custos && curr.hasLyrics());
 
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
       var fitsOnLine = !forceBreak && this.positionNotationElement(ctxt, this.lastLyrics, prevNeume, curr, actualRightBoundary, condensableSpaces);
-      if (fitsOnLine === false) {
+      if (curr.constructor === TextOnly && curr.lyrics.length === 1 && (fitsOnLine === false || (this.extraTextOnlyIndex !== null && curr.hasLyrics()))) {
+        // a special case for TextOnly elements that don't fit on the line: since they don't have neumes associated with them, we can place this
+        // and any additional TextOnly elements just below the current lyric lines, but we can only do this if the TextOnly elements have only one
+        // line of lyrics associated with them.
+        var firstOnLine;
+        if (this.extraTextOnlyIndex === null) {
+          this.lastLyricsBeforeTextOnly = this.lastLyrics.slice();
+          this.extraTextOnlyIndex = i;
+          curr.lyrics[0].origin.y = 0;
+        } else {
+          curr.lyrics[0].origin.y = this.lastLyrics[0].origin.y;
+        }
+        if (!fitsOnLine) {
+          curr.bounds.x = curr.lyrics[0].origin.x;
+          curr.lyrics[0].origin.y += curr.lyrics[0].bounds.height;
+          firstOnLine = curr;
+        }
+        firstOnLine.lyrics[0].lineWidth = curr.lyrics[0].getRight();
+      } else if (fitsOnLine === false) {
 
         // first check for elements that cannot begin a system: dividers and custodes
         while(this.numNotationsOnLine > 0 && (curr.isDivider || curr.constructor === Custos)) {
@@ -679,7 +723,7 @@ export class ChantLine extends ChantLayoutElement {
 
       // line breaks are a special case indicating to stop processing here
       if (curr.constructor === ChantLineBreak && width > 0) {
-        this.justify = curr.justify;
+        this.justify = curr.justify || this.extraTextOnlyIndex !== null;
         break;
       }
 
@@ -713,6 +757,11 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
+    if (this.lastLyricsBeforeTextOnly) {
+      this.lastLyrics = this.lastLyricsBeforeTextOnly;
+      delete this.lastLyricsBeforeTextOnly;
+    }
+
     // find the final lyric and mark it as connecting if needed.
     i = 0;
     while (this.lastLyrics && this.lastLyrics[i]) {
@@ -741,7 +790,7 @@ export class ChantLine extends ChantLayoutElement {
   }
 
   centerDividers() {
-    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine,
+    var lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex,
         curr;
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
       curr = this.score.notations[i];
@@ -785,7 +834,7 @@ export class ChantLine extends ChantLayoutElement {
     this.toJustify = [];
     var prev,
         curr = null,
-        lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
+        lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
 
       prev = curr;
@@ -821,7 +870,7 @@ export class ChantLine extends ChantLayoutElement {
 
   getWhitespaceOnRight(ctxt) {
     var notations = this.score.notations;
-    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
+    var lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
     var last = notations[lastIndex - 1];
     var lastRightNeume = last? last.bounds.right() + last.trailingSpace : 0;
     var lastRightLyric = this.lastLyrics.length? LyricArray.getRight(this.lastLyrics) : 0;
@@ -1181,7 +1230,8 @@ export class ChantLine extends ChantLayoutElement {
     // To begin we just place the current notation right after the previous,
     // irrespective of lyrics.
     curr.bounds.x = prev.bounds.right();
-    if (curr.constructor === TextOnly || !curr.hasLyrics() && prev.trailingSpace < 0) {
+
+    if (curr.constructor === TextOnly || (!curr.hasLyrics() && prev.trailingSpace < 0)) {
       // We transfer over the trailing space from the previous neume if the current neume is text only,
       // so that the text only neume has a better chance at not needing a connector.
       curr.trailingSpace = prev.trailingSpace;
