@@ -617,6 +617,8 @@ export class ChantLine extends ChantLayoutElement {
         } else {
           curr.lyrics[0].origin.y = this.lastLyrics[0].origin.y;
         }
+        delete curr.lyrics[0].lineWidth;
+        curr.needsLayout = true;
         if (!fitsOnLine) {
           curr.bounds.x = curr.lyrics[0].origin.x;
           curr.lyrics[0].origin.y += curr.lyrics[0].bounds.height;
