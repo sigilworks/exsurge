@@ -169,14 +169,14 @@ export class ChantLine extends ChantLayoutElement {
       offset = this.notationBounds.y + this.notationBounds.height + (this.numLyricLines - 1) * this.lyricLineHeight;
       for (i = this.extraTextOnlyIndex; i < lastIndex; i++) {
         notation = notations[i];
-        for (j = 0; j < notation.lyrics.length; j++) {
-          lastLyrics = notation.lyrics[j];
-          if(lastLyrics.lineWidth) {
-            xOffset = this.staffRight - lastLyrics.lineWidth;
-          }
-          lastLyrics.bounds.y = lastLyrics.origin.y + offset + this.lyricLineBaseline;
-          lastLyrics.bounds.x += xOffset;
+        if (!notation.lyrics[0])
+          continue;
+        lastLyrics = notation.lyrics[0];
+        if(lastLyrics.lineWidth) {
+          xOffset = this.staffRight - lastLyrics.lineWidth;
         }
+        lastLyrics.bounds.y = lastLyrics.origin.y + offset + this.lyricLineBaseline;
+        notation.bounds.x += xOffset;
       }
       this.extraTextOnlyHeight = lastLyrics.origin.y;
     }
@@ -574,7 +574,7 @@ export class ChantLine extends ChantLayoutElement {
     for (i = newElementStart; i <= lastNotationIndex; i++) {
 
       prev = curr;
-      if (curr.constructor !== TextOnly || this.extraTextOnlyIndex !== null)
+      if (curr.constructor !== TextOnly)
         prevNeume = curr;
 
       curr = notations[i];
@@ -602,6 +602,10 @@ export class ChantLine extends ChantLayoutElement {
       // also force a break if we've run into extra TextOnly elements, but the current notation is not a TextOnly and has lyrics
       forceBreak = forceBreak || (this.extraTextOnlyIndex !== null && curr.constructor !== TextOnly && curr.constructor !== ChantLineBreak && curr.constructor !== Custos && curr.hasLyrics());
 
+      if (curr.needsLayout && curr.hasLyrics()) {
+        // to reset any lyrical changes due to extra TextOnly elements at the end of the line last time the element was laid out.
+        // curr.lyrics[0].bounds.x = -curr.lyrics[0].origin.x
+      }
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
       var fitsOnLine = !forceBreak && this.positionNotationElement(ctxt, this.lastLyrics, prevNeume, curr, actualRightBoundary, condensableSpaces);
@@ -618,7 +622,6 @@ export class ChantLine extends ChantLayoutElement {
           curr.lyrics[0].origin.y = this.lastLyrics[0].origin.y;
         }
         delete curr.lyrics[0].lineWidth;
-        curr.needsLayout = true;
         if (!fitsOnLine) {
           curr.bounds.x = curr.lyrics[0].origin.x;
           curr.lyrics[0].origin.y += curr.lyrics[0].bounds.height;
@@ -725,8 +728,8 @@ export class ChantLine extends ChantLayoutElement {
 
       // line breaks are a special case indicating to stop processing here
       if (curr.constructor === ChantLineBreak && width > 0) {
-        this.justify = curr.justify || this.extraTextOnlyIndex !== null;
-        if (this.justify) this.findNeumesToJustify(prevLyrics);
+        this.findNeumesToJustify(prevLyrics);
+        this.justify = curr.justify || (this.extraTextOnlyIndex !== null && (this.getWhitespaceOnRight(ctxt) / (this.toJustify.length || 1) <= ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals));
         break;
       }
 
@@ -1247,8 +1250,13 @@ export class ChantLine extends ChantLayoutElement {
         (curr.lyrics[0].lyricType === LyricType.SingleSyllable || curr.lyrics[0].lyricType === LyricType.BeginningSyllable)) {
       curr.bounds.x += ctxt.intraNeumeSpacing * ctxt.intraSyllabicMultiplier;
     }
-    space.total = curr.bounds.x - prev.bounds.right();
-    space.condensable = space.total * ctxt.condensingTolerance;
+    if(this.extraTextOnlyIndex !== null && curr.constructor === TextOnly) {
+      curr.bounds.x = 0;
+      space.total = space.condensable = 0;
+    } else {
+      space.total = curr.bounds.x - prev.bounds.right();
+      space.condensable = space.total * ctxt.condensingTolerance;
+    }
 
     // if the previous notation has no lyrics, then we simply make sure the
     // current notation with lyrics is in the bounds of the line
