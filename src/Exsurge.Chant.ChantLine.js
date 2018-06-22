@@ -728,8 +728,9 @@ export class ChantLine extends ChantLayoutElement {
 
       // line breaks are a special case indicating to stop processing here
       if (curr.constructor === ChantLineBreak && width > 0) {
-        this.findNeumesToJustify(prevLyrics);
-        this.justify = curr.justify || (this.extraTextOnlyIndex !== null && (this.getWhitespaceOnRight(ctxt) / (this.toJustify.length || 1) <= ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals));
+        this.justify = curr.justify || this.extraTextOnlyIndex !== null;
+        if (this.justify)
+          this.findNeumesToJustify(prevLyrics);
         break;
       }
 
@@ -738,6 +739,10 @@ export class ChantLine extends ChantLayoutElement {
       } else if(curr.isNeume) {
         this.custos = null;
       }
+    }
+
+    if(this.justify && this.extraTextOnlyIndex !== null) {
+      this.justify = (this.getWhitespaceOnRight(ctxt) / (this.toJustify.length || 1) <= ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals);
     }
 
     if(!this.custos) {
@@ -755,7 +760,7 @@ export class ChantLine extends ChantLayoutElement {
             // Put the custos at the very end of the line
             this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
           } else {
-            this.custos.bounds.x = curr.bounds.x;
+            this.custos.bounds.x = prevNeume.bounds.right() + prevNeume.trailingSpace;
           }
           // nothing more to see here...
           break;
@@ -1237,7 +1242,7 @@ export class ChantLine extends ChantLayoutElement {
     // irrespective of lyrics.
     curr.bounds.x = prev.bounds.right();
 
-    if (curr.constructor === TextOnly || (!curr.hasLyrics() && prev.trailingSpace < 0)) {
+    if ((curr.constructor === TextOnly && this.extraTextOnlyIndex === null) || (!curr.hasLyrics() && prev.trailingSpace < 0)) {
       // We transfer over the trailing space from the previous neume if the current neume is text only,
       // so that the text only neume has a better chance at not needing a connector.
       curr.trailingSpace = prev.trailingSpace;
