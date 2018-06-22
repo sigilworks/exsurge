@@ -726,6 +726,7 @@ export class ChantLine extends ChantLayoutElement {
       // line breaks are a special case indicating to stop processing here
       if (curr.constructor === ChantLineBreak && width > 0) {
         this.justify = curr.justify || this.extraTextOnlyIndex !== null;
+        if (this.justify) this.findNeumesToJustify(prevLyrics);
         break;
       }
 
@@ -893,7 +894,7 @@ export class ChantLine extends ChantLayoutElement {
     var i;
     var toJustify = this.toJustify || [];
     var notations = this.score.notations;
-    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
+    var lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
 
     // first step of justification is to determine how much space we have to use up
     var extraSpace = this.getWhitespaceOnRight();
