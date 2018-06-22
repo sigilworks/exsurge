@@ -571,6 +571,8 @@ export class ChantLine extends ChantLayoutElement {
     if (ctxt.lastStartBrace && !ctxt.lastStartBrace.note) {
       ctxt.lastStartBrace.note = this.startingClef;
     }
+    var lastLyricsBeforeTextOnly;
+    var textOnlyStartIndex;
 
     for (i = newElementStart; i <= lastNotationIndex; i++) {
 
@@ -603,9 +605,9 @@ export class ChantLine extends ChantLayoutElement {
       // also force a break if we've run into extra TextOnly elements, but the current notation is not a TextOnly and has lyrics
       forceBreak = forceBreak || (this.extraTextOnlyIndex !== null && curr.constructor !== TextOnly && curr.constructor !== ChantLineBreak && curr.constructor !== Custos && curr.hasLyrics());
 
-      if (curr.needsLayout && curr.hasLyrics()) {
-        // to reset any lyrical changes due to extra TextOnly elements at the end of the line last time the element was laid out.
-        // curr.lyrics[0].bounds.x = -curr.lyrics[0].origin.x
+      if (curr.constructor === TextOnly && prev === prevNeume) {
+        lastLyricsBeforeTextOnly = this.lastLyrics.slice();
+        textOnlyStartIndex = i;
       }
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
@@ -616,16 +618,21 @@ export class ChantLine extends ChantLayoutElement {
         // line of lyrics associated with them.
         var firstOnLine;
         if (this.extraTextOnlyIndex === null) {
-          this.lastLyricsBeforeTextOnly = this.lastLyrics.slice();
-          this.extraTextOnlyIndex = i;
-          curr.lyrics[0].origin.y = 0;
-        } else {
+          // go back to the first in this string of consecutive TextOnly elements.
+          this.extraTextOnlyIndex = textOnlyStartIndex;
+          this.lastLyricsBeforeTextOnly = lastLyricsBeforeTextOnly;
+          this.lastLyrics = [];
+          i = textOnlyStartIndex - 1;
+          this.numNotationsOnLine = textOnlyStartIndex - this.notationsStartIndex;
+          notations[textOnlyStartIndex].lyrics[0].origin.y = 0;
+          continue;
+        } else if(i !== this.extraTextOnlyIndex) {
           curr.lyrics[0].origin.y = this.lastLyrics[0].origin.y;
         }
         delete curr.lyrics[0].lineWidth;
-        if (!fitsOnLine) {
+        if (!fitsOnLine || i === this.extraTextOnlyIndex) {
           curr.bounds.x = curr.lyrics[0].origin.x;
-          curr.lyrics[0].origin.y += this.lastLyrics[0].bounds.height;
+          curr.lyrics[0].origin.y += (this.lastLyrics[0] || curr.lyrics[0]).bounds.height;
           curr.lyrics[0].setMaxWidth(ctxt, this.staffRight);
           firstOnLine = curr;
         }
