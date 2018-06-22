@@ -1250,20 +1250,16 @@ export class TextElement extends ChantLayoutElement {
     }
   }
 
-  setMaxWidth(ctxt, maxWidth) {
-    if(this.lastMaxWidth && this.lastMaxWidth !== maxWidth) {
-      // replace newlines with spaces
-      this.spans.forEach(span => (span.properties.newLine && (delete span.properties.newLine, span.text = ' ' + span.text)));
-      this.recalculateMetrics(ctxt);
-    }
-    if (this.bounds.width > maxWidth) {
+  setMaxWidth(ctxt, maxWidth, firstLineMaxWidth = maxWidth) {
+    if (this.bounds.width > firstLineMaxWidth) {
       var lastWidth = 0,
           lastMatch = null,
           regex = /\s+|$/g,
+          max = firstLineMaxWidth,
           match;
       while((match=regex.exec(this.text))) {
         var width = this.measureSubstring(ctxt, match.index);
-        if(width > maxWidth && lastMatch) {
+        if(width > max && lastMatch) {
           var spanIndex = 0,
               length = 0;
           while(length < lastMatch.index && spanIndex < this.spans.length) {
@@ -1281,13 +1277,14 @@ export class TextElement extends ChantLayoutElement {
           this.spans.splice(spanIndex, 1, ...newSpans);
           if(match.index === this.text.length || this.measureSubstring(ctxt) <= maxWidth) break;
           width = 0;
-          match = null;
+          match = lastMatch = null;
+          max = maxWidth;
         }
         lastWidth = width;
         lastMatch = match;
       }
 
-      this.recalculateMetrics(ctxt);
+      this.recalculateMetrics(ctxt, false);
     }
     this.lastMaxWidth = maxWidth;
   }
@@ -1484,6 +1481,9 @@ export class Lyric extends TextElement {
     // Lyrics can have their own language defined, which affects the alignment
     // of the text with the notation element
     this.language = null;
+
+    if (this.allowsConnector)
+      this.connectorSpan = new TextSpan(ctxt.syllableConnector);
   }
 
   allowsConnector() {
@@ -1532,11 +1532,15 @@ export class Lyric extends TextElement {
     return this.notation.bounds.x + this.bounds.x + this.bounds.width;
   }
 
-  recalculateMetrics(ctxt) {
+  recalculateMetrics(ctxt, resetNewLines = true) {
+    if(resetNewLines) {
+      // replace newlines with spaces
+      this.spans.forEach(span => (span.properties.newLine && (delete span.properties.newLine, span.text = ' ' + span.text)));
+    }
+      
     super.recalculateMetrics(ctxt);
 
     this.widthWithoutConnector = this.bounds.width;
-    this.connectorSpan = new TextSpan(ctxt.syllableConnector);
 
     this.connectorWidth = 0;
     this.defaultConnectorWidth = ctxt.hyphenWidth;
@@ -1616,9 +1620,6 @@ export class Lyric extends TextElement {
     this.bounds.y = 0;
 
     this.origin.x = offset;
-
-    this.bounds.width = this.widthWithoutConnector;
-    this.bounds.height = ctxt.lyricTextSize;
   }
 
   generateDropCap(ctxt) {

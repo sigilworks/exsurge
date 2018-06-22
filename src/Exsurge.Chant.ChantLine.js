@@ -167,6 +167,7 @@ export class ChantLine extends ChantLayoutElement {
       let lastLyrics = null;
       let xOffset = 0;
       offset = this.notationBounds.y + this.notationBounds.height + (this.numLyricLines - 1) * this.lyricLineHeight;
+      offset += this.numTranslationLines * this.translationLineHeight;
       for (i = this.extraTextOnlyIndex; i < lastIndex; i++) {
         notation = notations[i];
         if (!notation.lyrics[0])
@@ -178,7 +179,7 @@ export class ChantLine extends ChantLayoutElement {
         lastLyrics.bounds.y = lastLyrics.origin.y + offset + this.lyricLineBaseline;
         notation.bounds.x += xOffset;
       }
-      this.extraTextOnlyHeight = lastLyrics.origin.y;
+      this.extraTextOnlyHeight = lastLyrics.origin.y + lastLyrics.bounds.height - (lastLyrics.fontSize * 1.2);
     }
 
     if(this.startingClef.hasLyrics()) {
