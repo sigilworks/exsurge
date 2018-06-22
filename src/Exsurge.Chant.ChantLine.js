@@ -29,7 +29,7 @@ import * as Neumes from './Exsurge.Chant.Neumes.js'
 import { QuickSvg, ChantLayoutElement, GlyphCode, GlyphVisualizer, RoundBraceVisualizer, CurlyBraceVisualizer, Lyric, LyricArray, LyricType, DropCap } from './Exsurge.Drawing.js'
 import { ChantLineBreak, TextOnly, NoteShape } from './Exsurge.Chant.js'
 import { Glyphs } from './Exsurge.Glyphs.js'
-import { Custos, DoubleBar } from './Exsurge.Chant.Signs.js'
+import { Custos, DoubleBar, FullBar } from './Exsurge.Chant.Signs.js'
 import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema, BraceShape, BracePoint, BraceAttachment } from './Exsurge.Chant.Markings.js'
 
 
@@ -750,8 +750,12 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
-    if(this.justify && this.extraTextOnlyIndex !== null) {
-      this.justify = (this.getWhitespaceOnRight(ctxt) / (this.toJustify.length || 1) <= ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals);
+    var last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
+    var isLastLine = last.isDivider && this.notationsStartIndex + this.numNotationsOnLine === notations.length;
+    if((this.justify && this.extraTextOnlyIndex !== null) || (width > 0 && isLastLine)) {
+      // this is the last chant line, or it has extra TextOnly elements at the end
+      if (!this.toJustify) this.findNeumesToJustify(prevLyrics);
+      this.justify = (!isLastLine || last.isDivider) && (this.getWhitespaceOnRight(ctxt) / (this.toJustify.length || 1) <= ctxt.staffInterval * ctxt.maxExtraSpaceInStaffIntervals);
     }
 
     if(!this.custos) {
@@ -792,13 +796,9 @@ export class ChantLine extends ChantLayoutElement {
 
     // if the provided width is less than zero, then set the width of the line
     // based on the last notation
-    var last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
     if (width <= 0) {
       this.staffRight = last.bounds.right();
       this.justify = false;
-    } else if (this.notationsStartIndex + this.numNotationsOnLine === notations.length) {
-      // this is the last chant line.
-      this.justify = last.isDivider && ((this.staffRight - last.bounds.right()) / this.staffRight < .1);
     }
     
     // Justify the line if we need to
@@ -845,6 +845,8 @@ export class ChantLine extends ChantLayoutElement {
               curr.lyrics[j].bounds.x += offset;
             }
           }
+        } else if (i === lastIndex - 1 && this.justify && (curr.constructor === DoubleBar || curr.constructor === FullBar)) {
+          curr.bounds.x = this.staffRight - curr.bounds.width;
         }
       }
     }
