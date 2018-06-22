@@ -624,7 +624,8 @@ export class ChantLine extends ChantLayoutElement {
         delete curr.lyrics[0].lineWidth;
         if (!fitsOnLine) {
           curr.bounds.x = curr.lyrics[0].origin.x;
-          curr.lyrics[0].origin.y += curr.lyrics[0].bounds.height;
+          curr.lyrics[0].origin.y += this.lastLyrics[0].bounds.height;
+          curr.lyrics[0].setMaxWidth(ctxt, this.staffRight);
           firstOnLine = curr;
         }
         firstOnLine.lyrics[0].lineWidth = curr.lyrics[0].getRight();
@@ -884,7 +885,8 @@ export class ChantLine extends ChantLayoutElement {
     var lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
     var last = notations[lastIndex - 1];
     var lastRightNeume = last? last.bounds.right() + last.trailingSpace : 0;
-    var lastRightLyric = this.lastLyrics.length? LyricArray.getRight(this.lastLyrics) : 0;
+    var lastLyrics = this.lastLyricsBeforeTextOnly || this.lastLyrics;
+    var lastRightLyric = lastLyrics.length? LyricArray.getRight(lastLyrics) : 0;
 
     if (this.custos) {
       lastRightNeume += this.custos.bounds.width + this.custos.leadingSpace;
