@@ -1265,7 +1265,7 @@ export class ChantLine extends ChantLayoutElement {
 
     if(curr.hasLyrics() && !prev.isDivider && !prev.isAccidental && this.numNotationsOnLine > 0 &&
         (curr.lyrics[0].lyricType === LyricType.SingleSyllable || curr.lyrics[0].lyricType === LyricType.BeginningSyllable)) {
-      curr.bounds.x += ctxt.intraNeumeSpacing * ctxt.intraSyllabicMultiplier;
+      curr.bounds.x += ctxt.intraNeumeSpacing * ctxt.interVerbalMultiplier;
     }
     if(this.extraTextOnlyIndex !== null && curr.constructor === TextOnly) {
       curr.bounds.x = 0;

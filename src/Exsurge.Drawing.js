@@ -373,7 +373,10 @@ export class ChantContext {
     this.setGlyphScaling(1.0 / 16.0);
     
     // minimum space between puncta of different syllables, in multiples of this.intraNeumeSpacing
-    this.intraSyllabicMultiplier = 2.5;
+    this.interSyllabicMultiplier = 2.5;
+
+    // space added between puncta of different words, in multiples of this.intraNeumeSpacing
+    this.interVerbalMultiplier = 1;
 
     this.drawGuides = false;
     this.drawDebuggingBounds = true;
@@ -1886,7 +1889,7 @@ export class ChantNotationElement extends ChantLayoutElement {
   performLayout(ctxt) {
 
     if (this.trailingSpace < 0)
-      this.trailingSpace = ctxt.intraNeumeSpacing * ctxt.intraSyllabicMultiplier;
+      this.trailingSpace = ctxt.intraNeumeSpacing * ctxt.interSyllabicMultiplier;
 
     // reset the bounds and the staff notations before doing a layout
     this.visualizers = [];
