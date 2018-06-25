@@ -1270,6 +1270,7 @@ export class TextElement extends ChantLayoutElement {
   setMaxWidth(ctxt, maxWidth, firstLineMaxWidth = maxWidth) {
     if (this.bounds.width > maxWidth) {
       this.maxWidth = maxWidth;
+      if(firstLineMaxWidth < 0) firstLineMaxWidth = maxWidth;
       this.firstLineMaxWidth = firstLineMaxWidth;
       var lastWidth = 0,
           lastMatch = null,
