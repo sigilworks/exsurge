@@ -1205,17 +1205,28 @@ export class TextElement extends ChantLayoutElement {
     return font;
   }
 
+  // if length is undefined and this.rightAligned === true, then offsets will be marked for each newLine span
   measureSubstring(ctxt, length) {
     if(length === 0) return 0;
     if(!length) length = Infinity;
+    if(length < 0) {
+      var lines = -length;
+      length = Infinity;
+    }
     var canvasCtxt = ctxt.canvasCtxt;
     var width = 0;
     var widths = [];
+    var newLineSpans = [this.spans[0]];
     var subStringLength = 0;
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i],
           myText = span.text.slice(0, length - subStringLength);
       if(span.properties.newLine) {
+        if (!lines && this.rightAligned === true && length === Infinity) {
+          newLineSpans[newLineSpans.length - 1].properties.xOffset = this.firstLineMaxWidth - width;
+          newLineSpans.push(span);
+        } else if ((--lines === 0))
+          break;
         widths.push(width);
         width = 0;
       }
@@ -1224,6 +1235,9 @@ export class TextElement extends ChantLayoutElement {
       width += metrics.width;
       subStringLength += myText.length;
       if(subStringLength === length) break;
+    }
+    if (!lines && width && newLineSpans.length && this.rightAligned === true && length === Infinity) {
+      newLineSpans[newLineSpans.length - 1].properties.xOffset = this.firstLineMaxWidth - width;
     }
     return Math.max(width, ...widths);
   }
@@ -1247,20 +1261,22 @@ export class TextElement extends ChantLayoutElement {
       this.origin.y = -bbox.y; // offset to baseline from top
     } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
       var numLines = this.spans.reduce((r,i) => (r + (i.properties.newLine? 1 : 0)), 1);
-      this.bounds.width = this.measureSubstring(ctxt);
+      this.bounds.width = this.measureSubstring(ctxt, this.rightAligned? -1 : undefined);
       this.bounds.height = this.fontSize * (numLines + 0.2);
       this.origin.y = this.fontSize;
     }
   }
 
   setMaxWidth(ctxt, maxWidth, firstLineMaxWidth = maxWidth) {
-    if (this.bounds.width > firstLineMaxWidth) {
+    if (this.bounds.width > maxWidth) {
+      this.maxWidth = maxWidth;
+      this.firstLineMaxWidth = firstLineMaxWidth;
       var lastWidth = 0,
           lastMatch = null,
           regex = /\s+|$/g,
           max = firstLineMaxWidth,
           match;
-      while((match=regex.exec(this.text))) {
+      while((match=regex.exec(this.text)) && (!lastMatch || match.index > lastMatch.index)) {
         var width = this.measureSubstring(ctxt, match.index);
         if(width > max && lastMatch) {
           var spanIndex = 0,
@@ -1275,21 +1291,25 @@ export class TextElement extends ChantLayoutElement {
               textLeft = splitSpan.text.slice(0, lastMatch.index - length),
               textRight = splitSpan.text.slice(lastMatch.index + lastMatch[0].length - length),
               newSpans = [];
+          this.rightAligned = (max === firstLineMaxWidth && firstLineMaxWidth != maxWidth);
           if(textLeft) newSpans.push(new TextSpan(textLeft, splitSpan.properties));
-          if(textRight) newSpans.push(new TextSpan(textRight, Object.assign({}, splitSpan.properties, { newLine: true })));
+          if(textRight) {
+            newSpans.push(new TextSpan(textRight, Object.assign({}, splitSpan.properties, { newLine: true })));
+          } else if(this.spans[spanIndex + 1]) {
+            this.spans[spanIndex + 1].properties.newLine = true;
+          }
           this.spans.splice(spanIndex, 1, ...newSpans);
+          this.needsLayout = true;
+          max = maxWidth;
           if(match.index === this.text.length || this.measureSubstring(ctxt) <= maxWidth) break;
           width = 0;
           match = lastMatch = null;
-          max = maxWidth;
         }
         lastWidth = width;
         lastMatch = match;
       }
-
       this.recalculateMetrics(ctxt, false);
     }
-    this.lastMaxWidth = maxWidth;
   }
 
   getCssClasses() {
@@ -1320,9 +1340,13 @@ export class TextElement extends ChantLayoutElement {
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i];
       if(span.properties.newLine) {
-        canvasCtxt.translate(translateWidth, this.fontSize);
-        translateWidth = 0;
+        var xOffset = span.properties.xOffset || 0;
+        canvasCtxt.translate(translateWidth + xOffset, this.fontSize);
+        translateWidth = -xOffset;
         translateHeight -= this.fontSize;
+      } else if(span.properties.xOffset) {
+        canvasCtxt.translate(translateWidth + span.properties.xOffset, 0);
+        translateWidth = -xOffset;
       }
       var properties = Object.assign({}, this.getExtraStyleProperties(ctxt), span.properties);
       canvasCtxt.font = this.getCanvasFontForProperties(properties);
@@ -1340,20 +1364,24 @@ export class TextElement extends ChantLayoutElement {
     var spans = [];
 
     for (var i = 0; i < this.spans.length; i++) {
+      var span = this.spans[i];
       var options = {};
 
-      options['style'] = getCssForProperties(this.spans[i].properties);
-      if(this.spans[i].properties.newLine) {
+      options['style'] = getCssForProperties(span.properties);
+      if(span.properties.newLine) {
+        var xOffset = span.properties.xOffset || 0;
         options.dy = '1em';
-        options.x = this.bounds.x;
+        options.x = this.bounds.x + xOffset;
+      } else if(span.properties.xOffset) {
+        options.x = this.bounds.x + span.properties.xOffset;
       }
-      if(this.spans[i].properties.textLength) {
-        options.textLength = this.spans[i].properties.textLength;
+      if(span.properties.textLength) {
+        options.textLength = span.properties.textLength;
         options.lengthAdjust = "spacingAndGlyphs";
         options.y = this.bounds.y;
       }
 
-      spans.push( QuickSvg.createNode('tspan', options, this.spans[i].text) );
+      spans.push( QuickSvg.createNode('tspan', options, span.text) );
     }
 
     var styleProperties = getCssForProperties(this.getExtraStyleProperties(ctxt));
@@ -1538,8 +1566,11 @@ export class Lyric extends TextElement {
 
   recalculateMetrics(ctxt, resetNewLines = true) {
     if(resetNewLines) {
+      delete this.maxWidth;
+      delete this.firstLineMaxWidth;
+      delete this.rightAligned;
       // replace newlines with spaces
-      this.spans.forEach(span => (span.properties.newLine && (delete span.properties.newLine, span.text = ' ' + span.text)));
+      this.spans.forEach(span => (span.properties.newLine && (delete span.properties.newLine, delete span.properties.xOffset, span.text = ' ' + span.text)));
     }
       
     super.recalculateMetrics(ctxt);

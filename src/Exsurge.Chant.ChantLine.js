@@ -163,7 +163,14 @@ export class ChantLine extends ChantLayoutElement {
 
     // handle placement of extra TextOnly elements:
     this.extraTextOnlyHeight = 0;
-    if(this.extraTextOnlyIndex !== null) {
+    if(this.extraTextOnlyIndex === null) {
+      // even if extraTextOnlyIndex is null, there might be extra lines on the last lyric if it is TextOnly:
+      let lastNotation = notations[lastNeumeIndex - 1];
+      if(lastNotation.constructor === ChantLineBreak) lastNotation = notations[lastNeumeIndex - 2];
+      if(lastNotation.constructor === TextOnly && lastNotation.lyrics.length === 1 && lastNotation.lyrics[0].bounds.height > this.lyricLineHeight) {
+        this.extraTextOnlyHeight = lastNotation.lyrics[0].bounds.height - this.lyricLineHeight;
+      }
+    } else {
       let lastLyrics = null;
       let xOffset = 0;
       offset = this.notationBounds.y + this.notationBounds.height + (this.numLyricLines - 1) * this.lyricLineHeight;
@@ -609,6 +616,11 @@ export class ChantLine extends ChantLayoutElement {
         lastLyricsBeforeTextOnly = this.lastLyrics.slice();
         textOnlyStartIndex = i;
       }
+
+      if (curr.hasLyrics() && curr.lyrics[0].needsLayout) {
+        curr.lyrics[0].recalculateMetrics(ctxt);
+      }
+
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
       var fitsOnLine = !forceBreak && this.positionNotationElement(ctxt, this.lastLyrics, prevNeume, curr, actualRightBoundary, condensableSpaces);
@@ -633,7 +645,7 @@ export class ChantLine extends ChantLayoutElement {
         if (!fitsOnLine || i === this.extraTextOnlyIndex) {
           curr.bounds.x = curr.lyrics[0].origin.x;
           curr.lyrics[0].origin.y += (this.lastLyrics[0] || curr.lyrics[0]).bounds.height;
-          curr.lyrics[0].setMaxWidth(ctxt, this.staffRight);
+          curr.lyrics[0].setMaxWidth(ctxt, this.staffRight, this.staffRight - ((LyricArray.getRight(this.lastLyrics) + ctxt.minLyricWordSpacing) || 0));
           firstOnLine = curr;
         }
         firstOnLine.lyrics[0].lineWidth = curr.lyrics[0].getRight();
@@ -1270,6 +1282,9 @@ export class ChantLine extends ChantLayoutElement {
       // so that the text only neume has a better chance at not needing a connector.
       curr.trailingSpace = prev.trailingSpace;
       if (curr.hasLyrics()) curr.trailingSpace -= curr.lyrics[0].bounds.width;
+      if(curr.constructor === TextOnly && curr.lyrics.length === 1) {
+        curr.lyrics[0].setMaxWidth(ctxt, this.staffRight, this.staffRight - LyricArray.getRight(prevLyrics) - ctxt.minLyricWordSpacing);
+      }
     } else {
       curr.bounds.x += prev.trailingSpace;
     }
