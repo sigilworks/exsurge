@@ -590,11 +590,12 @@ export class ChantLine extends ChantLayoutElement {
       curr = notations[i];
       
       var actualRightBoundary;
-      if(i === lastNotationIndex || curr.constructor === Custos || (prev.constructor === Custos && curr.isDivider)) {
+      if(i === lastNotationIndex || curr.constructor === Custos || (prev.constructor === Custos && curr.isDivider) || (curr.constructor === ChantLineBreak && prevNeume.constructor === Custos)) {
         // on the last notation of the score, we don't need a custos or trailing space, so we use staffRight as the
         // right boundary.
         // Also, if the current notation is a divider and the previous was a custos, we don't need extra space
         // because if the following notation won't fit, we can switch the order and use the custos as the end-of-the-line custos
+        // Ditto in the case of the current element being a chant line break and the previous neume a custos, because that custos will become our end-of-line custos
         actualRightBoundary = this.staffRight;
       } else if (i === lastNotationIndex - 1) {
         // on the penultimate notation, make sure there is at least enough room for whichever takes up less space,
