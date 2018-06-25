@@ -788,8 +788,19 @@ export class ChantLine extends ChantLayoutElement {
 
     // find the final lyric and mark it as connecting if needed.
     i = 0;
+    var whitespace = this.getWhitespaceOnRight();
     while (this.lastLyrics && this.lastLyrics[i]) {
-      if(this.lastLyrics[i].allowsConnector()) this.lastLyrics[i].setNeedsConnector(true);
+      if(this.lastLyrics[i].allowsConnector()) {
+        if(ctxt.minLyricWordSpacing < ctxt.hyphenWidth) {
+          // shrink the hyphen if we are already out of whitespace or if we would be if we used a regular hyphen:
+          if(whitespace < ctxt.hyphenWidth) {
+            var minHyphenWidth = this.lastLyrics.length > 1? ctxt.intraNeumeSpacing : ctxt.minLyricWordSpacing;
+            // we might not need to shift the syllable, but we do want to shrink the hyphen...
+            this.lastLyrics[i].setConnectorWidth(minHyphenWidth);
+          }
+        }
+        this.lastLyrics[i].setNeedsConnector(true);
+      }
       ++i;
     }
 
@@ -1427,7 +1438,7 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     if (curr.bounds.right() + curr.trailingSpace < (rightNotationBoundary + condensableSpaces.sum + space.condensable) &&
-        curr.lyrics[0].getRight() <= this.staffRight + condensableSpaces.sum + space.condensable) {
+        LyricArray.getRight(curr.lyrics, true) <= this.staffRight + condensableSpaces.sum + space.condensable) {
       if(prev.isAccidental) {
         // move the previous accidental up next to the current note:
         let shift = (curr.bounds.x - prev.bounds.width - prev.trailingSpace) - prev.bounds.x;

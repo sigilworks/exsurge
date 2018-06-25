@@ -1423,14 +1423,15 @@ export var LyricArray = {
     return x;
   },
 
-  getRight: function(lyricArray) {
+  getRight: function(lyricArray,presumeConnectorNeeded) {
     if (lyricArray.length === 0)
       return NaN;
 
     var x = Number.MIN_VALUE;
     for (var i = 0; i < lyricArray.length; i++) {
-      if (lyricArray[i])
-        x = Math.max(x, lyricArray[i].notation.bounds.x + lyricArray[i].bounds.x + lyricArray[i].bounds.width);
+      let l = lyricArray[i];
+      if (l)
+        x = Math.max(x, l.notation.bounds.x + l.bounds.x + l.bounds.width + ((presumeConnectorNeeded && l.allowsConnector() && !l.needsConnector)? l.getConnectorWidth() : 0));
     }
 
     return x;
