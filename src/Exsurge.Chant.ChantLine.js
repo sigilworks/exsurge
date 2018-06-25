@@ -606,8 +606,8 @@ export class ChantLine extends ChantLayoutElement {
       }
 
       // First check if we're already beyond the rightNotationBoundary (due to condensing that hasn't yet happened) and have a good element to end with
-      // but if we have 2 or fewer elements, we'll go ahead and try for them anyway.
-      var forceBreak = (lastNotationIndex - i > 1 && !prevNeume.keepWithNext && prevNeume.bounds.right() >= rightNotationBoundary);
+      // but if we have 2 or fewer elements, or if the current element is a line break or a custos, we'll go ahead and try for them anyway.
+      var forceBreak = (curr.constructor !== ChantLineBreak && curr.constructor !== Custos && lastNotationIndex - i > 1 && !prevNeume.keepWithNext && prevNeume.bounds.right() >= rightNotationBoundary);
 
       // also force a break if we've run into extra TextOnly elements, but the current notation is not a TextOnly and has lyrics
       forceBreak = forceBreak || (this.extraTextOnlyIndex !== null && curr.constructor !== TextOnly && curr.constructor !== ChantLineBreak && curr.constructor !== Custos && curr.hasLyrics());
@@ -966,6 +966,8 @@ export class ChantLine extends ChantLayoutElement {
         if (curr.hasLyrics()) {
           curr.bounds.x = Math.min(curr.bounds.x + (this.staffRight - LyricArray.getRight(curr.lyrics)), this.staffRight - curr.bounds.width);
           offset += increment
+        } else {
+          curr.bounds.x = this.staffRight - curr.bounds.width;
         }
         continue;
       }
