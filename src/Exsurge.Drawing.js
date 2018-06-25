@@ -1291,7 +1291,7 @@ export class TextElement extends ChantLayoutElement {
               textLeft = splitSpan.text.slice(0, lastMatch.index - length),
               textRight = splitSpan.text.slice(lastMatch.index + lastMatch[0].length - length),
               newSpans = [];
-          this.rightAligned = (max === firstLineMaxWidth && firstLineMaxWidth != maxWidth);
+          this.rightAligned = (max === firstLineMaxWidth && firstLineMaxWidth !== maxWidth);
           if(textLeft) newSpans.push(new TextSpan(textLeft, splitSpan.properties));
           if(textRight) {
             newSpans.push(new TextSpan(textRight, Object.assign({}, splitSpan.properties, { newLine: true })));
