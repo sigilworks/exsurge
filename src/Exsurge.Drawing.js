@@ -1340,13 +1340,13 @@ export class TextElement extends ChantLayoutElement {
         translateHeight = 0;
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i];
+      var xOffset = span.properties.xOffset || 0;
       if(span.properties.newLine) {
-        var xOffset = span.properties.xOffset || 0;
         canvasCtxt.translate(translateWidth + xOffset, this.fontSize);
         translateWidth = -xOffset;
         translateHeight -= this.fontSize;
-      } else if(span.properties.xOffset) {
-        canvasCtxt.translate(translateWidth + span.properties.xOffset, 0);
+      } else if(xOffset) {
+        canvasCtxt.translate(translateWidth + xOffset, 0);
         translateWidth = -xOffset;
       }
       var properties = Object.assign({}, this.getExtraStyleProperties(ctxt), span.properties);
@@ -1571,7 +1571,13 @@ export class Lyric extends TextElement {
       delete this.firstLineMaxWidth;
       delete this.rightAligned;
       // replace newlines with spaces
-      this.spans.forEach(span => (span.properties.newLine && (delete span.properties.newLine, delete span.properties.xOffset, span.text = ' ' + span.text)));
+      this.spans.forEach(span => {
+        delete span.properties.xOffset;
+        if (span.properties.newLine) {
+          delete span.properties.newLine;
+          span.text = ' ' + span.text;
+        }
+      });
     }
       
     super.recalculateMetrics(ctxt);
