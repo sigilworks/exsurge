@@ -1200,7 +1200,7 @@ export class TextElement extends ChantLayoutElement {
     if(properties['font-style'] === 'italic') font += 'italic ';
     if(properties['font-variant'] === 'small-caps') font += 'small-caps ';
     if(properties['font-weight'] === 'bold') font += 'bold ';
-    font += (properties['font-size'] || `${this.fontSize}px`) + ' ';
+    font += (properties['font-size'] || `${this.fontSize * (this.resize||1)}px`) + ' ';
     font += properties['font-family'] || this.fontFamily;
     return font;
   }
@@ -1268,46 +1268,58 @@ export class TextElement extends ChantLayoutElement {
   }
 
   setMaxWidth(ctxt, maxWidth, firstLineMaxWidth = maxWidth) {
+    if (this.spans.filter(s => s.properties.newLine).length) {
+      // first get rid of any new lines set from a previous maxWidth
+      this.recalculateMetrics(ctxt);
+    }
     if (this.bounds.width > maxWidth) {
       this.maxWidth = maxWidth;
-      if(firstLineMaxWidth < 0) firstLineMaxWidth = maxWidth;
-      this.firstLineMaxWidth = firstLineMaxWidth;
-      var lastWidth = 0,
-          lastMatch = null,
-          regex = /\s+|$/g,
-          max = firstLineMaxWidth,
-          match;
-      while((match=regex.exec(this.text)) && (!lastMatch || match.index > lastMatch.index)) {
-        var width = this.measureSubstring(ctxt, match.index);
-        if(width > max && lastMatch) {
-          var spanIndex = 0,
-              length = 0;
-          while(length < lastMatch.index && spanIndex < this.spans.length) {
-            length += this.spans[spanIndex++].text.length;
+      var percentage = maxWidth / this.bounds.width;
+      if (percentage >= 0.85) {
+        this.resize = percentage;
+        console.info(percentage,this.text)
+      } else {
+        if(firstLineMaxWidth < 0) firstLineMaxWidth = maxWidth;
+        this.firstLineMaxWidth = firstLineMaxWidth;
+        var lastWidth = 0,
+            lastMatch = null,
+            regex = /\s+|$/g,
+            max = firstLineMaxWidth,
+            match;
+        while((match=regex.exec(this.text)) && (!lastMatch || match.index > lastMatch.index)) {
+          var width = this.measureSubstring(ctxt, match.index);
+          if(width > max && lastMatch) {
+            var spanIndex = 0,
+                length = 0;
+            while(length < lastMatch.index && spanIndex < this.spans.length) {
+              let span = this.spans[spanIndex++];
+              length += span.text.length + (span.properties.newLine? 1 : 0);
+            }
+            if(length > lastMatch.index) {
+              let span = this.spans[--spanIndex];
+              length -= span.text.length;
+            }
+            var splitSpan = this.spans[spanIndex],
+                textLeft = splitSpan.text.slice(0, lastMatch.index - length),
+                textRight = splitSpan.text.slice(lastMatch.index + lastMatch[0].length - length),
+                newSpans = [];
+            this.rightAligned = (max === firstLineMaxWidth && firstLineMaxWidth !== maxWidth);
+            if(textLeft) newSpans.push(new TextSpan(textLeft, splitSpan.properties));
+            if(textRight) {
+              newSpans.push(new TextSpan(textRight, Object.assign({}, splitSpan.properties, { newLine: true })));
+            } else if(this.spans[spanIndex + 1]) {
+              this.spans[spanIndex + 1].properties.newLine = true;
+            }
+            this.spans.splice(spanIndex, 1, ...newSpans);
+            this.needsLayout = true;
+            max = maxWidth;
+            if(match.index === this.text.length || this.measureSubstring(ctxt) <= maxWidth) break;
+            width = 0;
+            match = lastMatch = null;
           }
-          if(length > lastMatch.index) {
-            length -= this.spans[--spanIndex].text.length;
-          }
-          var splitSpan = this.spans[spanIndex],
-              textLeft = splitSpan.text.slice(0, lastMatch.index - length),
-              textRight = splitSpan.text.slice(lastMatch.index + lastMatch[0].length - length),
-              newSpans = [];
-          this.rightAligned = (max === firstLineMaxWidth && firstLineMaxWidth !== maxWidth);
-          if(textLeft) newSpans.push(new TextSpan(textLeft, splitSpan.properties));
-          if(textRight) {
-            newSpans.push(new TextSpan(textRight, Object.assign({}, splitSpan.properties, { newLine: true })));
-          } else if(this.spans[spanIndex + 1]) {
-            this.spans[spanIndex + 1].properties.newLine = true;
-          }
-          this.spans.splice(spanIndex, 1, ...newSpans);
-          this.needsLayout = true;
-          max = maxWidth;
-          if(match.index === this.text.length || this.measureSubstring(ctxt) <= maxWidth) break;
-          width = 0;
-          match = lastMatch = null;
+          lastWidth = width;
+          lastMatch = match;
         }
-        lastWidth = width;
-        lastMatch = match;
       }
       this.recalculateMetrics(ctxt, false);
     }
@@ -1381,6 +1393,9 @@ export class TextElement extends ChantLayoutElement {
         options.lengthAdjust = "spacingAndGlyphs";
         options.y = this.bounds.y;
       }
+      if(this.resize) {
+        options['font-size'] = span.properties['font-size'] || (this.fontSize * this.resize);
+      }
 
       spans.push( QuickSvg.createNode('tspan', options, span.text) );
     }
@@ -1404,15 +1419,27 @@ export class TextElement extends ChantLayoutElement {
     var spans = "";
 
     for (var i = 0; i < this.spans.length; i++) {
+      var span = this.spans[i];
       var options = {};
 
-      options['style'] = getCssForProperties(this.spans[i].properties);
-      if(this.spans[i].properties.newLine) {
+      options['style'] = getCssForProperties(span.properties);
+      if(span.properties.newLine) {
+        var xOffset = span.properties.xOffset || 0;
         options.dy = '1em';
-        options.x = this.bounds.x;
+        options.x = this.bounds.x + xOffset;
+      } else if(span.properties.xOffset) {
+        options.x = this.bounds.x + span.properties.xOffset;
+      }
+      if(span.properties.textLength) {
+        options.textLength = span.properties.textLength;
+        options.lengthAdjust = "spacingAndGlyphs";
+        options.y = this.bounds.y;
+      }
+      if(this.resize) {
+        options['font-size'] = span.properties['font-size'] || (this.fontSize * this.resize);
       }
 
-      spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(this.spans[i].text));
+      spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(span.text));
     }
 
     var styleProperties = getCssForProperties(this.getExtraStyleProperties(ctxt));
@@ -1570,6 +1597,7 @@ export class Lyric extends TextElement {
       delete this.maxWidth;
       delete this.firstLineMaxWidth;
       delete this.rightAligned;
+      delete this.resize;
       // replace newlines with spaces
       this.spans.forEach(span => {
         delete span.properties.xOffset;
