@@ -1261,7 +1261,7 @@ export class TextElement extends ChantLayoutElement {
     } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
       var numLines = this.spans.reduce((r,i) => (r + (i.properties.newLine? 1 : 0)), 1);
       this.bounds.width = this.measureSubstring(ctxt, this.rightAligned? -1 : undefined);
-      this.bounds.height = this.fontSize * (numLines + 0.2);
+      this.bounds.height = this.fontSize * Math.min(1, numLines + 0.2);
       this.origin.y = this.fontSize;
     }
   }
