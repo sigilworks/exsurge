@@ -1126,12 +1126,11 @@ export class TextElement extends ChantLayoutElement {
 
     var filterFrames = (frame, symbol) => frame.Symbol === symbol;
 
-    var that = this;
-    var closeSpan = function (spanText, extraProperties) {
-      if (spanText === "" && !that.dropCap)
+    var closeSpan = (spanText, extraProperties) => {
+      if (spanText === "" && !this.dropCap)
         return;
 
-      that.text += spanText;
+      this.text += spanText;
 
       var properties = {};
       for (var i = 0; i < markupStack.length; i++)
@@ -1140,7 +1139,7 @@ export class TextElement extends ChantLayoutElement {
       if (extraProperties)
         Object.assign(properties, extraProperties);
 
-      that.spans.push(new TextSpan(spanText, properties));
+      this.spans.push(new TextSpan(spanText, properties));
     };
 
     var markupRegex = /([ARVarv])\/\.|([*_^%])(?=(?:(.+?)\2)?)/g;
@@ -1564,7 +1563,7 @@ export class Lyric extends TextElement {
       this.bounds.width = this.widthWithoutConnector;
 
       var span = this.spans.pop();
-      if (span !== this.connectorSpan)
+      if (span && span !== this.connectorSpan)
         this.spans.push(span);
     }
   }
