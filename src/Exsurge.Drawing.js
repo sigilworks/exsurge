@@ -1494,7 +1494,7 @@ export var LyricArray = {
 
   mergeIn: function(lyricArray, newLyrics) {
     for (var i = 0; i < newLyrics.length; ++i) {
-      if(newLyrics[i].originalText) lyricArray[i] = newLyrics[i];
+      if(newLyrics[i].originalText || !lyricArray[i]) lyricArray[i] = newLyrics[i];
     }
   },
 

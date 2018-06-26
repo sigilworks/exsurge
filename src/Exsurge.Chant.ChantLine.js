@@ -1446,12 +1446,13 @@ export class ChantLine extends ChantLayoutElement {
     } while(curr.lyrics.length > 1 && hasShifted && atLeastOneWithoutConnector);
 
     for (i = Math.min(curr.lyrics.length, prevLyrics.length) - 1; i >= 0; i--) {
-      if(prevLyrics[i].needsConnector && prevLyrics[i].connectorWidth) {
+      let pLyrics = prevLyrics[i];
+      if(pLyrics.needsConnector && pLyrics.connectorWidth) {
         currLyricLeft = curr.lyrics[i].getLeft();
-        prevLyricRight = prevLyrics[i].getRight() - prevLyrics[i].connectorWidth;
+        prevLyricRight = pLyrics.getRight() - pLyrics.connectorWidth;
         spaceBetweenSyls = currLyricLeft - prevLyricRight;
         if(spaceBetweenSyls >= ctxt.hyphenWidth) spaceBetweenSyls = 0;
-        prevLyrics[i].setConnectorWidth(spaceBetweenSyls);
+        pLyrics.setConnectorWidth(spaceBetweenSyls);
       }
     }
 
