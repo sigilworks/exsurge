@@ -763,8 +763,12 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
-    var last = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
-    var isLastLine = last.isDivider && this.notationsStartIndex + this.numNotationsOnLine === notations.length;
+    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine - 1;
+    var last = notations[lastIndex];
+    while(lastIndex && (last.constructor === ChantLineBreak || last.constructor === Custos || last.constructor === TextOnly)) {
+      last = notations[--lastIndex];
+    }
+    var isLastLine = this.notationsStartIndex + this.numNotationsOnLine === notations.length;
     if((this.justify && this.extraTextOnlyIndex !== null) || (width > 0 && isLastLine)) {
       // this is the last chant line, or it has extra TextOnly elements at the end
       if (!this.toJustify) this.findNeumesToJustify(prevLyrics);
@@ -821,7 +825,7 @@ export class ChantLine extends ChantLayoutElement {
     // if the provided width is less than zero, then set the width of the line
     // based on the last notation
     if (width <= 0) {
-      this.staffRight = last.bounds.right();
+      this.staffRight = notations[this.notationsStartIndex + this.numNotationsOnLine - 1].bounds.right();
       this.justify = false;
     }
     
@@ -938,7 +942,7 @@ export class ChantLine extends ChantLayoutElement {
     var i;
     var toJustify = this.toJustify || [];
     var notations = this.score.notations;
-    var lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
+    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
     // first step of justification is to determine how much space we have to use up
     var extraSpace = this.getWhitespaceOnRight();
@@ -963,14 +967,16 @@ export class ChantLine extends ChantLayoutElement {
 
       curr = notations[i];
 
-      if (curr === this.custos) {
+      if (this.extraTextOnlyIndex !== null && i >= this.extraTextOnlyIndex && curr.constructor === TextOnly) {
+        continue;
+      }
+
+      if (curr === this.custos && !multiplier) {
         if (curr.hasLyrics()) {
           curr.bounds.x = Math.min(curr.bounds.x + (this.staffRight - LyricArray.getRight(curr.lyrics)), this.staffRight - curr.bounds.width);
           offset += increment
-        } else {
-          curr.bounds.x = this.staffRight - curr.bounds.width;
+          continue;
         }
-        continue;
       }
 
       if (multiplier) {
