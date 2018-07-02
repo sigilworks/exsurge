@@ -1380,7 +1380,7 @@ export class ChantLine extends ChantLayoutElement {
         if (i < prevLyrics.length && prevLyrics[i]) {
           prevLyricRight = prevLyrics[i].getRight();
           let notationI = condensableSpaces.map(s => s.notation).lastIndexOf(prevLyrics[i].notation);
-          condensableSpacesSincePrevLyric = condensableSpaces.slice(notationI);
+          condensableSpacesSincePrevLyric = condensableSpaces.slice(notationI + 1);
           condensableSpacesSincePrevLyric.sum = condensableSpacesSincePrevLyric.map(s => s.condensable).reduce((a,b) => a+b, 0);
         }
 
