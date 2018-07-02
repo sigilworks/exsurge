@@ -804,19 +804,27 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     // find the final lyric and mark it as connecting if needed.
+    if(width > 0) {
+      var whitespace = this.getWhitespaceOnRight();
+      var rightEdge = this.staffRight;
+      if(whitespace < 0) {
+        rightEdge -= whitespace;
+      }
+    }
     i = 0;
-    var whitespace = this.getWhitespaceOnRight();
     while (this.lastLyrics && this.lastLyrics[i]) {
-      if(this.lastLyrics[i].allowsConnector()) {
-        if(ctxt.minLyricWordSpacing < ctxt.hyphenWidth) {
+      let lyrics = this.lastLyrics[i];
+      if(lyrics.allowsConnector()) {
+        lyrics.setNeedsConnector(true, 0);
+        if(width > 0 && ctxt.minLyricWordSpacing < ctxt.hyphenWidth) {
+          whitespace = rightEdge - lyrics.getRight();
           // shrink the hyphen if we are already out of whitespace or if we would be if we used a regular hyphen:
-          if(whitespace < ctxt.hyphenWidth) {
-            var minHyphenWidth = this.lastLyrics.length > 1? ctxt.intraNeumeSpacing : ctxt.minLyricWordSpacing;
+          if(whitespace < 0) {
+            var minHyphenWidth = Math.max(ctxt.hyphenWidth + whitespace, this.lastLyrics.length > 1? ctxt.intraNeumeSpacing : ctxt.minLyricWordSpacing);
             // we might not need to shift the syllable, but we do want to shrink the hyphen...
-            this.lastLyrics[i].setConnectorWidth(minHyphenWidth);
+            lyrics.setConnectorWidth(minHyphenWidth);
           }
         }
-        this.lastLyrics[i].setNeedsConnector(true);
       }
       ++i;
     }

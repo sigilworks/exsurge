@@ -1551,10 +1551,14 @@ export class Lyric extends TextElement {
             this.lyricType === LyricType.MiddleSyllable;
   }
 
-  setNeedsConnector(needs) {
+  setNeedsConnector(needs,width) {
     if (needs === true) {
       this.needsConnector = true;
-      this.bounds.width = this.widthWithoutConnector + this.getConnectorWidth();
+      if (typeof width !== 'undefined') {
+        this.setConnectorWidth(width)
+      } else {
+        this.bounds.width = this.widthWithoutConnector + this.getConnectorWidth();
+      }
 
       if (this.spans.length > 0 && this.spans[this.spans.length - 1] !== this.connectorSpan)
         this.spans.push(this.connectorSpan)
