@@ -509,11 +509,18 @@ export class Gabc {
       // then, if we're passed a notation, let's add it
       // also, perform chant logic here
       if (notation !== null) {
+        let prevNotation = notations[notations.length - 1];
         notation.sourceIndex = sourceIndex;
         if (notation.isClef) {
           ctxt.activeClef = notation;
-        } else if (notation.isAccidental)
+          if (prevNotation && prevNotation.trailingSpace < 0 && prevNotation.isDivider) {
+            prevNotation.trailingSpace = ctxt.intraNeumeSpacing * ctxt.accidentalSpaceMultiplier;
+          }
+        } else if (notation.isAccidental) {
           ctxt.activeClef.activeAccidental = notation;
+        } else if (notation.trailingSpace < 0 && notation instanceof Signs.Custos) {
+          notation.trailingSpace = ctxt.intraNeumeSpacing * ctxt.accidentalSpaceMultiplier;
+        }
         else if (notation.resetsAccidentals)
           ctxt.activeClef.resetAccidentals();
 
@@ -644,7 +651,8 @@ export class Gabc {
 
             addNotation(custos);
 
-          } else if (atom.length > 1 && (atom[1] === 'x' || atom[1] === 'y' || atom[1] === '#')) {
+          } else if (atom.length > 1 && /[xy#]/.test(atom[1])) {
+
 
             var accidentalType;
 
@@ -665,7 +673,7 @@ export class Gabc {
             var accidental = new Signs.Accidental(noteArray[0].staffPosition, accidentalType);
             accidental.pitch = this.gabcHeightToExsurgePitch(ctxt.activeClef, atom[0]);
             accidental.sourceIndex = sourceIndex;
-            accidental.trailingSpace = ctxt.intraNeumeSpacing * 2;
+            accidental.trailingSpace = ctxt.intraNeumeSpacing * ctxt.accidentalSpaceMultiplier;
 
             ctxt.activeClef.activeAccidental = accidental;
             

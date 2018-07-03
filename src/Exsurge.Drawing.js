@@ -376,6 +376,9 @@ export class ChantContext {
     // minimum space between puncta of different syllables, in multiples of this.intraNeumeSpacing
     this.interSyllabicMultiplier = 2.5;
 
+    // space between an accidental and the following note, in multiples of this.intraNeumeSpacing
+    this.accidentalSpaceMultiplier = 2;
+
     // space added between puncta of different words, in multiples of this.intraNeumeSpacing
     this.interVerbalMultiplier = 1;
 
