@@ -594,7 +594,7 @@ export let Glyphs = {
   "VerticalEpisemaAbove": {
     "paths": [{
       "type": "positive",
-      "data": "M-8-80H8L4 0h-8l-4-80z"
+      "data": "M-8-80H8V0H-8V-80z"
     }],
     "bounds": {
       "x": 0,
@@ -611,7 +611,7 @@ export let Glyphs = {
   "VerticalEpisemaBelow": {
     "paths": [{
       "type": "positive",
-      "data": "M-8 80H8L4 0h-8l-4 80z"
+      "data": "M-8 80H8V0H-8V 80z"
     }],
     "bounds": {
       "x": 0,
