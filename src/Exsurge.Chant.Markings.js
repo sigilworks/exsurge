@@ -81,13 +81,10 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
   performLayout(ctxt) {
 
-    // following logic helps to keep the episemae away from staff lines if they get too close
-    // the placement is based on a review of the Vatican and solesmes editions, which
-    // seem to always place the episemata centered between staff lines. Probably helps
-    // for visual layout, rather than letting episemata be at various heights.
+    // following logic helps to keep the episemata away from staff lines if they get too close
 
     var y = 0, step;
-    var minDistanceAway = ctxt.staffInterval * 0.3; // min distance from neume
+    var minDistanceAway = ctxt.staffInterval * 0.2; // min distance from neume
     var glyphCode = this.note.glyphVisualizer.glyphCode;
     
     if (this.positionHint === MarkingPositionHint.Below) {
@@ -99,7 +96,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
       if (Math.abs(step % 2) === 1)
-        step = step + 1;
+        step = step + 0.5;
     } else {
       y = this.note.bounds.y - minDistanceAway; // the lowest the line could be at
       step = Math.floor(y / ctxt.staffInterval);
@@ -107,7 +104,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
       if (Math.abs(step % 2) === 1)
-        step = step - 1;
+        step = step - 0.5;
     }
 
     y = step * ctxt.staffInterval;
@@ -141,7 +138,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
     }
 
     this.bounds.x = x;
-    this.bounds.y = y;
+    this.bounds.y = y - ctxt.episemaLineWeight / 2;
     this.bounds.width = width;
     this.bounds.height = ctxt.episemaLineWeight;
 
@@ -198,10 +195,11 @@ export class Ictus extends GlyphVisualizer {
     var glyphCode = this.note.glyphVisualizer.glyphCode;
     // we have to place the ictus futher from the note in some cases to avoid a collision with an episema on the same note:
     var staffPosition = this.note.staffPosition;
-    var placeFurtherFromNote = (this.note.episemata.length > 0 && this.note.episemata[0].positionHint === this.positionHint);
+    var positionHint = this.positionHint || MarkingPositionHint.Below;
+    var placeFurtherFromNote = (this.note.episemata.length > 0 && (this.note.episemata[0].positionHint || MarkingPositionHint.Above) === positionHint);
     var horizontalOffset;
-    var verticalOffset = 0;
-    var shortOffset = 1;
+    var verticalOffset = 1;
+    var shortOffset = 0.8;
 
     // The porrectus requires special handling of the note width,
     // otherwise the width is just that of the note itself
@@ -214,22 +212,24 @@ export class Ictus extends GlyphVisualizer {
       horizontalOffset = -ctxt.staffInterval / 2;
     } else {
       horizontalOffset = this.note.bounds.width / 2;
+      if (glyphCode === GlyphCode.PunctumInclinatum && staffPosition % 2 && !placeFurtherFromNote) {
+        placeFurtherFromNote = 0.2;
+      }
     }
 
     if (this.positionHint === MarkingPositionHint.Above) {
       glyphCode = GlyphCode.VerticalEpisemaAbove;
-      if(placeFurtherFromNote) {
-        if(staffPosition % 2 === 0) ++staffPosition;
-      } else shortOffset = 0.9;
-      verticalOffset = -ctxt.staffInterval * ((staffPosition % 2)? shortOffset : 1.5);
+      verticalOffset *= -1;
     } else {
       glyphCode = GlyphCode.VerticalEpisemaBelow;
-      if(placeFurtherFromNote) {
-        if(staffPosition % 2 === 0) --staffPosition;
-      } else shortOffset = 0.8;
-      verticalOffset = ctxt.staffInterval * ((staffPosition % 2)? shortOffset : 1.5);
     }
-    
+    if (placeFurtherFromNote === true) {
+      placeFurtherFromNote = 0.4;
+    } else if (placeFurtherFromNote === false) {
+      placeFurtherFromNote = 0;
+    }
+    verticalOffset *= ctxt.staffInterval * (placeFurtherFromNote + ((staffPosition % 2)? shortOffset : 1.3));
+
     this.setGlyph(ctxt, glyphCode);
     this.setStaffPosition(ctxt, staffPosition);
 

@@ -170,6 +170,18 @@ export var QuickSvg = {
     return node;
   },
 
+  svgFragmentForGlyph: function(glyph) {
+    var svgSrc = '';
+    for(var i=0; i < glyph.paths.length; ++i) {
+      var path = glyph.paths[i];
+      svgSrc += QuickSvg.createFragment(path.data? 'path' : 'g', {
+        d: path.data || undefined,
+        fill: path.type === 'negative'? '#fff' : undefined
+      });
+    }
+    return svgSrc;
+  },
+
   nodesForGlyph: function(glyph) {
     var nodes = [];
     for(var i=0; i < glyph.paths.length; ++i) {
@@ -478,7 +490,7 @@ export class ChantContext {
     this.staffLineWeight = Math.round(this.glyphPunctumWidth * this.glyphScaling / 8);
     this.neumeLineWeight = this.staffLineWeight; // the weight of connecting lines in the glyphs.
     this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
-    this.episemaLineWeight = this.neumeLineWeight; // of horizontal episemae
+    this.episemaLineWeight = this.neumeLineWeight; // of horizontal episemata
 
     this.updateHyphenWidth();
 
@@ -782,14 +794,12 @@ export class GlyphVisualizer extends ChantLayoutElement {
     // if this glyph hasn't been used yet, then load it up in the defs section for sharing
     if (!ctxt.defs.hasOwnProperty(this.glyphCode)) {
       var makeDef = () => {
-        var glyphSrc = this.glyph.svgSrc;
-
         // create the ref
         ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', {
           id: this.glyphCode,
           'class': 'glyph',
           transform: 'scale(' + ctxt.glyphScaling + ')'
-        }, glyphSrc);
+        }, QuickSvg.svgFragmentForGlyph(this.glyph));
 
         ctxt.defsNode.appendChild( QuickSvg.createNode('g', {
           id: this.glyphCode,
