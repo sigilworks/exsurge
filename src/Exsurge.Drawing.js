@@ -490,7 +490,7 @@ export class ChantContext {
     this.staffLineWeight = Math.round(this.glyphPunctumWidth * this.glyphScaling / 8);
     this.neumeLineWeight = this.staffLineWeight; // the weight of connecting lines in the glyphs.
     this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
-    this.episemaLineWeight = this.neumeLineWeight; // of horizontal episemae
+    this.episemaLineWeight = this.neumeLineWeight; // of horizontal episemata
 
     this.updateHyphenWidth();
 

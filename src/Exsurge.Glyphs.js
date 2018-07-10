@@ -594,30 +594,30 @@ export let Glyphs = {
   "VerticalEpisemaAbove": {
     "paths": [{
       "type": "positive",
-      "data": "M-8-4c2 3 6 4 8 4s6-1 8-4v-72c-2-3-6-4-8-4s-6 1-8 4z"
+      "data": "M-8-4c2 3 6 4 8 4s6-1 8-4v-52c-2-3-6-4-8-4s-6 1-8 4z"
     }],
     "bounds": {
       "x": 0,
       "y": 0,
       "width": 16,
-      "height": 80
+      "height": 60
     },
     "origin": {
       "x": 8,
-      "y": 80
+      "y": 60
     },
     "align": "left"
   },
   "VerticalEpisemaBelow": {
     "paths": [{
       "type": "positive",
-      "data": "M-8 76c2 3 6 4 8 4s6-1 8-4v-72c-2-3-6-4-8-4s-6 1-8 4z"
+      "data": "M-8 56c2 3 6 4 8 4s6-1 8-4v-52c-2-3-6-4-8-4s-6 1-8 4z"
     }],
     "bounds": {
       "x": 0,
       "y": 0,
       "width": 16,
-      "height": 80
+      "height": 60
     },
     "origin": {
       "x": 8,
