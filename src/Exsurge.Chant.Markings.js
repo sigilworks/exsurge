@@ -95,7 +95,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if (Math.abs(step % 2) === 1)
+      if ((step % 2) && Math.abs(step) < 4)
         step = step + 0.5;
     } else {
       y = this.note.bounds.y - minDistanceAway; // the lowest the line could be at
@@ -103,7 +103,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if (Math.abs(step % 2) === 1)
+      if ((step % 2) && Math.abs(step) < 4)
         step = step - 0.5;
     }
 
