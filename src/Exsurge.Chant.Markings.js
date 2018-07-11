@@ -96,7 +96,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if ((step % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition == -step)
+      if ((step % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition === -step)
         step = step + 0.5;
     } else {
       y = this.note.bounds.y - minDistanceAway; // the lowest the line could be at
@@ -104,7 +104,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if ((step % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition == -step)
+      if ((step % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition === -step)
         step = step - 0.5;
     }
 
@@ -202,7 +202,7 @@ export class Ictus extends GlyphVisualizer {
     var verticalOffset = 1;
     var shortOffset = -0.2;
     var extraOffset = 0;
-    var collisionWithStaffLine = (staffPosition % 2) && (Math.abs(staffPosition) < 4 || (this.note.neume.ledgerLines[0] || {}).staffPosition == staffPosition);
+    var collisionWithStaffLine = (staffPosition % 2) && (Math.abs(staffPosition) < 4 || (this.note.neume.ledgerLines[0] || {}).staffPosition === staffPosition);
 
     // The porrectus requires special handling of the note width,
     // otherwise the width is just that of the note itself
