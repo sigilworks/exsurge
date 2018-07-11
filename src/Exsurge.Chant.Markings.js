@@ -194,12 +194,14 @@ export class Ictus extends GlyphVisualizer {
 
     var glyphCode = this.note.glyphVisualizer.glyphCode;
     // we have to place the ictus futher from the note in some cases to avoid a collision with an episema on the same note:
-    var staffPosition = this.note.staffPosition;
     var positionHint = this.positionHint || MarkingPositionHint.Below;
-    var placeFurtherFromNote = (this.note.episemata.length > 0 && (this.note.episemata[0].positionHint || MarkingPositionHint.Above) === positionHint);
+    var staffPosition = this.note.staffPosition + (positionHint == MarkingPositionHint.Above? 1 : -1);
+    var collisionWithEpisema = (this.note.episemata.length > 0 && (this.note.episemata[0].positionHint || MarkingPositionHint.Above) === positionHint);
     var horizontalOffset;
     var verticalOffset = 1;
-    var shortOffset = 0.8;
+    var shortOffset = -0.2;
+    var extraOffset = 0;
+    var collisionWithStaffLine = (staffPosition % 2) && Math.abs(staffPosition) < 4;
 
     // The porrectus requires special handling of the note width,
     // otherwise the width is just that of the note itself
@@ -212,8 +214,8 @@ export class Ictus extends GlyphVisualizer {
       horizontalOffset = -ctxt.staffInterval / 2;
     } else {
       horizontalOffset = this.note.bounds.width / 2;
-      if (glyphCode === GlyphCode.PunctumInclinatum && staffPosition % 2 && !placeFurtherFromNote) {
-        placeFurtherFromNote = 0.2;
+      if (glyphCode === GlyphCode.PunctumInclinatum && !collisionWithStaffLine && !collisionWithEpisema) {
+        extraOffset = 0.3;
       }
     }
 
@@ -223,12 +225,10 @@ export class Ictus extends GlyphVisualizer {
     } else {
       glyphCode = GlyphCode.VerticalEpisemaBelow;
     }
-    if (placeFurtherFromNote === true) {
-      placeFurtherFromNote = 0.4;
-    } else if (placeFurtherFromNote === false) {
-      placeFurtherFromNote = 0;
+    if (collisionWithEpisema) {
+      extraOffset = 0.4;
     }
-    verticalOffset *= ctxt.staffInterval * (placeFurtherFromNote + ((staffPosition % 2)? shortOffset : 1.3));
+    verticalOffset *= ctxt.staffInterval * (extraOffset + (collisionWithStaffLine? 0.3 : shortOffset));
 
     this.setGlyph(ctxt, glyphCode);
     this.setStaffPosition(ctxt, staffPosition);
