@@ -195,7 +195,7 @@ export class Ictus extends GlyphVisualizer {
     var glyphCode = this.note.glyphVisualizer.glyphCode;
     // we have to place the ictus futher from the note in some cases to avoid a collision with an episema on the same note:
     var positionHint = this.positionHint || MarkingPositionHint.Below;
-    var staffPosition = this.note.staffPosition + (positionHint == MarkingPositionHint.Above? 1 : -1);
+    var staffPosition = this.note.staffPosition + (positionHint === MarkingPositionHint.Above? 1 : -1);
     var collisionWithEpisema = (this.note.episemata.length > 0 && (this.note.episemata[0].positionHint || MarkingPositionHint.Above) === positionHint);
     var horizontalOffset;
     var verticalOffset = 1;
