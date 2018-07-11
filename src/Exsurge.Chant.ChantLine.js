@@ -1051,44 +1051,11 @@ export class ChantLine extends ChantLayoutElement {
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
-    var processNeumeForLedgerLine = (neume) => {
-      var firstAbove = false,
-          needsAbove = false,
-          firstBelow = false,
-          needsBelow = false,
-          isPorrectus = false;
-
-      if (!neume.notes) return;
-
-      for (var i = 0; i < neume.notes.length; ++i) {
-        var note = neume.notes[i];
-        var staffPosition = note.staffPosition;
-        if (staffPosition >= 4) {
-          needsAbove = needsAbove || staffPosition >= 5;
-          if(firstAbove === false) firstAbove = isPorrectus? i - 1 : i;
-          if(staffPosition >= 5) continue;
-        } else if (staffPosition <= -4) {
-          needsBelow = needsBelow || staffPosition <= -5;
-          if(firstBelow === false) firstBelow = isPorrectus? i - 1 : i;
-          if(staffPosition <= -5) continue;
-        }
-        if (needsAbove || needsBelow) {
-          var endI = Math.abs(staffPosition) >= 4? i : i - 1;
-          processElementForLedgerLine(neume.notes[firstAbove || firstBelow || 0], neume.notes[endI], needsAbove? 5 : -5, neume.bounds.x);
-          firstAbove = firstBelow = needsAbove = needsBelow = false;
-        }
-        isPorrectus = /^Porrectus\d$/.test(note.glyphVisualizer.glyphCode);
-      }
-      if (needsAbove || needsBelow) {
-        processElementForLedgerLine(neume.notes[firstAbove || firstBelow || 0], neume.notes[neume.notes.length - 1], needsAbove? 5 : -5, neume.bounds.x);
-      }
-    }
-
     // an element needs to have a staffPosition property, as well as the standard
     // bounds property. so it could be a note, or it could be a custos
     // offsetX can be used to add to the position info for the element,
     // useful in the case of notes.
-    var processElementForLedgerLine = (element, endElem = element, staffPosition = element.staffPosition, offsetX = 0) => {
+    var processElementForLedgerLine = (element, endElem = element, staffPosition = element.staffPosition, offsetX = element.neume? element.neume.bounds.x : 0) => {
 
       // do we need a ledger line for this note?
 
@@ -1184,7 +1151,10 @@ export class ChantLine extends ChantLayoutElement {
       if (!neume.isNeume)
         continue;
 
-      processNeumeForLedgerLine(neume);
+      for (j = 0; j < neume.ledgerLines.length; j++) {
+        var ll = neume.ledgerLines[j];
+        processElementForLedgerLine(ll.element, ll.endElem, ll.staffPosition);
+      }
 
       for (j = 0; j < neume.notes.length; j++) {
         var k, note = neume.notes[j];

@@ -341,6 +341,8 @@ export class Neume extends ChantNotationElement {
 
   finishLayout(ctxt) {
 
+    this.ledgerLines = this.requiresLedgerLine();
+
     // allow subclasses an opportunity to position their own markings...
     this.positionMarkings();
 
@@ -380,6 +382,49 @@ export class Neume extends ChantNotationElement {
     this.origin.y = this.notes[0].origin.y;
 
     super.finishLayout(ctxt);
+  }
+
+  requiresLedgerLine() {
+    var firstAbove = false,
+        needsAbove = false,
+        firstBelow = false,
+        needsBelow = false,
+        isPorrectus = false,
+        result = [];
+
+    if (!this.notes) return result;
+
+    for (var i = 0; i < this.notes.length; ++i) {
+      var note = this.notes[i];
+      var staffPosition = note.staffPosition;
+      if (staffPosition >= 4) {
+        needsAbove = needsAbove || staffPosition >= 5;
+        if(firstAbove === false) firstAbove = isPorrectus? i - 1 : i;
+        if(staffPosition >= 5) continue;
+      } else if (staffPosition <= -4) {
+        needsBelow = needsBelow || staffPosition <= -5;
+        if(firstBelow === false) firstBelow = isPorrectus? i - 1 : i;
+        if(staffPosition <= -5) continue;
+      }
+      if (needsAbove || needsBelow) {
+        var endI = Math.abs(staffPosition) >= 4? i : i - 1;
+        result.push({
+          element: this.notes[firstAbove || firstBelow || 0],
+          endElem: this.notes[endI],
+          staffPosition: needsAbove? 5 : -5
+        });
+        firstAbove = firstBelow = needsAbove = needsBelow = false;
+      }
+      isPorrectus = /^Porrectus\d$/.test(note.glyphVisualizer.glyphCode);
+    }
+    if (needsAbove || needsBelow) {
+      result.push({
+        element: this.notes[firstAbove || firstBelow || 0],
+        endElem: this.notes[this.notes.length - 1],
+        staffPosition: needsAbove? 5 : -5
+      });
+    }
+    return result;
   }
 
   resetDependencies() {

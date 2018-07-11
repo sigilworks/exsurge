@@ -86,6 +86,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
     var y = 0, step;
     var minDistanceAway = ctxt.staffInterval * 0.2; // min distance from neume
     var glyphCode = this.note.glyphVisualizer.glyphCode;
+    var ledgerLine = this.note.neume.ledgerLines[0] || {};
     
     if (this.positionHint === MarkingPositionHint.Below) {
       y = this.note.bounds.bottom() + minDistanceAway; // the highest the line could be at
@@ -95,7 +96,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if ((step % 2) && Math.abs(step) < 4)
+      if ((step % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition == -step)
         step = step + 0.5;
     } else {
       y = this.note.bounds.y - minDistanceAway; // the lowest the line could be at
@@ -103,7 +104,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if ((step % 2) && Math.abs(step) < 4)
+      if ((step % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition == -step)
         step = step - 0.5;
     }
 
@@ -193,7 +194,7 @@ export class Ictus extends GlyphVisualizer {
   performLayout(ctxt) {
 
     var glyphCode = this.note.glyphVisualizer.glyphCode;
-    // we have to place the ictus futher from the note in some cases to avoid a collision with an episema on the same note:
+    // we have to place the ictus further from the note in some cases to avoid a collision with an episema on the same note:
     var positionHint = this.positionHint || MarkingPositionHint.Below;
     var staffPosition = this.note.staffPosition + (positionHint === MarkingPositionHint.Above? 1 : -1);
     var collisionWithEpisema = (this.note.episemata.length > 0 && (this.note.episemata[0].positionHint || MarkingPositionHint.Above) === positionHint);
@@ -201,7 +202,7 @@ export class Ictus extends GlyphVisualizer {
     var verticalOffset = 1;
     var shortOffset = -0.2;
     var extraOffset = 0;
-    var collisionWithStaffLine = (staffPosition % 2) && Math.abs(staffPosition) < 4;
+    var collisionWithStaffLine = (staffPosition % 2) && (Math.abs(staffPosition) < 4 || (this.note.neume.ledgerLines[0] || {}).staffPosition == staffPosition);
 
     // The porrectus requires special handling of the note width,
     // otherwise the width is just that of the note itself
