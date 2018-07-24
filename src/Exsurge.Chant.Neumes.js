@@ -399,15 +399,15 @@ export class Neume extends ChantNotationElement {
       var staffPosition = note.staffPosition;
       if (staffPosition >= 4) {
         needsAbove = needsAbove || staffPosition >= 5;
-        if(firstAbove === false) firstAbove = isPorrectus? i - 1 : i;
+        if(firstAbove === false) firstAbove = Math.max(0, i - 1);
         if(staffPosition >= 5) continue;
       } else if (staffPosition <= -4) {
         needsBelow = needsBelow || staffPosition <= -5;
-        if(firstBelow === false) firstBelow = isPorrectus? i - 1 : i;
+        if(firstBelow === false) firstBelow = Math.max(0, i - 1);
         if(staffPosition <= -5) continue;
       }
       if (needsAbove || needsBelow) {
-        var endI = Math.abs(staffPosition) >= 4? i : i - 1;
+        var endI = i; // Math.abs(staffPosition) >= 4? i : i - 1;
         result.push({
           element: this.notes[firstAbove || firstBelow || 0],
           endElem: this.notes[endI],
@@ -415,7 +415,7 @@ export class Neume extends ChantNotationElement {
         });
         firstAbove = firstBelow = needsAbove = needsBelow = false;
       }
-      isPorrectus = /^Porrectus\d$/.test(note.glyphVisualizer.glyphCode);
+      // isPorrectus = /^Porrectus\d$/.test(note.glyphVisualizer.glyphCode);
     }
     if (needsAbove || needsBelow) {
       result.push({
