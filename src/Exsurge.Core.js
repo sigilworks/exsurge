@@ -294,6 +294,10 @@ export class Pitch {
     return this.octave * 12 + this.step;
   }
 
+  transpose(step) {
+    return new Pitch(this.toInt() + step);
+  }
+
   isHigherThan(pitch) {
     return this.toInt() > pitch.toInt();
   }
