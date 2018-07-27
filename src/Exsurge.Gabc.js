@@ -292,7 +292,7 @@ export class Gabc {
 
       // new words reset the accidentals, per the Solesmes style (see LU xviij)
       // but we need to also make sure that there _is_ a word and that it has notes associated with it.
-      if (currSyllable === 0 && /\S/.test(lyricText) && /[a-m]/i.test(notationData))
+      if (currSyllable === 0 && /[a-z]/i.test(lyricText) && /[a-m]/i.test(notationData))
         ctxt.activeClef.resetAccidentals();      
 
       var items = this.parseNotations(ctxt, notationData, sourceIndex + match.index + match[1].length + 1);

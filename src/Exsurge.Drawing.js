@@ -1156,7 +1156,7 @@ export class TextElement extends ChantLayoutElement {
       this.spans.push(new TextSpan(spanText, properties));
     };
 
-    var markupRegex = /([ARVarv])\/\.|([*_^%])(?=(?:(.+?)\2)?)/g;
+    var markupRegex = /\\?([arv])(?:bar|\/\.)|([*_^%])(?=(?:(.+?)\2)?)/gi;
 
     var match = null;
     while ((match = markupRegex.exec(text))) {
