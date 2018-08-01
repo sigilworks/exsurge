@@ -84,33 +84,43 @@ export class HorizontalEpisema extends ChantLayoutElement {
     // following logic helps to keep the episemata away from staff lines if they get too close
 
     var y = 0, step;
-    var minDistanceAway = ctxt.staffInterval * 0.2; // min distance from neume
+    var minDistanceAway = ctxt.staffInterval * 0.25; // min distance from neume
     var glyphCode = this.note.glyphVisualizer.glyphCode;
     var ledgerLine = this.note.neume.ledgerLines[0] || {};
+    var punctumInclinatumShorten = false;
+
+    if(glyphCode === GlyphCode.PunctumInclinatum) {
+      let notes = this.note.neume.notes,
+          index = notes.indexOf(this.note),
+          prevNote = notes[index - 1];
+      if(prevNote && prevNote.glyphVisualizer.glyphCode === GlyphCode.PunctumInclinatum && (prevNote.staffPosition - this.note.staffPosition) === 1) {
+        punctumInclinatumShorten = true;
+      }
+    }
     
     if (this.positionHint === MarkingPositionHint.Below) {
       y = this.note.bounds.bottom() + minDistanceAway; // the highest the line could be at
       if (glyphCode === GlyphCode.None) // correction for episema under the second note of a porrectus
         y += ctxt.staffInterval;
-      step = Math.ceil(y / ctxt.staffInterval);
+      step = Math.ceil(2 * y / ctxt.staffInterval) / 2;
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if ((step % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition === -step)
+      if (!((step+1) % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition === -step)
         step = step + 0.5;
     } else {
       y = this.note.bounds.y - minDistanceAway; // the lowest the line could be at
-      step = Math.floor(y / ctxt.staffInterval);
+      step = Math.floor(2 * y / ctxt.staffInterval) / 2;
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if ((step % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition === -step)
+      if (!((step+1) % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition === -step)
         step = step - 0.5;
     }
 
     y = step * ctxt.staffInterval;
 
-    var width;
+    var width = this.note.bounds.width;
     var x = this.note.bounds.x;
 
     // The porrectus requires special handling of the note width,
@@ -123,8 +133,9 @@ export class HorizontalEpisema extends ChantLayoutElement {
     else if (glyphCode === GlyphCode.None) {
       width = ctxt.staffInterval;
       x -= width;
-    } else {
-      width = this.note.bounds.width;
+    } else if(punctumInclinatumShorten) {
+      width *= 2/3;
+      x += 0.5 * width;
     }
 
     // also, the position hint can affect the x/width of the episema
