@@ -153,7 +153,7 @@ export class ChantLine extends ChantLayoutElement {
       }
 
       if(notation.alText) {
-        offset = this.notationBounds.y;
+        offset = this.notationBounds.y - 2;
         for (j = 0; j < notation.alText.length; j++) {
           offset -= this.altLineHeight;
           notation.alText[j].bounds.y = offset + this.altLineBaseline;
@@ -163,12 +163,13 @@ export class ChantLine extends ChantLayoutElement {
 
     // handle placement of extra TextOnly elements:
     this.extraTextOnlyHeight = 0;
+    var extraTextOnlyLyricIndex = this.extraTextOnlyLyricIndex;
     if(this.extraTextOnlyIndex === null) {
       // even if extraTextOnlyIndex is null, there might be extra lines on the last lyric if it is TextOnly:
       let lastNotation = notations[lastNeumeIndex - 1];
       if(lastNotation.constructor === ChantLineBreak) lastNotation = notations[lastNeumeIndex - 2];
       if(lastNotation.constructor === TextOnly && lastNotation.lyrics.length === 1 && lastNotation.lyrics[0].bounds.height > this.lyricLineHeight) {
-        this.extraTextOnlyHeight = lastNotation.lyrics[0].bounds.height - this.lyricLineHeight;
+        this.extraTextOnlyHeight = lastNotation.lyrics[extraTextOnlyLyricIndex].bounds.height - this.lyricLineHeight;
       }
     } else {
       let lastLyrics = null;
@@ -177,9 +178,9 @@ export class ChantLine extends ChantLayoutElement {
       offset += this.numTranslationLines * this.translationLineHeight;
       for (i = this.extraTextOnlyIndex; i < lastIndex; i++) {
         notation = notations[i];
-        if (!notation.lyrics[0])
+        if (!notation.lyrics[extraTextOnlyLyricIndex])
           continue;
-        lastLyrics = notation.lyrics[0];
+        lastLyrics = notation.lyrics[extraTextOnlyLyricIndex];
         if(lastLyrics.lineWidth) {
           xOffset = this.staffRight - lastLyrics.lineWidth;
         }
@@ -237,7 +238,7 @@ export class ChantLine extends ChantLayoutElement {
     // add up the lyric line heights to get the total height of the chant line
     this.notationBounds.height += Math.max(ctxt.minSpaceBelowStaff * ctxt.staffInterval, (this.lyricLineHeight * this.numLyricLines) + (this.altLineHeight * this.numAltLines) + (this.translationLineHeight * this.numTranslationLines) + this.extraTextOnlyHeight);
     var totalHeight = this.notationBounds.height;
-    this.notationBounds.y -= this.altLineHeight * this.numAltLines;
+    this.notationBounds.y -= 2 + this.altLineHeight * this.numAltLines;
 
     this.bounds.x = 0;
     this.bounds.y = this.notationBounds.y;
@@ -503,6 +504,7 @@ export class ChantLine extends ChantLayoutElement {
     this.paddingLeft = 0;
 
     this.extraTextOnlyIndex = null;
+    this.extraTextOnlyLyricIndex = 0;
 
     if (width > 0)
       this.staffRight = width;
@@ -625,31 +627,33 @@ export class ChantLine extends ChantLayoutElement {
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
       var fitsOnLine = !forceBreak && this.positionNotationElement(ctxt, this.lastLyrics, prevNeume, curr, actualRightBoundary, condensableSpaces);
-      if (curr.constructor === TextOnly && curr.lyrics.length === 1 && (fitsOnLine === false || (this.extraTextOnlyIndex !== null && curr.hasLyrics()))) {
+      if (curr.constructor === TextOnly && LyricArray.hasOnlyOneLyric(curr.lyrics) && (fitsOnLine === false || this.extraTextOnlyIndex !== null)) {
         // a special case for TextOnly elements that don't fit on the line: since they don't have neumes associated with them, we can place this
         // and any additional TextOnly elements just below the current lyric lines, but we can only do this if the TextOnly elements have only one
         // line of lyrics associated with them.
         var firstOnLine;
+        var extraTextOnlyLyricIndex = this.extraTextOnlyLyricIndex;
         if (this.extraTextOnlyIndex === null) {
           // go back to the first in this string of consecutive TextOnly elements.
           this.extraTextOnlyIndex = textOnlyStartIndex;
+          extraTextOnlyLyricIndex = this.extraTextOnlyLyricIndex = LyricArray.indexOfLyric(curr.lyrics);
           this.lastLyricsBeforeTextOnly = lastLyricsBeforeTextOnly;
           this.lastLyrics = [];
           i = textOnlyStartIndex - 1;
           this.numNotationsOnLine = textOnlyStartIndex - this.notationsStartIndex;
-          notations[textOnlyStartIndex].lyrics[0].origin.y = 0;
+          notations[textOnlyStartIndex].lyrics[extraTextOnlyLyricIndex].origin.y = 0;
           continue;
         } else if(i !== this.extraTextOnlyIndex) {
-          curr.lyrics[0].origin.y = this.lastLyrics[0].origin.y;
+          curr.lyrics[extraTextOnlyLyricIndex].origin.y = this.lastLyrics[extraTextOnlyLyricIndex].origin.y;
         }
-        delete curr.lyrics[0].lineWidth;
+        delete curr.lyrics[extraTextOnlyLyricIndex].lineWidth;
         if (!fitsOnLine || i === this.extraTextOnlyIndex) {
-          curr.bounds.x = curr.lyrics[0].origin.x;
-          curr.lyrics[0].origin.y += (this.lastLyrics[0] || curr.lyrics[0]).bounds.height;
-          curr.lyrics[0].setMaxWidth(ctxt, this.staffRight, this.staffRight - ((LyricArray.getRight(this.lastLyrics) + ctxt.minLyricWordSpacing) || 0));
+          curr.bounds.x = curr.lyrics[extraTextOnlyLyricIndex].origin.x;
+          curr.lyrics[extraTextOnlyLyricIndex].origin.y += (this.lastLyrics[extraTextOnlyLyricIndex] || curr.lyrics[extraTextOnlyLyricIndex]).bounds.height;
+          curr.lyrics[extraTextOnlyLyricIndex].setMaxWidth(ctxt, this.staffRight, this.staffRight - ((LyricArray.getRight(this.lastLyrics) + ctxt.minLyricWordSpacing) || 0));
           firstOnLine = curr;
         }
-        firstOnLine.lyrics[0].lineWidth = curr.lyrics[0].getRight();
+        firstOnLine.lyrics[extraTextOnlyLyricIndex].lineWidth = curr.lyrics[extraTextOnlyLyricIndex].getRight();
       } else if (fitsOnLine === false) {
 
         // first check for elements that cannot begin a system: dividers and custodes

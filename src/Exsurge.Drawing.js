@@ -1506,6 +1506,14 @@ export var LyricArray = {
     return x;
   },
 
+  hasOnlyOneLyric: function(lyricArray) {
+    return lyricArray.filter(l => l.text).length === 1;
+  },
+
+  indexOfLyric: function(lyricArray) {
+    return lyricArray.indexOf(lyricArray.filter(l => l.text)[0]);
+  },
+
   mergeIn: function(lyricArray, newLyrics) {
     for (var i = 0; i < newLyrics.length; ++i) {
       if(newLyrics[i].originalText || !lyricArray[i]) lyricArray[i] = newLyrics[i];
@@ -1856,7 +1864,7 @@ export class Annotations extends ChantLayoutElement {
       annotation.recalculateMetrics(ctxt);
       this.bounds.width = Math.max(this.bounds.width, annotation.bounds.width);
       annotation.bounds.y += this.bounds.height;
-      this.bounds.height += annotation.bounds.height / 1.4;
+      this.bounds.height += annotation.bounds.height / 1.2;
       this.origin.y = this.origin.y || annotation.origin.y;
     }
   }
