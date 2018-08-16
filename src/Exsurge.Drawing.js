@@ -836,7 +836,7 @@ export class GlyphVisualizer extends ChantLayoutElement {
 
     for (var i = 0; i < this.glyph.paths.length; i++) {
       var path = this.glyph.paths[i];
-      canvasCtxt.fillStyle = ctxt.neumeLineColor;
+      canvasCtxt.fillStyle = path.type === 'negative'? '#fff' : ctxt.neumeLineColor;
       canvasCtxt.fill(new Path2D(path.data));
     }
 
