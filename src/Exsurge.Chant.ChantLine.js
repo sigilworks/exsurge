@@ -1276,7 +1276,7 @@ export class ChantLine extends ChantLayoutElement {
       if(curr.constructor === TextOnly && curr.lyrics.length === 1) {
         curr.lyrics[0].setMaxWidth(ctxt, this.staffRight, this.staffRight - LyricArray.getRight(prevLyrics) - ctxt.minLyricWordSpacing);
       }
-    } else {
+    } else if (!prev.hasNoWidth) {
       curr.bounds.x += prev.trailingSpace;
     }
 
@@ -1284,7 +1284,10 @@ export class ChantLine extends ChantLayoutElement {
         (curr.lyrics[0].lyricType === LyricType.SingleSyllable || curr.lyrics[0].lyricType === LyricType.BeginningSyllable)) {
       curr.bounds.x += ctxt.intraNeumeSpacing * ctxt.interVerbalMultiplier;
     }
-    if(this.extraTextOnlyIndex !== null && curr.constructor === TextOnly) {
+    if (curr.hasNoWidth) {
+      curr.bounds.width = 0;
+      space.total = space.condensable = 0;
+    } else if((this.extraTextOnlyIndex !== null && curr.constructor === TextOnly)) {
       curr.bounds.x = 0;
       space.total = space.condensable = 0;
     } else {

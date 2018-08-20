@@ -682,6 +682,10 @@ export class Gabc {
             trailingSpace = 0;
             addNotation(null);
             let bracketedNotations = this.parseNotations(ctxt, atom.slice(1).replace(/}$/,''), sourceIndex + 1);
+            // Set the width of these notations to 0
+            bracketedNotations.forEach(neume => {
+              neume.hasNoWidth = true;
+            });
             notations.push(...bracketedNotations);
           } else {
 
