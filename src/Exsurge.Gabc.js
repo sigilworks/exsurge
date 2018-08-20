@@ -35,7 +35,8 @@ import * as Neumes from './Exsurge.Chant.Neumes.js'
 var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
 var __altRegex = /<alt>(.*?)<\/alt>/g;
 var __translationRegex = /\[(alt:)?(.*?)\]/g
-var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*/g;
+
+var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*|\{[^}]+\}?/g;
 
 // for the brace string inside of [ and ] in notation data
 // the capturing groups are:
@@ -486,6 +487,7 @@ export class Gabc {
     if (!data)
       return [new TextOnly()];
 
+    var baseSourceIndex = sourceIndex;
     var notations = [];
     var notes = [];
     var trailingSpace = -1;
@@ -528,14 +530,12 @@ export class Gabc {
       }
     };
 
-    var atoms = data.match(__notationsRegex);
+    var regex = new RegExp(__notationsRegex.source, 'g');
+    var match;
 
-    if (atoms === null)
-      return notations;
-
-    for (var i = 0; i < atoms.length; i++) {
-      sourceIndex += (atoms[i-1] && atoms[i-1].length) || 0;
-      var atom = atoms[i];
+    while ((match = regex.exec(data))) {
+      sourceIndex = baseSourceIndex + match.index;
+      var atom = match[0];
 
       // handle the clefs and dividers here
       switch (atom) {
@@ -678,6 +678,11 @@ export class Gabc {
             ctxt.activeClef.activeAccidental = accidental;
             
             addNotation(accidental);
+          } else if (atom.length > 1 && atom[0]==='{') {
+            trailingSpace = 0;
+            addNotation(null);
+            let bracketedNotations = this.parseNotations(ctxt, atom.slice(1).replace(/}$/,''), sourceIndex + 1);
+            notations.push(...bracketedNotations);
           } else {
 
             // looks like it's a note
