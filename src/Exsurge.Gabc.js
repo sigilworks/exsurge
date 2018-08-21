@@ -36,7 +36,10 @@ var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
 var __altRegex = /<alt>(.*?)<\/alt>/g;
 var __translationRegex = /\[(alt:)?(.*?)\]/g
 
-var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*|\{[^}]+\}?/g;
+var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*|\{([^}]+)\}?/g;
+var __notationsRegex_group_insideBraces = 1;
+
+var __bracketedCommandRegex = /^([a-z]+):(.*)/
 
 // for the brace string inside of [ and ] in notation data
 // the capturing groups are:
@@ -681,7 +684,7 @@ export class Gabc {
           } else if (atom.length > 1 && atom[0]==='{') {
             trailingSpace = 0;
             addNotation(null);
-            let bracketedNotations = this.parseNotations(ctxt, atom.slice(1).replace(/}$/,''), sourceIndex + 1);
+            let bracketedNotations = this.parseNotations(ctxt, match[__notationsRegex_group_insideBraces], sourceIndex + 1);
             // Set the width of these notations to 0
             bracketedNotations.forEach(neume => {
               neume.hasNoWidth = true;
@@ -730,8 +733,14 @@ export class Gabc {
       if (lastNoteIndex < 0)
         return;
 
-      while (firstNoteIndex <= lastNoteIndex)
-        neume.addNote(notes[firstNoteIndex++]);
+      while (firstNoteIndex <= lastNoteIndex) {
+        let note = notes[firstNoteIndex++];
+        neume.addNote(note);
+        if (note.alText) {
+          if (!neume.alText) neume.alText = [];
+          neume.alText.push(note.alText);
+        }
+      }
 
       neumes.push(neume);
 
@@ -1358,7 +1367,7 @@ export class Gabc {
           while (i < data.length && data[i] !== ']')
             i++;
 
-          this.processInstructionForNote(ctxt, note, data.substring(startIndex, i));
+          this.processInstructionForNote(ctxt, note, data.substring(startIndex, i), startIndex);
           break;
       }
     }
@@ -1377,7 +1386,23 @@ export class Gabc {
   // category.
   //
   // currently only brace instructions are supported here!
-  static processInstructionForNote(ctxt, note, instruction) {
+  static processInstructionForNote(ctxt, note, instruction, sourceIndexOffset) {
+
+    var results = instruction.match(__bracketedCommandRegex);
+    if (results === null)
+      return;
+    var cmd = results[1];
+    var data = results[2];
+    switch(cmd) {
+      case "cs":
+        // TODO: support choral signs
+        return;
+      case "alt":
+        note.alText = new AboveLinesText(ctxt, data, note.sourceIndex + sourceIndexOffset);
+        note.alText.alignToNote = true;
+        return;
+    }
+
 
     var results = instruction.match(__braceSpecRegex);
 
