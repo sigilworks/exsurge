@@ -1404,7 +1404,7 @@ export class Gabc {
     }
 
 
-    var results = instruction.match(__braceSpecRegex);
+    results = instruction.match(__braceSpecRegex);
 
     if (results === null)
       return;
