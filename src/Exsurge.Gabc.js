@@ -688,6 +688,7 @@ export class Gabc {
             // Set the width of these notations to 0
             bracketedNotations.forEach(neume => {
               neume.hasNoWidth = true;
+              neume.firstWithNoWidth = bracketedNotations[0];
             });
             notations.push(...bracketedNotations);
           } else {

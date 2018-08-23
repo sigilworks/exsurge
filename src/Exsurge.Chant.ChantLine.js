@@ -964,9 +964,9 @@ export class ChantLine extends ChantLayoutElement {
 
     this.condensableSpaces = condensableSpaces;
 
-    var curr = null;
+    var curr, prev;
     var offset = 0;
-    var increment = extraSpace / toJustify.length;
+    var increment = extraSpace / toJustify.filter(n => !n.hasNoWidth).length;
     var multiplier = 0;
     var toJustifyIndex = 0;
     if (extraSpace < 0) {
@@ -976,7 +976,7 @@ export class ChantLine extends ChantLayoutElement {
     }
     var nextToJustify = toJustify[toJustifyIndex++];
     for (i = this.notationsStartIndex; i < lastIndex; i++) {
-
+      prev = curr;
       curr = notations[i];
 
       if (this.extraTextOnlyIndex !== null && i >= this.extraTextOnlyIndex && curr.constructor === TextOnly) {
@@ -986,7 +986,7 @@ export class ChantLine extends ChantLayoutElement {
       if (curr === this.custos && !multiplier) {
         if (curr.hasLyrics()) {
           curr.bounds.x = Math.min(curr.bounds.x + (this.staffRight - LyricArray.getRight(curr.lyrics)), this.staffRight - curr.bounds.width);
-          offset += increment
+          offset += increment;
           continue;
         }
       }
@@ -997,7 +997,9 @@ export class ChantLine extends ChantLayoutElement {
           nextToJustify = toJustify[toJustifyIndex++];
         }
       } else if (nextToJustify === curr) {
-        offset += increment;
+        if (!prev.hasNoWidth) {
+          offset += increment;
+        }
         nextToJustify = toJustify[toJustifyIndex++];
       }
 
@@ -1262,11 +1264,18 @@ export class ChantLine extends ChantLayoutElement {
   // fixme: if this returns false, shouldn't we set the connectors on prev to be activated?!
   positionNotationElement(ctxt, prevLyrics, prev, curr, rightNotationBoundary, condensableSpaces = []) {
     if(!condensableSpaces.hasOwnProperty('sum')) condensableSpaces.sum = 0;
-    var i, space = { notation: curr };
+    var i, space = { notation: curr }, fixedX = false;
 
     // To begin we just place the current notation right after the previous,
     // irrespective of lyrics.
-    curr.bounds.x = prev.bounds.right();
+    // But if the previous neume was part of a polyphonic "no width" group and the current is not, or is of a separate group,
+    // we force it to have the same x as the previous group.
+    if((!curr.hasNoWidth || curr.firstWithNoWidth === curr) && prev.firstWithNoWidth) {
+      curr.bounds.x = prev.firstWithNoWidth.bounds.x;
+      fixedX = true;
+    } else {
+      curr.bounds.x = prev.bounds.right();
+    }
 
     if ((curr.constructor === TextOnly && this.extraTextOnlyIndex === null) || (!curr.hasLyrics() && prev.trailingSpace < 0)) {
       // We transfer over the trailing space from the previous neume if the current neume is text only,
@@ -1276,7 +1285,7 @@ export class ChantLine extends ChantLayoutElement {
       if(curr.constructor === TextOnly && curr.lyrics.length === 1) {
         curr.lyrics[0].setMaxWidth(ctxt, this.staffRight, this.staffRight - LyricArray.getRight(prevLyrics) - ctxt.minLyricWordSpacing);
       }
-    } else if (!prev.hasNoWidth) {
+    } else if (!fixedX) {
       curr.bounds.x += prev.trailingSpace;
     }
 
@@ -1284,8 +1293,7 @@ export class ChantLine extends ChantLayoutElement {
         (curr.lyrics[0].lyricType === LyricType.SingleSyllable || curr.lyrics[0].lyricType === LyricType.BeginningSyllable)) {
       curr.bounds.x += ctxt.intraNeumeSpacing * ctxt.interVerbalMultiplier;
     }
-    if (curr.hasNoWidth) {
-      curr.bounds.width = 0;
+    if (curr.hasNoWidth || fixedX) {
       space.total = space.condensable = 0;
     } else if((this.extraTextOnlyIndex !== null && curr.constructor === TextOnly)) {
       curr.bounds.x = 0;
