@@ -451,8 +451,10 @@ export class Gabc {
   static makeLyric(ctxt, text, lyricType, notation, notations, sourceIndex) {
 
     var elides = false;
+    var forceConnector = false;
     if (text.length > 1) {
       if (text[text.length - 1] === '-') {
+        forceConnector = true;
         if (lyricType === LyricType.EndingSyllable)
           lyricType = LyricType.MiddleSyllable;
         else if (lyricType === LyricType.SingleSyllable)
@@ -478,6 +480,7 @@ export class Gabc {
 
     var lyric = new Lyric(ctxt, text, lyricType, notation, notations, sourceIndex);
     lyric.elidesToNext = elides;
+    if (forceConnector) lyric.setForceConnector(true);
 
     return lyric;
   }

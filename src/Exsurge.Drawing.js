@@ -1572,8 +1572,12 @@ export class Lyric extends TextElement {
             this.lyricType === LyricType.MiddleSyllable;
   }
 
+  setForceConnector(force) {
+    this.forceConnector = force && this.allowsConnector();
+  }
+
   setNeedsConnector(needs,width) {
-    if (needs === true) {
+    if (needs === true || this.forceConnector) {
       this.needsConnector = true;
       if (typeof width !== 'undefined') {
         this.setConnectorWidth(width)
@@ -1639,6 +1643,7 @@ export class Lyric extends TextElement {
 
     this.connectorWidth = 0;
     this.defaultConnectorWidth = ctxt.hyphenWidth;
+    this.setNeedsConnector();
 
     var activeLanguage = this.language || ctxt.defaultLanguage;
 
