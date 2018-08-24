@@ -532,7 +532,7 @@ export class ChantContext {
     for (var i = this.currNotationIndex + 1; i < this.notations.length; i++) {
       var notation = this.notations[i];
 
-      if (notation.isNeume)
+      if (notation.isNeume && !notation.hasNoWidth)
         return notation;
     }
 

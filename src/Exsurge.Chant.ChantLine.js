@@ -676,6 +676,11 @@ export class ChantLine extends ChantLayoutElement {
           // curr is the first notation on the next line
           // cne is the last notation on the previous line
 
+          if(cne.firstWithNoWidth) {
+            this.numNotationsOnLine--;
+            continue;
+          }
+
           // don't let a line break occur in the middle of a translation
           if (lastTranslationTextWithEndNeume) {
             this.numNotationsOnLine--;
@@ -966,7 +971,7 @@ export class ChantLine extends ChantLayoutElement {
 
     var curr, prev;
     var offset = 0;
-    var increment = extraSpace / toJustify.filter(n => !n.hasNoWidth).length;
+    var increment = extraSpace / toJustify.length;
     var multiplier = 0;
     var toJustifyIndex = 0;
     if (extraSpace < 0) {
@@ -975,6 +980,7 @@ export class ChantLine extends ChantLayoutElement {
       increment = 0;
     }
     var nextToJustify = toJustify[toJustifyIndex++];
+    var incrementOffsetAtNextChance = false;
     for (i = this.notationsStartIndex; i < lastIndex; i++) {
       prev = curr;
       curr = notations[i];
@@ -997,10 +1003,15 @@ export class ChantLine extends ChantLayoutElement {
           nextToJustify = toJustify[toJustifyIndex++];
         }
       } else if (nextToJustify === curr) {
-        if (!prev.hasNoWidth) {
+        if (prev.hasNoWidth) {
+          incrementOffsetAtNextChance = true;
+        } else {
           offset += increment;
         }
         nextToJustify = toJustify[toJustifyIndex++];
+      } else if (incrementOffsetAtNextChance && !prev.hasNoWidth) {
+        incrementOffsetAtNextChance = false;
+        offset += increment;
       }
 
       curr.bounds.x += offset;
