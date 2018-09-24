@@ -653,7 +653,7 @@ export class ChantLine extends ChantLayoutElement {
           curr.lyrics[extraTextOnlyLyricIndex].setMaxWidth(ctxt, this.staffRight, this.staffRight - ((LyricArray.getRight(this.lastLyrics) + ctxt.minLyricWordSpacing) || 0));
           firstOnLine = curr;
         }
-        firstOnLine.lyrics[extraTextOnlyLyricIndex].lineWidth = curr.lyrics[extraTextOnlyLyricIndex].getRight();
+        if (firstOnLine) firstOnLine.lyrics[extraTextOnlyLyricIndex].lineWidth = curr.lyrics[extraTextOnlyLyricIndex].getRight();
       } else if (fitsOnLine === false) {
 
         // first check for elements that cannot begin a system: dividers and custodes

@@ -1507,7 +1507,7 @@ export var LyricArray = {
   },
 
   hasOnlyOneLyric: function(lyricArray) {
-    return lyricArray.filter(l => l.text).length === 1;
+    return lyricArray.filter(l => l.originalText).length === 1;
   },
 
   indexOfLyric: function(lyricArray) {
