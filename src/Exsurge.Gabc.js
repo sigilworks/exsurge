@@ -169,7 +169,7 @@ export class Gabc {
       if(index>0) sourceIndex = mappings[index-1].sourceIndex + mappings[index-1].source.length + 1;
       if (resultCode === '=') {
         var sourceIndexDiff = sourceIndex - mappings[index].sourceIndex;
-        // skip over ones that haven't changed, but updating the clef and source index (and pitch in case clef has changed) as we go
+        // skip over ones that haven't changed, but updating the clef and source index (and pitch in case clef or accidentals have changed) as we go
         for (j = 0; j < resultValues.length; j++, index++) {
           mapping = mappings[index];
           mapping.sourceIndex += sourceIndexDiff;
@@ -180,6 +180,10 @@ export class Gabc {
 
             if (curNotation.isClef)
               ctxt.activeClef = mappings[index].notations[k];
+
+            if (curNotation.isAccidental) {
+              ctxt.activeClef.activeAccidental = curNotation;
+            }
 
             // update source index, pitch, and automatic braces
             if(curNotation.notes) {
