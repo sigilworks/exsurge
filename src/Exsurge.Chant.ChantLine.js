@@ -610,7 +610,7 @@ export class ChantLine extends ChantLayoutElement {
 
       // First check if we're already beyond the rightNotationBoundary (due to condensing that hasn't yet happened) and have a good element to end with
       // but if we have 2 or fewer elements, or if the current element is a line break or a custos, we'll go ahead and try for them anyway.
-      var forceBreak = (curr.constructor !== ChantLineBreak && curr.constructor !== Custos && lastNotationIndex - i > 1 && !prevNeume.keepWithNext && prevNeume.bounds.right() >= rightNotationBoundary);
+      var forceBreak = (!curr.isDivider && curr.constructor !== ChantLineBreak && curr.constructor !== Custos && lastNotationIndex - i > 1 && !prevNeume.keepWithNext && prevNeume.bounds.right() >= rightNotationBoundary);
 
       // also force a break if we've run into extra TextOnly elements, but the current notation is not a TextOnly and has lyrics
       forceBreak = forceBreak || (this.extraTextOnlyIndex !== null && curr.constructor !== TextOnly && curr.constructor !== ChantLineBreak && curr.constructor !== Custos && curr.hasLyrics());
@@ -848,6 +848,13 @@ export class ChantLine extends ChantLayoutElement {
     
     // Justify the line if we need to
     this.justifyElements(this.justify, condensableSpaces);
+
+    // if it wasn't an ideal line break, and the last note is further from the custos than it would have been from its next punctum,
+    // move the custos over
+    curr = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
+    if (this.custos && curr.keepWithNext && (curr.bounds.right() + curr.trailingSpace < this.custos.bounds.x)) {
+      this.custos.bounds.x = curr.bounds.right() + curr.trailingSpace;
+    }
 
     this.centerDividers();
 
