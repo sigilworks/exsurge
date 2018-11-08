@@ -908,11 +908,15 @@ export class ChantLine extends ChantLayoutElement {
     this.toJustify = [];
     var prev,
         curr = null,
+        next = null,
         lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
 
       prev = curr;
       curr = this.score.notations[i];
+      next = curr.isAccidental && this.score.notations[++i];
+      var nextOrCurr = (next || curr);
+      var hasLyrics = nextOrCurr.hasLyrics();
 
       if (!curr || !prev)
         continue;
@@ -923,20 +927,21 @@ export class ChantLine extends ChantLayoutElement {
           continue;
       }
 
-      if (prevLyrics.length && prevLyrics[0].allowsConnector() && curr.hasLyrics())
+      if (prevLyrics.length && prevLyrics[0].allowsConnector() && hasLyrics)
         continue;
 
-      if (curr.constructor === ChantLineBreak)
+      if (nextOrCurr.constructor === ChantLineBreak)
         continue;
 
-      if (curr === this.custos && !curr.hasLyrics())
+      if (nextOrCurr === this.custos && !hasLyrics)
         continue;
 
-      if (i === 0 && this.score.useDropCap && curr.hasLyrics())
+      if (i === 0 && this.score.useDropCap && hasLyrics)
         continue;
 
       // otherwise, we can add space before this element
       this.toJustify.push(curr);
+      curr = nextOrCurr;
     }
     if (curr !== null) LyricArray.mergeIn(prevLyrics, curr.lyrics);
     return curr;
