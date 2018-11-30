@@ -23,7 +23,8 @@ Then, create a ChantScore from gabc code:
 
 ```javascript
 var gabc = "(f3) EC(ce!fg)CE(f) *(,) ad(fe~)vé(f!gwhf)nit(f) (,)"
-var score = exsurge.Gabc.loadChantScore(ctxt, gabc, true);
+var mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabc);
+var score = new exsurge.ChantScore(ctxt, mappings, true);
 ```
 
 Finally, let the ChantScore handle the layout process, and use the SVG however you want:
