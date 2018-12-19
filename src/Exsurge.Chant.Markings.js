@@ -106,16 +106,28 @@ export class HorizontalEpisema extends ChantLayoutElement {
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if (!((step+1) % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition === -step)
-        step = step + 0.5;
+      if (step % 2) {
+        if (Math.abs(step) < 4 || ledgerLine.staffPosition === -step) {
+          step = step + 0.5;
+        } else {
+          // no ledger line, but we don't want the episema to be at exactly the same height the ledger line would occupy:
+          step = step + 0.3;
+        }
+      }
     } else {
       y = this.note.bounds.y - minDistanceAway; // the lowest the line could be at
       step = Math.floor(2 * y / ctxt.staffInterval) / 2;
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if (!((step+1) % 2) && Math.abs(step) < 4 || ledgerLine.staffPosition === -step)
-        step = step - 0.5;
+      if (step % 2) {
+        if (Math.abs(step) < 4 || ledgerLine.staffPosition === -step) {
+          step = step - 0.5;
+        } else {
+          // no ledger line, but we don't want the episema to be at exactly the same height the ledger line would occupy:
+          step = step - 0.3;
+        }
+      }
     }
 
     y = step * ctxt.staffInterval;
