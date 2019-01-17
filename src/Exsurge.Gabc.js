@@ -214,6 +214,9 @@ export class Gabc {
               lastTranslationNeumes[0] = curNotation;
             }
             if(sourceIndexDiff) {
+              if(typeof curNotation.sourceIndex === 'number') {
+                curNotation.sourceIndex += sourceIndexDiff;
+              }
               for(l=0; l < curNotation.lyrics.length; ++l) {
                 curNotation.lyrics[l].sourceIndex += sourceIndexDiff;
               }
@@ -304,11 +307,11 @@ export class Gabc {
         ctxt.activeClef.resetAccidentals();      
 
       var items = this.parseNotations(ctxt, notationData, sourceIndex + match.index + match[1].length + 1);
-      items[0].firstOfSyllable = !!lyricText;
 
       if (items.length === 0)
         continue;
 
+      items[0].firstOfSyllable = !!lyricText;
       notations.push(...items);
 
       var m = __altRegex.exec();
