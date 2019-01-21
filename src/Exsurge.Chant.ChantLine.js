@@ -927,7 +927,7 @@ export class ChantLine extends ChantLayoutElement {
           continue;
       }
 
-      if (prevLyrics.length && prevLyrics[0].allowsConnector() && hasLyrics)
+      if (!curr.isDivider && prevLyrics.length && prevLyrics[0].allowsConnector() && hasLyrics)
         continue;
 
       if (nextOrCurr.constructor === ChantLineBreak)
