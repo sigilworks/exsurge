@@ -509,7 +509,7 @@ export class ChantLine extends ChantLayoutElement {
     if (width > 0)
       this.staffRight = width;
     else
-      this.staffRight = 99999999; // no limit to staff size
+      this.staffRight = Infinity; // no limit to staff size
 
     // If this is the first chant line, then we have to make room for a
     // drop cap and/or annotation, if present
@@ -847,14 +847,7 @@ export class ChantLine extends ChantLayoutElement {
     }
     
     // Justify the line if we need to
-    this.justifyElements(this.justify, condensableSpaces);
-
-    // if it wasn't an ideal line break, and the last note is further from the custos than it would have been from its next punctum,
-    // move the custos over
-    curr = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
-    if (this.custos && curr.keepWithNext && (curr.bounds.right() + curr.trailingSpace < this.custos.bounds.x)) {
-      this.custos.bounds.x = curr.bounds.right() + curr.trailingSpace;
-    }
+    this.justifyElements(ctxt, this.justify, condensableSpaces);
 
     this.centerDividers();
 
@@ -966,12 +959,35 @@ export class ChantLine extends ChantLayoutElement {
     return this.staffRight - Math.max(lastRightLyric, lastRightNeume);
   }
 
-  justifyElements(doJustify, condensableSpaces) {
+  justifyElements(ctxt, doJustify, condensableSpaces) {
 
     var i;
     var toJustify = this.toJustify || [];
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
+
+    // if it wasn't an ideal line break, and the last note is further from the custos than it would have been from its next punctum,
+    // move the custos over.
+    // We do this first so that if it opens up any new whitespace, that gets accounted for when we do the justification
+    var lastNotation = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
+    var extraSpaceBeforeCustos = this.staffRight < Infinity && this.custos && lastNotation.keepWithNext && (this.custos.bounds.x - lastNotation.bounds.right() - lastNotation.trailingSpace);
+    if (extraSpaceBeforeCustos > 0) {
+      // first, shrink the hyphen(s) if applicable, to move the neumes closer to the custos:
+      i = 0;
+      while (this.lastLyrics && this.lastLyrics[i]) {
+        let lyrics = this.lastLyrics[i];
+        if(lyrics.allowsConnector()) {
+          var connectorWidth = lyrics.getConnectorWidth();
+          if(ctxt.minLyricWordSpacing < connectorWidth) {
+            var minHyphenWidth = Math.max(connectorWidth - extraSpaceBeforeCustos, this.lastLyrics.length > 1? ctxt.intraNeumeSpacing : ctxt.minLyricWordSpacing);
+            // we might not need to shift the syllable, but we do want to shrink the hyphen...
+            lyrics.setConnectorWidth(minHyphenWidth);
+          }
+        }
+        ++i;
+      }
+      this.custos.bounds.x = lastNotation.bounds.right() + lastNotation.trailingSpace;
+    }
 
     // first step of justification is to determine how much space we have to use up
     var extraSpace = this.getWhitespaceOnRight();
@@ -1027,6 +1043,10 @@ export class ChantLine extends ChantLayoutElement {
       }
 
       curr.bounds.x += offset;
+    }
+
+    if (extraSpaceBeforeCustos > 0) {
+      this.custos.bounds.x = lastNotation.bounds.right() + lastNotation.trailingSpace;
     }
   }
 
