@@ -733,6 +733,9 @@ export class ChantLine extends ChantLayoutElement {
               break;
             }
           }
+          // remove the custos and divider from the condensable spaces list, before adding the divider back, when repositioning it.
+          condensableSpaces.sum -= condensableSpaces.pop().condensable;
+          condensableSpaces.sum -= condensableSpaces.pop().condensable;
           this.positionNotationElement(ctxt, prevLyrics, notations[j - 2], notations[j], this.staffRight, condensableSpaces);
           this.custos = notations[j - 1];
           this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
@@ -1017,12 +1020,12 @@ export class ChantLine extends ChantLayoutElement {
         continue;
       }
 
-      if (curr === this.custos && !multiplier) {
-        if (curr.hasLyrics()) {
+      if (curr === this.custos) {
+        if (!multiplier && curr.hasLyrics()) {
           curr.bounds.x = Math.min(curr.bounds.x + (this.staffRight - LyricArray.getRight(curr.lyrics)), this.staffRight - curr.bounds.width);
           offset += increment;
-          continue;
         }
+        continue;
       }
 
       if (multiplier) {
