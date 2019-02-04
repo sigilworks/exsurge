@@ -78,9 +78,13 @@ if (typeof document !== 'undefined' && document.registerElement) {
   }
 
   // register the custom element
-  document.registerElement('chant-visual', {
-    prototype: ChantVisualElementPrototype
-  });
+  // if(window.customElements && window.customElements.define) {
+  //   window.customElements.define('chant-visual', ChantVisualElementPrototype);
+  // } else {
+    document.registerElement('chant-visual', {
+      prototype: ChantVisualElementPrototype
+    });
+  // }
 }
 
 export * from './Exsurge.Core.js'
