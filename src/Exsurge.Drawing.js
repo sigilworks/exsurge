@@ -1511,7 +1511,7 @@ export var LyricArray = {
   },
 
   indexOfLyric: function(lyricArray) {
-    return lyricArray.indexOf(lyricArray.filter(l => l.text)[0]);
+    return lyricArray.indexOf(lyricArray.filter(l => l.originalText)[0]);
   },
 
   mergeIn: function(lyricArray, newLyrics) {

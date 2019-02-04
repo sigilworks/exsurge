@@ -627,12 +627,25 @@ export class ChantLine extends ChantLayoutElement {
       // try to fit the curr element on this line.
       // if it doesn't fit, we finish up here.
       var fitsOnLine = !forceBreak && this.positionNotationElement(ctxt, this.lastLyrics, prevNeume, curr, actualRightBoundary, condensableSpaces);
-      if (curr.constructor === TextOnly && LyricArray.hasOnlyOneLyric(curr.lyrics) && (fitsOnLine === false || this.extraTextOnlyIndex !== null)) {
+      var candidateForExtraTextOnlyLine = curr.constructor === TextOnly && LyricArray.hasOnlyOneLyric(curr.lyrics) && (fitsOnLine === false || this.extraTextOnlyIndex !== null);
+      var extraTextOnlyLyricIndex;
+      if(candidateForExtraTextOnlyLine && this.extraTextOnlyIndex === null) {
+        // check to make sure there is enough text to put on the text only line:
+        extraTextOnlyLyricIndex = LyricArray.indexOfLyric(curr.lyrics);
+        if(textOnlyStartIndex === i) {
+          var currentLyric = notations[i].lyrics[extraTextOnlyLyricIndex].text;
+          if(currentLyric.length <= 1) {
+            var nextNotation = notations[i+1];
+            candidateForExtraTextOnlyLine = nextNotation && nextNotation.constructor === TextOnly && nextNotation.lyrics[extraTextOnlyLyricIndex] && nextNotation.lyrics[extraTextOnlyLyricIndex].text.length > 0;
+          }
+        }
+      }
+      if (candidateForExtraTextOnlyLine) {
         // a special case for TextOnly elements that don't fit on the line: since they don't have neumes associated with them, we can place this
         // and any additional TextOnly elements just below the current lyric lines, but we can only do this if the TextOnly elements have only one
         // line of lyrics associated with them.
         var firstOnLine;
-        var extraTextOnlyLyricIndex = this.extraTextOnlyLyricIndex;
+        extraTextOnlyLyricIndex = this.extraTextOnlyLyricIndex;
         if (this.extraTextOnlyIndex === null) {
           // go back to the first in this string of consecutive TextOnly elements.
           this.extraTextOnlyIndex = textOnlyStartIndex;
