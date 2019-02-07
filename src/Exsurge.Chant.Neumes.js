@@ -389,7 +389,7 @@ export class Neume extends ChantNotationElement {
         needsAbove = false,
         firstBelow = false,
         needsBelow = false,
-        isPorrectus = false,
+        // isPorrectus = false,
         result = [];
 
     if (!this.notes) return result;
@@ -551,8 +551,6 @@ export class Apostropha extends Neume {
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
-
-    var y = ctxt.calculateHeightFromStaffPosition(4);
 
     this.build(ctxt).noteAt(this.notes[0], Apostropha.getNoteGlyphCode(this.notes[0]));
 

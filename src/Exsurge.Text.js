@@ -69,6 +69,8 @@ export class Latin extends Language {
     this.diphthongs = ["ae", "au", "oe", "aé", "áu", "oé"];
     // for centering over the vowel, we will need to know any combinations that might be diphthongs:
     this.possibleDiphthongs = this.diphthongs.concat(["ei", "eu", "ui", "éi", "éu", "úi"]);
+    this.regexVowel = /(i|(?:[qg]|^)u)?([eé][iu]|[uú]i|[aeiouáéíóúäëïöüāēīōūăĕĭŏŭåe̊o̊ůæœǽyýÿ])/i;
+
 
     // some words that are simply exceptions to standard syllabification rules!
     var wordExceptions = new Object();
@@ -301,30 +303,13 @@ export class Latin extends Language {
    */
   findVowelSegment(s, startIndex) {
 
-    var i, end, index;
-    var workingString = s.toLowerCase();
-
-    // do we have a diphthong?
-    for (i = 0, end = this.possibleDiphthongs.length; i < end; i++) {
-      var d = this.possibleDiphthongs[i];
-      index = workingString.indexOf(d, startIndex);
-
-      if (index >= 0)
-        return { found: true, startIndex: index, length: d.length };
-    }
-
-    // no diphthongs. Let's look for single vowels then...
-    for (i = 0, end = this.vowels.length; i < end; i++) {
-      index = workingString.indexOf(this.vowels[i], startIndex);
-
-      if (index >= 0) {
-        // if the first vowel found might also be a consonant (U or I), and it is immediately followed by another vowel, (e.g., sanguis, quis), the first u counts as a consonant:
-        // (in practice, this only affects words such as equus that contain a uu, since the alphabetically earlier vowel would be found before the U)
-        if(this.isVowelActingAsConsonant(workingString.substr(index, 2))) {
-          ++index;
-        }
-        return { found: true, startIndex: index, length: 1 };
+    var match = this.regexVowel.exec(s.slice(startIndex));
+    if(match) {
+      if(match[1]) {
+        // the first group should be ignored, as it is to separate an i or u that is used as a consonant.
+        match.index += match[1].length;
       }
+      return { found: true, startIndex: startIndex + match.index, length: match[2].length }
     }
 
     // no vowels sets found after startIndex!
@@ -442,7 +427,7 @@ export class Spanish extends Language {
 
     // fixme: first check for prefixes
 
-    for (i = 0; i < word.length; i++) {
+    for (var i = 0; i < word.length; i++) {
 
       var c = word[i].toLowerCase();
 
@@ -481,7 +466,7 @@ export class Spanish extends Language {
             var numberOfConsonants = 1, consonant2;
 
             // count how many more consonants there are
-            for (j = i + 1; j < word.length; j++) {
+            for (var j = i + 1; j < word.length; j++) {
               if (this.isVowel(word[j]))
                 break;
               numberOfConsonants++;
