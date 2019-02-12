@@ -904,6 +904,7 @@ export class ChantLine extends ChantLayoutElement {
             var offset = oldBoundsX - curr.bounds.x;
             for(j = curr.lyrics.length - 1; j >= 0; j--) {
               curr.lyrics[j].bounds.x += offset;
+              curr.lyrics[j].needsLayout = true;
             }
           }
         } else if (i === lastIndex - 1 && this.justify && (curr.constructor === DoubleBar || curr.constructor === FullBar)) {
