@@ -87,7 +87,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
     var minDistanceAway = ctxt.staffInterval * 0.25; // min distance from neume
     var glyphCode = this.note.glyphVisualizer.glyphCode;
     var ledgerLine = this.note.neume.ledgerLines[0] || {};
-    var punctumInclinatumShorten = glyphCode === GlyphCode.PunctumInclinatumLiquescent;
+    var punctumInclinatumShorten = false;
 
     if(glyphCode === GlyphCode.PunctumInclinatum) {
       let notes = this.note.neume.notes,
@@ -162,6 +162,9 @@ export class HorizontalEpisema extends ChantLayoutElement {
     } else if(punctumInclinatumShorten) {
       width *= 2/3;
       x += 0.5 * width;
+    } else if(glyphCode === GlyphCode.PunctumInclinatumLiquescent) {
+      width *= 2/3;
+      x += 0.25 * width;
     }
 
     // also, the position hint can affect the x/width of the episema
