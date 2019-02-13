@@ -102,31 +102,36 @@ export class HorizontalEpisema extends ChantLayoutElement {
       y = this.note.bounds.bottom() + minDistanceAway; // the highest the line could be at
       if (glyphCode === GlyphCode.None) // correction for episema under the second note of a porrectus
         y += ctxt.staffInterval;
-      step = Math.ceil(2 * y / ctxt.staffInterval) / 2;
+      // find nearest acceptable third between staff lines (or staff line)
+      step = (Math.ceil((1.5 * y / ctxt.staffInterval) - 0.5) * 2 + 1) / 3;
 
       // if it's an odd step, that means we're on a staff line,
       // so we shift to between the staff line
-      if (step % 2) {
+      if (Math.abs(step) % 2 === 1) {
         if (Math.abs(step) < 4 || ledgerLine.staffPosition === -step) {
-          step = step + 0.5;
+          step += 2/3;
         } else {
           // no ledger line, but we don't want the episema to be at exactly the same height the ledger line would occupy:
-          step = step + 0.3;
+          step += 1/3;
         }
+      } else if(step % 2 === 0) {
+        step = (step + 3/4 + ((y - minDistanceAway)/ctxt.staffInterval)) / 2;
       }
     } else {
       y = this.note.bounds.y - minDistanceAway; // the lowest the line could be at
-      step = Math.floor(2 * y / ctxt.staffInterval) / 2;
+      step = (Math.floor((1.5 * y / ctxt.staffInterval) - 0.5) * 2 + 1) / 3;
 
-      // if it's an odd step, that means we're on a staff line,
+      // find nearest acceptable third between staff lines (or staff line)
       // so we shift to between the staff line
-      if (step % 2) {
+      if (Math.abs(step) % 2 === 1) {
         if (Math.abs(step) < 4 || ledgerLine.staffPosition === -step) {
-          step = step - 0.5;
+          step -= 2/3;
         } else {
           // no ledger line, but we don't want the episema to be at exactly the same height the ledger line would occupy:
-          step = step - 0.3;
+          step -= 1/3;
         }
+      } else if(step % 2 === 0) {
+        step = (step - 3/4 + ((y + minDistanceAway) / ctxt.staffInterval)) / 2;
       }
     }
 
