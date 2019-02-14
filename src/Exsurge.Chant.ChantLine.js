@@ -919,13 +919,14 @@ export class ChantLine extends ChantLayoutElement {
     var prev,
         curr = null,
         next = null,
+        nextOrCurr = null,
         lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
 
-      prev = curr;
+      prev = nextOrCurr;
       curr = this.score.notations[i];
       next = curr.isAccidental && this.score.notations[++i];
-      var nextOrCurr = (next || curr);
+      nextOrCurr = (next || curr);
       var hasLyrics = nextOrCurr.hasLyrics();
 
       if (!curr || !prev)
@@ -951,10 +952,9 @@ export class ChantLine extends ChantLayoutElement {
 
       // otherwise, we can add space before this element
       this.toJustify.push(curr);
-      curr = nextOrCurr;
     }
-    if (curr !== null) LyricArray.mergeIn(prevLyrics, curr.lyrics);
-    return curr;
+    if (nextOrCurr !== null) LyricArray.mergeIn(prevLyrics, nextOrCurr.lyrics);
+    return nextOrCurr;
   }
 
   getWhitespaceOnRight(ctxt) {
