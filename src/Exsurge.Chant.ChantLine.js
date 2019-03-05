@@ -956,7 +956,7 @@ export class ChantLine extends ChantLayoutElement {
     if (nextOrCurr !== null) LyricArray.mergeIn(prevLyrics, nextOrCurr.lyrics);
     // if the next line begins with a fresh word, than there can be extra space between the last notation on this line and the custos:
     next = this.score.notations[lastIndex];
-    if (next && next.hasLyrics() && (next.lyrics[0].lyricType == LyricType.BeginningSyllable || next.lyrics[0].lyricType == LyricType.SingleSyllable)) {
+    if (next && next.hasLyrics() && (next.lyrics[0].lyricType === LyricType.BeginningSyllable || next.lyrics[0].lyricType === LyricType.SingleSyllable)) {
       this.toJustify.push(this.custos);
     }
     return nextOrCurr;
