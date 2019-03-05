@@ -69,7 +69,7 @@ export class Latin extends Language {
     this.diphthongs = ["ae", "au", "oe", "aé", "áu", "oé"];
     // for centering over the vowel, we will need to know any combinations that might be diphthongs:
     this.possibleDiphthongs = this.diphthongs.concat(["ei", "eu", "ui", "éi", "éu", "úi"]);
-    this.regexVowel = /(i|(?:[qg]|^)u)?([eé][iu]|[uú]i|[aeiouáéíóúäëïöüāēīōūăĕĭŏŭåe̊o̊ůæœǽyýÿ])/i;
+    this.regexVowel = /(i|(?:[qg]|^)u)?([eé][iu]|[uú]i|[ao][eé]|[aá]u|[aeiouáéíóúäëïöüāēīōūăĕĭŏŭåe̊o̊ůæœǽyýÿ])/i;
 
 
     // some words that are simply exceptions to standard syllabification rules!

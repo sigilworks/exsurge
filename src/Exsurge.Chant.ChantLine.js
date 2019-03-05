@@ -1167,7 +1167,8 @@ export class ChantLine extends ChantLayoutElement {
 
     var positionNonLyricText = (text, neume, rightX) => {
       text.setMaxWidth(ctxt, this.staffRight);
-      text.bounds.x = neume.hasLyrics()? Math.min(...neume.lyrics.map(l => l.bounds.x)) : 0;
+      //text.bounds.x = neume.hasLyrics()? Math.min(...neume.lyrics.map(l => l.bounds.x)) : 0;
+      text.bounds.x = 0;
       if (rightX) text.bounds.x = (text.bounds.x + rightX - text.bounds.width) / 2;
       var beyondStaffRight = neume.bounds.x + text.bounds.right() - this.staffRight;
       if (beyondStaffRight > 0) {
