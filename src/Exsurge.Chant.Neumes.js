@@ -456,16 +456,15 @@ export class Neume extends ChantNotationElement {
   positionPodatusMorae(bottomNote, topNote) {
     var mark;
 
-    // The mora on the first (lower) note needs to be below it, if the second note
-    // is only one pitch above, and the first note is on a line.
-    if (topNote.staffPosition - bottomNote.staffPosition === 1 &&
-          Math.abs(bottomNote.staffPosition % 2) === 1) {
+    // The mora on the first (lower) note should be below it,
+    // if it is on a line.
+    if (Math.abs(bottomNote.staffPosition % 2) === 1) {
       if (bottomNote.morae.length === 1) {
         mark = bottomNote.morae[0];
       } else if (topNote.morae.length > 1) {
         mark = topNote.morae[0];
       }
-      if(mark) mark.positionHint = MarkingPositionHint.Below;
+      if(mark && mark.positionHint === MarkingPositionHint.Default) mark.positionHint = MarkingPositionHint.Below;
     }
 
     // if there is a mora on the first note but not on the second, and the neume
