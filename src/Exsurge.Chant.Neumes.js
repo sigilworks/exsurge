@@ -69,7 +69,7 @@ class NeumeBuilder {
 
     var needsLine = withLineTo && this.lastNote !== null &&
       (this.lineIsHanging ||
-       this.lastNote.glyphVisualizer.align === 'right' ||
+       (this.lastNote.glyphVisualizer && this.lastNote.glyphVisualizer.align === 'right') ||
        Math.abs(this.lastNote.staffPosition - note.staffPosition) > 1);
 
     if (needsLine) {
@@ -263,7 +263,7 @@ class NeumeBuilder {
 
     var needsLine = this.lastNote !== null &&
       (this.lineIsHanging ||
-       this.lastNote.glyphVisualizer.align === 'right' ||
+       (this.lastNote.glyphVisualizer && this.lastNote.glyphVisualizer.align === 'right') ||
        Math.abs(this.lastNote.staffPosition - start.staffPosition) > 1);
 
     if (needsLine) {
