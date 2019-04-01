@@ -212,8 +212,8 @@ class NeumeBuilder {
     return this;
   }
 
-  // lays out a sequence of notes that are inclinati (e.g., climacus, pes subpunctis)
-  withInclinati(notes) {
+  // lays out a sequence of notes that are inclinata (e.g., climacus, pes subpunctis)
+  withInclinata(notes) {
 
     var staffPosition = notes[0].staffPosition, prevStaffPosition = notes[0].staffPosition;
 
@@ -222,7 +222,7 @@ class NeumeBuilder {
     // the same as non-liquscents
     var advanceWidth = Glyphs.PunctumInclinatum.bounds.width * this.ctxt.glyphScaling;
 
-    // now add all the punctum inclinati
+    // now add all the punctum inclinatum
     for (var i = 0; i < notes.length; i++, prevStaffPosition = staffPosition) {
       var note = notes[i];
 
@@ -453,6 +453,20 @@ export class Neume extends ChantNotationElement {
     this.positionEpisemataBelow(bottomNote);
     this.positionEpisemataAbove(topNote);
   }
+  positionInclinataMorae(notes) {
+    notes = notes.slice(-2);
+    if (notes.length < 2 || notes[1].staffPosition > notes[0].staffPosition) return;
+    var bottomNote = notes[1],
+        topNote = notes[0],
+        mark;
+
+    // The mora on the second (lower) note should be below the punctum,
+    // if the punctum is on a line and the previous punctum is in the space above.
+    if (Math.abs(bottomNote.staffPosition % 2) === 1 && (topNote.staffPosition - bottomNote.staffPosition === 1) && bottomNote.morae.length > 0) {
+      mark = bottomNote.morae.slice(-1)[0];
+      if (mark.positionHint === MarkingPositionHint.Default) mark.positionHint = MarkingPositionHint.Below;
+    }
+  }
   positionPodatusMorae(bottomNote, topNote) {
     var mark;
 
@@ -636,6 +650,7 @@ export class Climacus extends Neume {
     for (var i = 0; i < this.notes.length; i++) {
       this.positionEpisemataAbove(this.notes[i]);
     }
+    this.positionInclinataMorae(this.notes);
   }
 
   performLayout(ctxt) {
@@ -644,7 +659,7 @@ export class Climacus extends Neume {
     this.build(ctxt)
       .virgaAt(this.notes[0])
       .advanceBy(ctxt.intraNeumeSpacing)
-      .withInclinati(this.notes.slice(1));
+      .withInclinata(this.notes.slice(1));
 
     this.finishLayout(ctxt);
   }
@@ -801,16 +816,17 @@ export class PesSubpunctis extends Neume {
     for(var i=2; i < this.notes.length; ++i) {
       this.positionEpisemataAbove(this.notes[i]);
     }
+    this.positionInclinataMorae(this.notes.slice(1));
   }
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
 
-    // podatus followed by inclinati
+    // podatus followed by inclinata
     this.build(ctxt)
       .withPodatus(this.notes[0], this.notes[1])
       .advanceBy(ctxt.intraNeumeSpacing * 0.68)
-      .withInclinati(this.notes.slice(2));
+      .withInclinata(this.notes.slice(2));
 
     this.finishLayout(ctxt);
   }
@@ -915,10 +931,14 @@ export class PorrectusFlexus extends Neume {
 // of puncta inclinata, but this will be part of other composite neumes.
 export class PunctaInclinata extends Neume {
 
+  positionMarkings() {
+    this.positionInclinataMorae(this.notes);
+  }
+
   performLayout(ctxt) {
     super.performLayout(ctxt);
 
-    this.build(ctxt).withInclinati(this.notes);
+    this.build(ctxt).withInclinata(this.notes);
 
     this.finishLayout(ctxt);
   }
