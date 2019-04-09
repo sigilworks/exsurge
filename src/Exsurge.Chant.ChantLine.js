@@ -187,7 +187,9 @@ export class ChantLine extends ChantLayoutElement {
         lastLyrics.bounds.y = lastLyrics.origin.y + offset + this.lyricLineBaseline;
         notation.bounds.x += xOffset;
       }
-      this.extraTextOnlyHeight = lastLyrics.origin.y + lastLyrics.bounds.height - (lastLyrics.fontSize * 1.2);
+      if (lastLyrics) {
+        this.extraTextOnlyHeight = lastLyrics.origin.y + lastLyrics.bounds.height - (lastLyrics.fontSize * 1.2);
+      }
     }
 
     if(this.startingClef.hasLyrics()) {
