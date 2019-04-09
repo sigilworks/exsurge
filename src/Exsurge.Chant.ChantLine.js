@@ -1043,6 +1043,8 @@ export class ChantLine extends ChantLayoutElement {
         if (curr.hasLyrics()) {
           curr.bounds.x = Math.min(curr.bounds.x + (this.staffRight - LyricArray.getRight(curr.lyrics)), this.staffRight - curr.bounds.width);
           offset += increment;
+        } else {
+          curr.bounds.x = Math.min(curr.bounds.x + offset, this.staffRight - curr.bounds.width);
         }
         continue;
       }
