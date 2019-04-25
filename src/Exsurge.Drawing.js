@@ -380,6 +380,9 @@ export class ChantContext {
     // for connecting neume syllables...
     this.syllableConnector = '-';
 
+    // set whether to scale the def tags (scaleDefs = true) or the use tags.
+    this.scaleDefs = true;
+
     // fixme: for now, we just set these using the glyph scales as noted above, presuming a
     // staff line size of 0.5 in. Really what we should do is scale the punctum size based
     // on the text metrics, right? 1 punctum ~ x height size?
@@ -447,6 +450,14 @@ export class ChantContext {
     this.rubricColor = color;
     this.specialCharProperties.fill = color;
     this.fontStyleDictionary["^"].fill = color;
+  }
+
+  setScaleDefs(scaleDefs) {
+    scaleDefs = !!scaleDefs;
+    if(this.scaleDefs !== scaleDefs) {
+      this.scaleDefs = scaleDefs;
+      this.setGlyphScaling(this.glyphScaling);
+    }
   }
 
   createStyleCss() {
@@ -794,16 +805,17 @@ export class GlyphVisualizer extends ChantLayoutElement {
     // if this glyph hasn't been used yet, then load it up in the defs section for sharing
     if (!ctxt.defs.hasOwnProperty(this.glyphCode)) {
       var makeDef = () => {
+        var options = {
+          id: this.glyphCode,
+          'class': 'glyph'
+        };
+        if(ctxt.scaleDefs === true) {
+          options.transform = 'scale(' + ctxt.glyphScaling + ')';
+        }
         // create the ref
-        ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', {
-          id: this.glyphCode,
-          'class': 'glyph'
-        }, QuickSvg.svgFragmentForGlyph(this.glyph));
+        ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', options, QuickSvg.svgFragmentForGlyph(this.glyph));
 
-        ctxt.defsNode.appendChild( QuickSvg.createNode('g', {
-          id: this.glyphCode,
-          'class': 'glyph'
-        }, QuickSvg.nodesForGlyph(this.glyph)));
+        ctxt.defsNode.appendChild( QuickSvg.createNode('g', options, QuickSvg.nodesForGlyph(this.glyph)));
       };
       makeDef();
       ctxt.makeDefs.push(makeDef);
@@ -842,25 +854,30 @@ export class GlyphVisualizer extends ChantLayoutElement {
     canvasCtxt.translate(-x, -y);
   }
 
-  createSvgNode(ctxt, source) {
-    return QuickSvg.createNode('use', {
-      source: source,
+  getSvgAttributes(ctxt, source) {
+    var result = {
       'source-index': source.sourceIndex,
-      'xlink:href': '#' + this.glyphCode,
-      x: (this.bounds.x + this.origin.x) / ctxt.glyphScaling,
-      y: (this.bounds.y + this.origin.y) / ctxt.glyphScaling,
-      transform: 'scale(' + ctxt.glyphScaling + ')'
-    });
+      'xlink:href': '#' + this.glyphCode
+    };
+    if(ctxt.scaleDefs === true) {
+      result.x = this.bounds.x + this.origin.x;
+      result.y = this.bounds.y + this.origin.y;
+    } else {
+      result.x = (this.bounds.x + this.origin.x) / ctxt.glyphScaling;
+      result.y = (this.bounds.y + this.origin.y) / ctxt.glyphScaling;
+      result.transform = 'scale(' + ctxt.glyphScaling + ')';
+    }
+    return result;
+  }
+
+  createSvgNode(ctxt, source) {
+    var attributes = this.getSvgAttributes(ctxt, source);
+    attributes.source = source;
+    return QuickSvg.createNode('use', attributes);
   }
 
   createSvgFragment(ctxt, source) {
-    return QuickSvg.createFragment('use', {
-      'source-index': source.sourceIndex,
-      'xlink:href': '#' + this.glyphCode,
-      x: (this.bounds.x + this.origin.x) / ctxt.glyphScaling,
-      y: (this.bounds.y + this.origin.y) / ctxt.glyphScaling,
-      transform: 'scale(' + ctxt.glyphScaling + ')'
-    });
+    return QuickSvg.createFragment('use', this.getSvgAttributes(ctxt, source));
   }
 }
 
