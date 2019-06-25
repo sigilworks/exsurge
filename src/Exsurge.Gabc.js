@@ -175,6 +175,7 @@ export class Gabc {
           mapping.sourceIndex += sourceIndexDiff;
           for (k = 0; k < mapping.notations.length; k++) {
             var curNotation = mapping.notations[k];
+            var prevIsAccidental = mapping.notations[k - 1] && mapping.notations[k - 1].isAccidental;
             // notify the notation that its dependencies are no longer valid
             curNotation.resetDependencies();
 
@@ -183,6 +184,8 @@ export class Gabc {
 
             if (curNotation.isAccidental) {
               ctxt.activeClef.activeAccidental = curNotation;
+            } else if (curNotation.resetsAccidentals || (!prevIsAccidental && curNotation.hasLyrics() && curNotation.lyrics[0].lyricType <= LyricType.BeginningSyllable)) {
+              ctxt.activeClef.resetAccidentals();
             }
 
             // update source index, pitch, and automatic braces
