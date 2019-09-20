@@ -929,7 +929,7 @@ export class ChantLine extends ChantLayoutElement {
         curr = null,
         next = null,
         nextOrCurr = null,
-        lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
+        lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
     for (var i = this.notationsStartIndex; i < lastIndex; i++) {
 
       prev = nextOrCurr;
@@ -939,6 +939,9 @@ export class ChantLine extends ChantLayoutElement {
       var hasLyrics = nextOrCurr.hasLyrics();
 
       if (!curr || !prev)
+        continue;
+
+      if (this.extraTextOnlyIndex !== null && i >= this.extraTextOnlyIndex && curr.constructor === TextOnly)
         continue;
 
       if (prev !== null) {
@@ -968,8 +971,12 @@ export class ChantLine extends ChantLayoutElement {
 
   getWhitespaceOnRight(ctxt) {
     var notations = this.score.notations;
-    var lastIndex = (this.extraTextOnlyIndex === null)? (this.notationsStartIndex + this.numNotationsOnLine) : this.extraTextOnlyIndex;
+    var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
     var last = notations[lastIndex - 1];
+    if (this.extraTextOnlyIndex !== null && last.constructor === TextOnly) {
+      lastIndex = this.extraTextOnlyIndex;
+      last = notations[lastIndex - 1];
+    }
     var lastRightNeume = last? last.bounds.right() + last.trailingSpace : 0;
     var lastLyrics = this.lastLyricsBeforeTextOnly || this.lastLyrics;
     var lastRightLyric = lastLyrics.length? LyricArray.getRight(lastLyrics) : 0;
