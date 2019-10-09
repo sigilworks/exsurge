@@ -31,6 +31,7 @@ import { Latin } from './Exsurge.Text.js'
 // load in the web font for special chant characters here:
 var __exsurgeCharactersFont = require("url?limit=30000!../assets/fonts/ExsurgeChar.otf")
 
+const canAccessDOM = typeof document !== 'undefined';
 
 export let GlyphCode = {
 
@@ -92,6 +93,10 @@ export var QuickSvg = {
   ns: 'http://www.w3.org/2000/svg',
   xmlns: 'http://www.w3.org/2000/xmlns/',
   xlink: 'http://www.w3.org/1999/xlink',
+
+  hasDOMAccess: function() {
+    return canAccessDOM;
+  },
 
   // create the root level svg object
   svg: function(width, height) {
@@ -290,7 +295,9 @@ export class ChantContext {
     this.textMeasuringStrategy = textMeasuringStrategy;
     this.defs = {};
     this.makeDefs = [];
-    this.defsNode = QuickSvg.createNode('defs');
+    if(QuickSvg.hasDOMAccess()) {
+      this.defsNode = QuickSvg.createNode('defs');
+    }
 
     // font styles
     this.lyricTextSize = 16; // in pixels
@@ -362,9 +369,6 @@ export class ChantContext {
 
     this.defaultLanguage = new Latin();
 
-    this.canvas = document.createElement("canvas");
-    this.canvasCtxt = this.canvas.getContext("2d");
-
     // calculate the pixel ratio for drawing to a canvas
     this.pixelRatio = window.devicePixelRatio || 1.0;
 
@@ -375,6 +379,8 @@ export class ChantContext {
       this.svgTextMeasurer.setAttribute('id', "TextMeasurer");
       this.svgTextMeasurer.setAttribute('style', "position:absolute");
       document.body.insertBefore(this.svgTextMeasurer, document.body.firstChild);
+    } else if(textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
+      this.makeCanvasIfNeeded();
     }
 
     // for connecting neume syllables...
@@ -507,7 +513,7 @@ export class ChantContext {
 
     this.intraNeumeSpacing = this.staffInterval / 2.0;
 
-    while(this.defsNode.firstChild)
+    while(this.defsNode && this.defsNode.firstChild)
         this.defsNode.removeChild(this.defsNode.firstChild);
     for(var i = 0; i < this.makeDefs.length; ++i) {
       this.makeDefs[i]();
@@ -519,6 +525,8 @@ export class ChantContext {
   }
 
   insertFontsInDoc() {
+
+    if (!canAccessDOM) return;
 
     var styleElement = document.getElementById('exsurge-fonts');
 
@@ -550,7 +558,16 @@ export class ChantContext {
     return null;
   }
 
+  makeCanvasIfNeeded() {
+    if(!this.canvas) {
+      this.canvas = document.createElement("canvas");
+      this.canvasCtxt = this.canvas.getContext("2d");
+    }
+  }
+
   setCanvasSize(width, height, scale = 1) {
+    this.makeCanvasIfNeeded();
+
     this.canvas.style.width = (width * scale) + "px";
     this.canvas.style.height = (height * scale) + "px";
     scale *= this.pixelRatio;
@@ -815,7 +832,7 @@ export class GlyphVisualizer extends ChantLayoutElement {
         // create the ref
         ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', options, QuickSvg.svgFragmentForGlyph(this.glyph));
 
-        ctxt.defsNode.appendChild( QuickSvg.createNode('g', options, QuickSvg.nodesForGlyph(this.glyph)));
+        if(ctxt.defsNode) ctxt.defsNode.appendChild( QuickSvg.createNode('g', options, QuickSvg.nodesForGlyph(this.glyph)));
       };
       makeDef();
       ctxt.makeDefs.push(makeDef);
