@@ -27,6 +27,14 @@ import { Units, Pitch, Point, Rect, Margins, Size, Step, getCssForProperties } f
 import { Glyphs } from './Exsurge.Glyphs.js'
 import { Latin } from './Exsurge.Text.js'
 
+const opentype = require('opentype.js');
+function getFontFilenameForProperties(properties = {}, url) {
+    var italic = properties['font-style'] === 'italic' ? "Italic" : "",
+      bold = properties['font-weight'] === 'bold' ? "Bold" : "";
+    return url.replace('{}', `-${(italic||bold)? `${bold}${italic}` : `Regular`}`);
+  }
+
+
 
 // load in the web font for special chant characters here:
 var __exsurgeCharactersFont = require("url?limit=30000!../assets/fonts/ExsurgeChar.otf")
@@ -282,7 +290,8 @@ export var QuickSvg = {
 export var TextMeasuringStrategy = {
   // shapes
   Svg:    0,
-  Canvas: 1
+  Canvas: 1,
+  OpenTypeJS: 2
 };
 
 /*
@@ -434,22 +443,43 @@ export class ChantContext {
     this.insertFontsInDoc();
   }
 
-  setFont(font, size = 16) {
+  setFont(font, size = 16, url = font, styles = [{}], finishedCallback) {
     this.lyricTextSize = size;
     this.lyricTextFont = font;
 
     this.alTextSize = size;
     this.alTextFont = font;
-    
+
     this.translationTextSize = size;
     this.translationTextFont = font;
-    
+
     this.dropCapTextSize = size * 4;
     this.dropCapTextFont = font;
-    
+
     this.annotationTextSize = size * 2 / 3;
     this.annotationTextFont = font;
 
+    if (this.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS) {
+      this.font = null;
+      this.onFontLoaded = [];
+      //for(s of styles) {
+        // console.info(s);
+        opentype.load(getFontFilenameForProperties({}, url), (err, font) => {
+          if(err) {
+            console.warn(err);
+            return;
+          }
+          let onFontLoaded = this.onFontLoaded;
+          delete this.onFontLoaded;
+          this.font = font;
+          this.updateHyphenWidth();
+          if(typeof finishedCallback === 'function') {
+            finishedCallback(font);
+          }
+          onFontLoaded.forEach(callback => callback(font));
+        });
+      // }
+    }
   }
 
   setRubricColor(color) {
@@ -1285,6 +1315,7 @@ export class TextElement extends ChantLayoutElement {
         widths.push(width);
         width = 0;
       }
+      if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
         canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
         let metrics = canvasCtxt.measureText(myText, width, fontSize * (numLines - 1));
         width += metrics.width;
@@ -1311,6 +1342,25 @@ export class TextElement extends ChantLayoutElement {
             )
           );
         }
+      } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS && ctxt.font) {
+        // get the bounding box for the substring, placing it at x = width, y = fontSize * (numLines - 1)
+        let options = { features: { liga: true } };
+        let subBbox = ctxt.font.getPath(myText, width, fontSize * (numLines - 1), fontSize, options).getBoundingBox();
+        let subWidth = ctxt.font.getAdvanceWidth(myText, fontSize, options);
+
+        bbox.union(
+          new Rect(
+            width + subBbox.x1,
+            subBbox.y1,
+            subWidth - subBbox.x1,
+            subBbox.y2 - subBbox.y1
+          )
+        );
+        width += subWidth;
+        if(this instanceof DropCap) {
+          width -= subBbox.x1;
+        }
+      }
       subStringLength += myText.length;
       if(subStringLength === length) break;
     }

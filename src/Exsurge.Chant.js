@@ -495,9 +495,14 @@ export class ChantScore {
       return; // nothing to do here!
     }
 
+    if (ctxt.onFontLoaded) {
+      ctxt.onFontLoaded.push(() => this.performLayoutAsync(ctxt, finishedCallback));
+      return;
+    }
+
     // check for sane value of hyphen width:
     ctxt.updateHyphenWidth();
-    if(ctxt.hyphenWidth / ctxt.lyricTextSize > 0.6) {
+    if(!ctxt.hyphenWidth || ctxt.hyphenWidth / ctxt.lyricTextSize > 0.6) {
       setTimeout(() => {
         this.performLayoutAsync(ctxt, finishedCallback);
       }, 100);
