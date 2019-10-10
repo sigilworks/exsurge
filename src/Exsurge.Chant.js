@@ -584,11 +584,12 @@ export class ChantScore {
 
   draw(ctxt, scale = 1) {
 
+    ctxt.setCanvasSize(this.bounds.width, this.bounds.height, scale);
+
     var canvasCtxt = ctxt.canvasCtxt;
 
     canvasCtxt.clearRect(0, 0, ctxt.canvas.width, ctxt.canvas.height);
 
-    ctxt.setCanvasSize(this.bounds.width, this.bounds.height, scale);
     canvasCtxt.translate(this.bounds.x, this.bounds.y);
 
     for (var i = 0; i < this.lines.length; i++)

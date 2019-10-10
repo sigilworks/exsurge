@@ -212,6 +212,7 @@ export class ChantLine extends ChantLayoutElement {
         // horizontally is as easy as this.staffLeft / 2
         this.score.dropCap.bounds.x = this.staffLeft / 2;
         this.score.dropCap.bounds.y = dropCapY;
+        this.notationBounds.union(this.score.dropCap.bounds);
       }
 
       if (this.score.annotation !== null) {

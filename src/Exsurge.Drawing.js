@@ -509,8 +509,6 @@ export class ChantContext {
     this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
     this.episemaLineWeight = this.neumeLineWeight * 1.25; // of horizontal episemata
 
-    this.updateHyphenWidth();
-
     this.intraNeumeSpacing = this.staffInterval / 2.0;
 
     while(this.defsNode && this.defsNode.firstChild)
@@ -518,6 +516,8 @@ export class ChantContext {
     for(var i = 0; i < this.makeDefs.length; ++i) {
       this.makeDefs[i]();
     }
+
+    this.updateHyphenWidth();
   }
 
   calculateHeightFromStaffPosition(staffPosition) {
@@ -1252,8 +1252,12 @@ export class TextElement extends ChantLayoutElement {
     return font;
   }
 
+  measureSubstringBBox(ctxt, length) {
+    return this.measureSubstring(ctxt, length, true);
+  }
+
   // if length is undefined and this.rightAligned === true, then offsets will be marked for each newLine span
-  measureSubstring(ctxt, length) {
+  measureSubstring(ctxt, length, returnBBox = false) {
     if(length === 0) return 0;
     if(!length) length = Infinity;
     if(length < 0) {
@@ -1265,10 +1269,14 @@ export class TextElement extends ChantLayoutElement {
     var widths = [];
     var newLineSpans = [this.spans[0]];
     var subStringLength = 0;
+    var numLines = 1;
+    var fontSize = this.fontSize * (this.resize || 1);
+    var bbox = new Rect(0, -fontSize, 0, fontSize);
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i],
           myText = span.text.slice(0, length - subStringLength);
       if(span.properties.newLine) {
+        ++numLines;
         if (!lines && this.rightAligned === true && length === Infinity) {
           newLineSpans[newLineSpans.length - 1].properties.xOffset = this.firstLineMaxWidth - width;
           newLineSpans.push(span);
@@ -1277,16 +1285,46 @@ export class TextElement extends ChantLayoutElement {
         widths.push(width);
         width = 0;
       }
-      canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
-      var metrics = canvasCtxt.measureText(myText, this.bounds.x, this.bounds.y);
-      width += metrics.width;
+        canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
+        let metrics = canvasCtxt.measureText(myText, width, fontSize * (numLines - 1));
+        width += metrics.width;
+        if('actualBoundingBoxAscent' in metrics) {
+          let left = metrics.actualBoundingBoxLeft;
+          bbox.union(
+            new Rect(
+              width - metrics.width - left,
+              fontSize * (numLines - 1) - metrics.actualBoundingBoxAscent,
+              metrics.width + left,
+              metrics.actualBoundingBoxDescent + metrics.actualBoundingBoxAscent
+            )
+          );
+          if(this instanceof DropCap) {
+            width += Math.max(0, left);
+          }
+        } else {
+          bbox.union(
+            new Rect(
+              width - metrics.width,
+              fontSize * (numLines - 2),
+              metrics.width,
+              fontSize
+            )
+          );
+        }
       subStringLength += myText.length;
       if(subStringLength === length) break;
     }
     if (!lines && width && newLineSpans.length && this.rightAligned === true && length === Infinity) {
       newLineSpans[newLineSpans.length - 1].properties.xOffset = this.firstLineMaxWidth - width;
     }
-    return Math.max(width, ...widths);
+    width = Math.max(width, ...widths);
+    if(returnBBox === true) {
+      let height = bbox.height;
+      let y = bbox.y;
+      return { width, height, x: 0, y }
+    } else {
+      return width;
+    }
   }
 
   recalculateMetrics(ctxt) {
@@ -1306,11 +1344,13 @@ export class TextElement extends ChantLayoutElement {
       this.bounds.width = bbox.width;
       this.bounds.height = bbox.height;
       this.origin.y = -bbox.y; // offset to baseline from top
-    } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
-      var numLines = this.spans.reduce((r,i) => (r + (i.properties.newLine? 1 : 0)), 1);
-      this.bounds.width = this.measureSubstring(ctxt, this.rightAligned? -1 : undefined);
-      this.bounds.height = this.fontSize * Math.min(1, numLines + 0.2);
-      this.origin.y = this.fontSize;
+      this.origin.x = -bbox.x;
+    } else {
+      let bbox = this.measureSubstringBBox(ctxt);
+      this.bounds.width = bbox.width;
+      this.bounds.height = bbox.height;
+      this.origin.y = -bbox.y;
+      this.origin.x = -bbox.x;
     }
   }
 
@@ -1706,7 +1746,7 @@ export class Lyric extends TextElement {
         // svgTextMeasurer still has the current lyric in it...
         x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, this.centerStartIndex);
         x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, this.centerStartIndex + this.centerLength);
-      } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
+      } else {
         x1 = this.measureSubstring(ctxt, this.centerStartIndex);
         x2 = this.measureSubstring(ctxt, this.centerStartIndex + this.centerLength);
       }
@@ -1742,7 +1782,7 @@ export class Lyric extends TextElement {
           // svgTextMeasurer still has the current lyric in it...
           x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex);
           x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex + result.length);
-        } else if(ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
+        } else {
           x1 = this.measureSubstring(ctxt, result.startIndex);
           x2 = this.measureSubstring(ctxt, result.startIndex + result.length);
         }
