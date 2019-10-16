@@ -28,10 +28,10 @@ import { Glyphs } from './Exsurge.Glyphs.js'
 import { Latin } from './Exsurge.Text.js'
 
 const opentype = require('opentype.js');
-function getFontFilenameForProperties(properties = {}, url) {
+function getFontFilenameForProperties(properties = {}, url = '{}') {
     var italic = properties['font-style'] === 'italic' ? "Italic" : "",
       bold = properties['font-weight'] === 'bold' ? "Bold" : "";
-    return url.replace('{}', `-${(italic||bold)? `${bold}${italic}` : `Regular`}`);
+    return url.replace('{}', `${(italic||bold)? `${bold}${italic}` : `Regular`}`);
   }
 
 
@@ -299,7 +299,7 @@ export var TextMeasuringStrategy = {
  */
 export class ChantContext {
 
-  constructor(textMeasuringStrategy = TextMeasuringStrategy.Svg) {
+  constructor(textMeasuringStrategy = QuickSvg.hasDOMAccess()? TextMeasuringStrategy.Canvas : TextMeasuringStrategy.OpenTypeJS) {
 
     this.textMeasuringStrategy = textMeasuringStrategy;
     this.defs = {};
@@ -443,7 +443,12 @@ export class ChantContext {
     this.insertFontsInDoc();
   }
 
-  setFont(font, size = 16, url = font, styles = [{}], finishedCallback) {
+  getFontForProperties(properties = {}) {
+    let key = getFontFilenameForProperties(properties);
+    return this.font && (this.font[key] || this.font.Regular);
+  }
+
+  setFont(font, size = 16, url = font, styles = {}, finishedCallback) {
     this.lyricTextSize = size;
     this.lyricTextFont = font;
 
@@ -460,25 +465,39 @@ export class ChantContext {
     this.annotationTextFont = font;
 
     if (this.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS) {
-      this.font = null;
+      this.font = {};
       this.onFontLoaded = [];
-      //for(s of styles) {
-        // console.info(s);
-        opentype.load(getFontFilenameForProperties({}, url), (err, font) => {
-          if(err) {
-            console.warn(err);
-            return;
+      var callbacksRequested = 0,
+          callbacksMade = 0,
+          styleKeys = Object.keys(styles),
+          loadedFont = s => (err, font) => {
+            ++callbacksMade;
+            if (err) {
+              console.warn(err);
+              return;
+            }
+            let key = getFontFilenameForProperties(s);
+            this.font[key] = font;
+            if(callbacksMade === callbacksRequested) {
+              let onFontLoaded = this.onFontLoaded;
+              delete this.onFontLoaded;
+              this.updateHyphenWidth();
+              if (typeof finishedCallback === "function") {
+                finishedCallback(font);
+              }
+              onFontLoaded.forEach(callback => callback(font));
+            }
+          };
+      for(let i = (1 << styleKeys.length) - 1; i>=0; --i) {
+        let s = {};
+        for(let j = styleKeys.length - 1; j >= 0; --j) {
+          if (i & (1 << j)) {
+            s[styleKeys[j]] = styles[styleKeys[j]];
           }
-          let onFontLoaded = this.onFontLoaded;
-          delete this.onFontLoaded;
-          this.font = font;
-          this.updateHyphenWidth();
-          if(typeof finishedCallback === 'function') {
-            finishedCallback(font);
-          }
-          onFontLoaded.forEach(callback => callback(font));
-        });
-      // }
+        }
+        opentype.load(getFontFilenameForProperties(s, url), loadedFont(s));
+        ++callbacksRequested;
+      }
     }
   }
 
@@ -1315,6 +1334,7 @@ export class TextElement extends ChantLayoutElement {
         widths.push(width);
         width = 0;
       }
+      let font = ctxt.getFontForProperties(span.properties);
       if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
         canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
         let metrics = canvasCtxt.measureText(myText, width, fontSize * (numLines - 1));
@@ -1342,11 +1362,14 @@ export class TextElement extends ChantLayoutElement {
             )
           );
         }
-      } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS && ctxt.font) {
+      } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS && font) {
         // get the bounding box for the substring, placing it at x = width, y = fontSize * (numLines - 1)
         let options = { features: { liga: true } };
-        let subBbox = ctxt.font.getPath(myText, width, fontSize * (numLines - 1), fontSize, options).getBoundingBox();
-        let subWidth = ctxt.font.getAdvanceWidth(myText, fontSize, options);
+        if(span.properties['font-variant'] === 'small-caps') {
+          options.features.smcp = true;
+        }
+        let subBbox = font.getPath(myText, width, fontSize * (numLines - 1), fontSize, options).getBoundingBox();
+        let subWidth = font.getAdvanceWidth(myText, fontSize, options);
 
         bbox.union(
           new Rect(
