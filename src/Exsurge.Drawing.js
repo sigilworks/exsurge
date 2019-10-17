@@ -473,7 +473,7 @@ export class ChantContext {
           loadedFont = s => (err, font) => {
             ++callbacksMade;
             if (err) {
-              console.warn(err);
+              console.warn(err, getFontFilenameForProperties(s, url));
               return;
             }
             let key = getFontFilenameForProperties(s);
@@ -483,7 +483,7 @@ export class ChantContext {
               delete this.onFontLoaded;
               this.updateHyphenWidth();
               if (typeof finishedCallback === "function") {
-                finishedCallback(font);
+                finishedCallback(this.font);
               }
               onFontLoaded.forEach(callback => callback(font));
             }
@@ -1581,8 +1581,8 @@ export class TextElement extends ChantLayoutElement {
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i];
       var options = {};
+      var setFontFamilyAttributes = /{}$/.test(this.fontFamily);
 
-      options['style'] = getCssForProperties(span.properties);
       if(span.properties.newLine) {
         var xOffset = span.properties.xOffset || 0;
         options.dy = '1em';
@@ -1598,13 +1598,21 @@ export class TextElement extends ChantLayoutElement {
       if(this.resize) {
         options['font-size'] = span.properties['font-size'] || (this.fontSize * this.resize);
       }
+      if(setFontFamilyAttributes) {
+        options['font-family'] = getFontFilenameForProperties(span.properties, this.fontFamily);
+        let properties = Object.assign({}, span.properties);
+        delete properties['font-weight'];
+        delete properties['font-style'];
+        options['style'] = getCssForProperties(properties);
+      } else {
+        options['style'] = getCssForProperties(span.properties);
+      }
 
       spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(span.text));
     }
 
     var styleProperties = getCssForProperties(this.getExtraStyleProperties(ctxt));
-
-    return QuickSvg.createFragment('text', {
+    options = {
       'source-index': this.sourceIndex,
       'x': this.bounds.x,
       'y': this.bounds.y,
@@ -1612,7 +1620,12 @@ export class TextElement extends ChantLayoutElement {
       'text-anchor': this.textAnchor,
       //'dominant-baseline': this.dominantBaseline, // hanging baseline doesn't work in Safari
       'style': styleProperties
-    }, spans);
+    };
+    if (setFontFamilyAttributes) {
+      options['font-size'] = this.fontSize
+    }
+
+    return QuickSvg.createFragment('text', options, spans);
   }
 }
 
