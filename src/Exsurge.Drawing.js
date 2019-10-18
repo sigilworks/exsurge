@@ -27,7 +27,6 @@ import { Units, Pitch, Point, Rect, Margins, Size, Step, getCssForProperties } f
 import { Glyphs } from './Exsurge.Glyphs.js'
 import { Latin } from './Exsurge.Text.js'
 
-const opentype = require('opentype.js');
 function getFontFilenameForProperties(properties = {}, url = '{}') {
     var italic = properties['font-style'] === 'italic' ? "Italic" : "",
       bold = properties['font-weight'] === 'bold' ? "Bold" : "";
@@ -333,6 +332,7 @@ export class ChantContext {
       "^": {'fill':this.rubricColor},
       "%": {
         "font-variant":"small-caps",
+        "font-variant-caps":"small-caps",
         "font-feature-settings":"'smcp'",
         "-webkit-font-feature-settings":"'smcp'"
       }
@@ -443,12 +443,13 @@ export class ChantContext {
     this.insertFontsInDoc();
   }
 
-  getFontForProperties(properties = {}) {
-    let key = getFontFilenameForProperties(properties);
-    return this.font && (this.font[key] || this.font.Regular);
+  getFontForProperties(properties = {}, fontFamily) {
+    let key = getFontFilenameForProperties(properties),
+        keyWithFontFamily = getFontFilenameForProperties(properties, fontFamily);
+    return this.fontDictionary && (this.fontDictionary[keyWithFontFamily] || this.fontDictionary[fontFamily] || this.fontDictionary.Regular);
   }
 
-  setFont(font, size = 16, url = font, styles = {}, finishedCallback) {
+  setFont(font, size = 16, baseStyle = {}, opentypeFontDictionary) {
     this.lyricTextSize = size;
     this.lyricTextFont = font;
 
@@ -464,40 +465,11 @@ export class ChantContext {
     this.annotationTextSize = size * 2 / 3;
     this.annotationTextFont = font;
 
-    if (this.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS) {
-      this.font = {};
-      this.onFontLoaded = [];
-      var callbacksRequested = 0,
-          callbacksMade = 0,
-          styleKeys = Object.keys(styles),
-          loadedFont = s => (err, font) => {
-            ++callbacksMade;
-            if (err) {
-              console.warn(err, getFontFilenameForProperties(s, url));
-              return;
-            }
-            let key = getFontFilenameForProperties(s);
-            this.font[key] = font;
-            if(callbacksMade === callbacksRequested) {
-              let onFontLoaded = this.onFontLoaded;
-              delete this.onFontLoaded;
-              this.updateHyphenWidth();
-              if (typeof finishedCallback === "function") {
-                finishedCallback(this.font);
-              }
-              onFontLoaded.forEach(callback => callback(font));
-            }
-          };
-      for(let i = (1 << styleKeys.length) - 1; i>=0; --i) {
-        let s = {};
-        for(let j = styleKeys.length - 1; j >= 0; --j) {
-          if (i & (1 << j)) {
-            s[styleKeys[j]] = styles[styleKeys[j]];
-          }
-        }
-        opentype.load(getFontFilenameForProperties(s, url), loadedFont(s));
-        ++callbacksRequested;
-      }
+    this.baseTextStyle = baseStyle;
+
+    if (opentypeFontDictionary) {
+      this.textMeasuringStrategy = TextMeasuringStrategy.OpenTypeJS;
+      this.fontDictionary = opentypeFontDictionary;
     }
   }
 
@@ -1334,7 +1306,6 @@ export class TextElement extends ChantLayoutElement {
         widths.push(width);
         width = 0;
       }
-      let font = ctxt.getFontForProperties(span.properties);
       if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
         canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
         let metrics = canvasCtxt.measureText(myText, width, fontSize * (numLines - 1));
@@ -1362,14 +1333,16 @@ export class TextElement extends ChantLayoutElement {
             )
           );
         }
-      } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS && font) {
+      } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS && ctxt.fontDictionary) {
         // get the bounding box for the substring, placing it at x = width, y = fontSize * (numLines - 1)
+        let font = ctxt.getFontForProperties(span.properties, span.properties['font-family'] || this.fontFamily);
         let options = { features: { liga: true } };
         if(span.properties['font-variant'] === 'small-caps') {
           options.features.smcp = true;
         }
-        let subBbox = font.getPath(myText, width, fontSize * (numLines - 1), fontSize, options).getBoundingBox();
-        let subWidth = font.getAdvanceWidth(myText, fontSize, options);
+        let spanFontSize = parseFloat(span.properties['font-size']) || fontSize;
+        let subBbox = font.getPath(myText, width, fontSize * (numLines - 1), spanFontSize, options).getBoundingBox();
+        let subWidth = font.getAdvanceWidth(myText, spanFontSize, options);
 
         bbox.union(
           new Rect(
@@ -1490,7 +1463,7 @@ export class TextElement extends ChantLayoutElement {
   }
 
   getExtraStyleProperties(ctxt) {
-    return {};
+    return ctxt.baseTextStyle || {};
   }
 
   static escapeForTspan(string) {
@@ -1581,7 +1554,6 @@ export class TextElement extends ChantLayoutElement {
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i];
       var options = {};
-      var setFontFamilyAttributes = /{}$/.test(this.fontFamily);
 
       if(span.properties.newLine) {
         var xOffset = span.properties.xOffset || 0;
@@ -1598,8 +1570,8 @@ export class TextElement extends ChantLayoutElement {
       if(this.resize) {
         options['font-size'] = span.properties['font-size'] || (this.fontSize * this.resize);
       }
-      if(setFontFamilyAttributes) {
-        options['font-family'] = getFontFilenameForProperties(span.properties, this.fontFamily);
+      if(ctxt.setFontFamilyAttributes) {
+        options['font-family'] = span.properties['font-family'] || getFontFilenameForProperties(span.properties, this.fontFamily);
         let properties = Object.assign({}, span.properties);
         delete properties['font-weight'];
         delete properties['font-style'];
@@ -1621,7 +1593,7 @@ export class TextElement extends ChantLayoutElement {
       //'dominant-baseline': this.dominantBaseline, // hanging baseline doesn't work in Safari
       'style': styleProperties
     };
-    if (setFontFamilyAttributes) {
+    if (ctxt.setFontFamilyAttributes) {
       options['font-size'] = this.fontSize
     }
 
@@ -1904,7 +1876,7 @@ export class Lyric extends TextElement {
   }
 
   getExtraStyleProperties(ctxt) {
-    var props = super.getExtraStyleProperties();
+    var props = super.getExtraStyleProperties(ctxt);
 
     if (this.lyricType === LyricType.Directive && ctxt.autoColor === true)
       props = Object.assign({}, props, {fill: ctxt.rubricColor});
