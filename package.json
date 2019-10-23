@@ -21,7 +21,6 @@
     "eslint-loader": "^1.2.1",
     "file-loader": "^0.8.5",
     "mocha": "^2.4.5",
-    "opentype.js": "^1.1.0",
     "surge": "^0.17.7",
     "url-loader": "^0.5.7",
     "webpack": "^1.12.13",
@@ -44,5 +43,7 @@
     "note",
     "solesmes"
   ],
-  "dependencies": {}
+  "dependencies": {
+    "opentype.js": "^1.1.0"
+  }
 }
