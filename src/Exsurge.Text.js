@@ -54,6 +54,29 @@ export class Language {
   }
 }
 
+export class English extends Language {
+  constructor() {
+    super("English");
+  }
+  
+  /**
+   * @param {String} s the string to search
+   * @param {Number} startIndex The index at which to start searching for a vowel in the string
+   * @retuns a custom class with three properties: {found: (true/false) startIndex: (start index in s of vowel segment) length ()}
+   */
+  findVowelSegment(s, startIndex) {
+
+    var i, end, index;
+    var regexLetter = /[a-zäëïöüÿáéíóúýàèìòùỳāēīōūȳăĕĭŏŭæœ]+/i;
+    var match = regexLetter.exec(s.slice(startIndex));
+    if(match)
+      return { found: true, startIndex: startIndex + match.index, length: match[0].length };
+
+    // no vowels sets found after startIndex!
+    return { found: false, startIndex: -1, length: -1 };
+  }
+}
+
 /**
  * @class
  */
@@ -81,7 +104,7 @@ export class Latin extends Language {
     wordExceptions["huic"] = ["huic"];
     wordExceptions["cui"] = ["cui"];
     wordExceptions["hui"] = ["hui"];
-    
+
     // eu combos pronounced as diphthongs
     wordExceptions["euge"] = ["eu", "ge"];
     wordExceptions["seu"] = ["seu"];
@@ -119,7 +142,7 @@ export class Latin extends Language {
 
     return false;
   }
-  
+
   // substring should be a vowel and the character following
   isVowelActingAsConsonant(substring) {
     return this.isVowelThatMightBeConsonant(substring[0]) && this.isVowel(substring[1]);
@@ -394,7 +417,7 @@ export class Spanish extends Language {
     var ellidesToNext = false;
 
     if (text.length > 0) {
-        
+
         if (text[0] == '`') {
             accented = true;
             text = text.substr(1);

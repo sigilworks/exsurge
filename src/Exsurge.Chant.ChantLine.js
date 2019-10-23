@@ -77,7 +77,7 @@ export class ChantLine extends ChantLayoutElement {
     // start off with a rectangle that holds at least the four staff lines
     // we fudge the 3 to 3.1 so that the svg doesn't crop off the upper/lower staff lines...
     this.notationBounds = new Rect(this.staffLeft, -(3.1 + ctxt.minSpaceAboveStaff) * ctxt.staffInterval,
-      this.staffRight - this.staffLeft, (6.2 + ctxt.minSpaceAboveStaff) * ctxt.staffInterval);
+      this.staffRight - this.staffLeft, (6.2 + ctxt.minSpaceAboveStaff + ctxt.minSpaceBelowStaff) * ctxt.staffInterval);
 
     // run through all the elements of the line and calculate the bounds of the notations,
     // as well as the bounds of each text track we will use
@@ -117,13 +117,13 @@ export class ChantLine extends ChantLayoutElement {
       if(notation.alText && this.numAltLines < notation.alText.length) {
         if(notation.alText[0].bounds.height > this.altLineHeight) this.altLineHeight = notation.alText[0].bounds.height;
         if(notation.alText[0].origin.y > this.altLineBaseline) this.altLineBaseline = notation.alText[0].origin.y;
-        if(notation.alText.length > this.numAltLines) this.numAltLines = notation.alText.length;        
+        if(notation.alText.length > this.numAltLines) this.numAltLines = notation.alText.length;
       }
 
       if(notation.translationText && this.numTranslationLines < notation.translationText.length) {
         if(notation.translationText[0].bounds.height > this.translationLineHeight) this.translationLineHeight = notation.translationText[0].bounds.height;
         if(notation.translationText[0].origin.y > this.translationLineBaseline) this.translationLineBaseline = notation.translationText[0].origin.y;
-        if(notation.translationText.length > this.numTranslationLines) this.numTranslationLines = notation.translationText.length;        
+        if(notation.translationText.length > this.numTranslationLines) this.numTranslationLines = notation.translationText.length;
       }
     }
 
@@ -483,7 +483,7 @@ export class ChantLine extends ChantLayoutElement {
     else
       h = ctxt.staffInterval / 2;
 
-    // and q factor, .5 is normal, higher q = more expressive bracket 
+    // and q factor, .5 is normal, higher q = more expressive bracket
     var q = 0.6;
 
     var len = x2 - x1;
@@ -500,10 +500,10 @@ export class ChantLine extends ChantLayoutElement {
     var qx4 = x1 + .75*len;
     var qy4 = y  + (1-q)*h;
     var d   =  ( "M " +  x1 + " " +  y +
-            " Q " + qx1 + " " + qy1 + " " + qx2 + " " + qy2 + 
+            " Q " + qx1 + " " + qy1 + " " + qx2 + " " + qy2 +
             " T " + tx1 + " " + ty1 +
             " M " +  x2 + " " +  y +
-            " Q " + qx3 + " " + qy3 + " " + qx4 + " " + qy4 + 
+            " Q " + qx3 + " " + qy3 + " " + qx4 + " " + qy4 +
             " T " + tx1 + " " + ty1);
 
     return QuickSvg.createFragment('path', {
@@ -613,7 +613,7 @@ export class ChantLine extends ChantLayoutElement {
         prevNeume = curr;
 
       curr = notations[i];
-      
+
       var actualRightBoundary;
       if(i === lastNotationIndex || curr.constructor === Custos || (prev.constructor === Custos && curr.isDivider) || (curr.constructor === ChantLineBreak && prevNeume.constructor === Custos)) {
         // on the last notation of the score, we don't need a custos or trailing space, so we use staffRight as the
@@ -733,7 +733,7 @@ export class ChantLine extends ChantLayoutElement {
           }
 
           // if the line break is allowed (cne.allowLineBreakBeforeNext), keep this number of notations around so we can check during justification
-          // whether there would be too much space introduced between 
+          // whether there would be too much space introduced between
           if (cne.keepWithNext === true) {
             if(cne.allowLineBreakBeforeNext && !this.maxNumNotationsOnLine)
               this.maxNumNotationsOnLine = this.numNotationsOnLine;
@@ -744,10 +744,10 @@ export class ChantLine extends ChantLayoutElement {
 
         // if for some reason not a single notation can fit on the line, we'd better put it on anyway, to avoid an infinite loop:
         if(this.numNotationsOnLine === 0) numNotationsOnLine = 1;
-        
+
         // determine the neumes we can space apart, if we do end up justifying
         curr = this.findNeumesToJustify(prevLyrics);
-        
+
         this.lastLyrics = prevLyrics;
         if(this.maxNumNotationsOnLine) {
           // Check whether we should squeeze some extra notations on the line to avoid too much space after justification:
@@ -891,7 +891,7 @@ export class ChantLine extends ChantLayoutElement {
       this.staffRight = notations[this.notationsStartIndex + this.numNotationsOnLine - 1].bounds.right();
       this.justify = false;
     }
-    
+
     // Justify the line if we need to
     this.justifyElements(ctxt, this.justify, condensableSpaces);
 
@@ -1540,7 +1540,7 @@ export class ChantLine extends ChantLayoutElement {
             }
           }
         }
-   
+
       }
     } while(curr.lyrics.length > 1 && hasShifted && atLeastOneWithoutConnector);
 
