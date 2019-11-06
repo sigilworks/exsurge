@@ -66,7 +66,6 @@ export class English extends Language {
    */
   findVowelSegment(s, startIndex) {
 
-    var i, end, index;
     var regexLetter = /[a-zäëïöüÿáéíóúýàèìòùỳāēīōūȳăĕĭŏŭæœ]+/i;
     var match = regexLetter.exec(s.slice(startIndex));
     if(match)
