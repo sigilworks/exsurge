@@ -321,20 +321,17 @@ export class ChantContext {
     this.textAfterSpecialChar = '.';
     this.specialCharText = char => char;
 
-    // var boldMarkup = "*";
-    // var italicMarkup = "_";
-    // var redMarkup = "^";
-    // var smallCapsMarkup = "%";
-
     this.fontStyleDictionary = {
-      "*": {'font-weight':'bold'},
-      "_": {'font-style':'italic'},
-      "^": {'fill':this.rubricColor},
-      "%": {
-        "font-variant":"small-caps",
-        "font-variant-caps":"small-caps",
-        "font-feature-settings":"'smcp'",
-        "-webkit-font-feature-settings":"'smcp'"
+      "b": { "font-weight": "bold" },
+      "i": { "font-style": "italic" },
+      "u": { "text-decoration": "underline" },
+      "ul": { "text-decoration": "underline" },
+      "c": { fill: this.rubricColor },
+      "sc": {
+        "font-variant": "small-caps",
+        "font-variant-caps": "small-caps",
+        "font-feature-settings": "'smcp'",
+        "-webkit-font-feature-settings": "'smcp'"
       }
     };
 
@@ -359,8 +356,8 @@ export class ChantContext {
     this.annotationPadding = 1;  // minimum padding on either side of annotation in staffIntervals
 
     this.minLedgerSeparation = 2; // multiple of staffInterval
-    this.minSpaceAboveStaff = 1; // multiple of staffInterval
-    this.minSpaceBelowStaff = 2; // multiple of staffInterval
+    this.minSpaceAboveStaff = 2; // multiple of staffInterval
+    this.minSpaceBelowStaff = 1; // multiple of staffInterval
 
     // everything depends on the scale of the punctum
     this.glyphPunctumWidth = Glyphs.PunctumQuadratum.bounds.width;
@@ -476,7 +473,7 @@ export class ChantContext {
   setRubricColor(color) {
     this.rubricColor = color;
     this.specialCharProperties.fill = color;
-    this.fontStyleDictionary["^"].fill = color;
+    this.fontStyleDictionary.c.fill = color;
   }
 
   setScaleDefs(scaleDefs) {
@@ -1136,14 +1133,18 @@ var TextSpan = function(text, properties) {
   this.properties = properties;
 };
 
-function MarkupStackFrame(symbol, startIndex, properties = {}) {
-  this.symbol = symbol;
+function MarkupStackFrame(tagName, startIndex, properties = {}) {
+  this.tagName = tagName;
   this.startIndex = startIndex;
   this.properties = properties;
 }
 
-MarkupStackFrame.createStackFrame = function(ctxt, symbol, startIndex) {
-  return new MarkupStackFrame(symbol, startIndex, ctxt.fontStyleDictionary[symbol]);
+MarkupStackFrame.createStackFrame = function(ctxt, tagName, startIndex) {
+  return new MarkupStackFrame(
+    tagName,
+    startIndex,
+    ctxt.fontStyleDictionary[tagName]
+  );
 };
 
 
@@ -1211,12 +1212,13 @@ export class TextElement extends ChantLayoutElement {
       this.spans.push(new TextSpan(spanText, properties));
     };
 
-    var markupRegex = /\\?([arv])(?:bar|\/\.)|([*_^%])(?=(?:(.+?)\2)?)/gi;
+    var markupRegex = /\\?([arv])(?:bar|\/\.)|<(\/)?([bciu]|ul|sc)>(?=(?:(.+?)<\/\3>)?)/gi;
 
     var match = null;
     while ((match = markupRegex.exec(text))) {
 
-      var markupSymbol = match[2];
+      var tagName = match[3],
+        closingTag = match[2];
 
       // non-matching symbols first
       if (match[1]) {
@@ -1224,13 +1226,11 @@ export class TextElement extends ChantLayoutElement {
       } else if (markupStack.length === 0) {
         // otherwise we're dealing with matching markup delimeters
         // if this is our first markup frame, then just create an inline for preceding text and push the stack frame
-        if (markupSymbol === '*' && !match[3]) // we are only strict with the asterisk, because there are cases when it needs to be displayed rather than count as a markup symbol
-          continue;
         closeSpan(text.substring(spanStartIndex, match.index));
-        markupStack.push(MarkupStackFrame.createStackFrame(ctxt, markupSymbol, match.index));
+        markupStack.push(MarkupStackFrame.createStackFrame(ctxt, tagName, match.index));
       } else {
 
-        if (markupStack[markupStack.length - 1].symbol === markupSymbol) {
+        if (markupStack[markupStack.length - 1].tagName === tagName) {
           // group close
           closeSpan(text.substring(spanStartIndex, match.index));
           markupStack.pop();
@@ -1242,10 +1242,8 @@ export class TextElement extends ChantLayoutElement {
           continue;
         } else {
           // group open
-          if (markupSymbol === '*' && !match[3])
-            continue;
           closeSpan(text.substring(spanStartIndex, match.index));
-          markupStack.push(MarkupStackFrame.createStackFrame(ctxt, markupSymbol, match.index));
+          markupStack.push(MarkupStackFrame.createStackFrame(ctxt, tagName, match.index));
         }
       }
 
