@@ -36,7 +36,7 @@ var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
 var __altRegex = /<alt>(.*?)<\/alt>/g;
 var __translationRegex = /\[(alt:)?(.*?)\]/g
 
-var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/\/|\/| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*|\{([^}]+)\}?/g;
+var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/+| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*|\{([^}]+)\}?/g;
 var __notationsRegex_group_insideBraces = 1;
 
 var __bracketedCommandRegex = /^([a-z]+):(.*)/
@@ -641,14 +641,6 @@ export class Gabc {
           trailingSpace = 0;
           addNotation(null);
           break;
-        case "/":
-          trailingSpace = ctxt.intraNeumeSpacing;
-          addNotation(null);
-          break;
-        case "//":
-          trailingSpace = ctxt.intraNeumeSpacing * 2;
-          addNotation(null);
-          break;
         case ' ':
           // fixme: is this correct? logically what is the difference in gabc
           // between putting a space between notes vs putting '//' between notes?
@@ -658,8 +650,11 @@ export class Gabc {
 
 
         default:
-          // might be a custos, might be an accidental, or might be a note
-          if (atom.length > 1 && atom[1] === '+') {
+          // might be a number of slashes, a custos, might be an accidental, or might be a note
+          if (atom[0] === '/') {
+            trailingSpace = ctxt.intraNeumeSpacing * atom.length;
+            addNotation(null);
+          } else if (atom.length > 1 && atom[1] === '+') {
             // custos
             var custos = new Signs.Custos();
 
