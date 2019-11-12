@@ -36,7 +36,7 @@ var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
 var __altRegex = /<alt>(.*?)<\/alt>/g;
 var __translationRegex = /\[(alt:)?(.*?)\]/g
 
-var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb3|cb4|\/+| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*|\{([^}]+)\}?/g;
+var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb[1-4]|\/+| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*|\{([^}]+)\}?/g;
 var __notationsRegex_group_insideBraces = 1;
 
 var __bracketedCommandRegex = /^([a-z]+):(.*)/
@@ -616,6 +616,14 @@ export class Gabc {
 
         case "f4":
           addNotation(ctxt.activeClef = new FaClef(3, 2));
+          break;
+
+        case "cb1":
+          addNotation(ctxt.activeClef = new DoClef(-3, 2, new Signs.Accidental(-4, Signs.AccidentalType.Flat)));
+          break;
+
+        case "cb2":
+          addNotation(ctxt.activeClef = new DoClef(-1, 2, new Signs.Accidental(-2, Signs.AccidentalType.Flat)));
           break;
 
         case "cb3":
