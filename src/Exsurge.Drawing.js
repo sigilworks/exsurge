@@ -338,18 +338,18 @@ export class ChantContext {
     this.alTextSize = this.lyricTextSize;
     this.alTextFont = this.lyricTextFont;
     this.alTextColor = this.lyricTextColor;
-    this.alTextStyle = '_';
-    
+    this.alTextStyle = '<i>';
+
     this.translationTextSize = this.lyricTextSize;
     this.translationTextFont = this.lyricTextFont;
     this.translationTextColor = this.lyricTextColor;
-    this.translationTextStyle = '_';
-    
+    this.translationTextStyle = '<i>';
+
     this.dropCapTextSize = 64;
     this.dropCapTextFont = this.lyricTextFont;
     this.dropCapTextColor = this.lyricTextColor;
     this.dropCapPadding = 1; // minimum padding on either side of drop cap in staffIntervals
-    
+
     this.annotationTextSize = 13;
     this.annotationTextFont = this.lyricTextFont;
     this.annotationTextColor = this.lyricTextColor;
