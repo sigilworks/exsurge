@@ -1368,8 +1368,9 @@ export class TextElement extends ChantLayoutElement {
     width = Math.max(width, ...widths);
     if(returnBBox === true) {
       let height = bbox.height;
-      let y = bbox.y;
-      return { width, height, x: 0, y }
+      let y = bbox.y,
+          x = bbox.x;
+      return { width, height, x, y }
     } else {
       return width;
     }
@@ -1858,6 +1859,7 @@ export class Lyric extends TextElement {
 
   generateDropCap(ctxt) {
     if (this.dropCap) return this.dropCap;
+    // TODO: should really consider any opening tags and handle that properly for the drop cap
     var dropCap = this.dropCap = new DropCap(ctxt, this.originalText.substring(0, 1), this.sourceIndex);
     this.sourceIndex++;
 

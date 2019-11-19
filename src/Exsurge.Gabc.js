@@ -62,7 +62,7 @@ export class Gabc {
 
     // set the default clef
     ctxt.activeClef = Clef.default();
-    
+
     var mappings = this.createMappingsFromWords(ctxt, words, (clef) => ctxt.activeClef = clef);
 
     // always set the last notation to have a trailingSpace of 0. This makes layout for the last chant line simpler
@@ -126,7 +126,7 @@ export class Gabc {
 
       if (before.length)
         result.push(['-', before]);
-      
+
       if (after.length)
         result.push(['+', after]);
 
@@ -226,7 +226,7 @@ export class Gabc {
               if(curNotation.alText) {
                 for(l=0; l < curNotation.alText.length; ++l) {
                   curNotation.alText[l].sourceIndex += sourceIndexDiff;
-                }  
+                }
               }
             }
           }
@@ -292,7 +292,7 @@ export class Gabc {
     var makeAlText = function(text, sourceIndex) {
       return new AboveLinesText(ctxt, text, sourceIndex);
     };
-    
+
     while ((match = __syllablesRegex.exec(word)))
       matches.push(match);
 
@@ -307,7 +307,7 @@ export class Gabc {
       // new words reset the accidentals, per the Solesmes style (see LU xviij)
       // but we need to also make sure that there _is_ a word and that it has notes associated with it.
       if (currSyllable === 0 && /[a-z]/i.test(lyricText) && /[a-m]/i.test(notationData))
-        ctxt.activeClef.resetAccidentals();      
+        ctxt.activeClef.resetAccidentals();
 
       var items = this.parseNotations(ctxt, notationData, sourceIndex + match.index + match[1].length + 1);
 
@@ -354,7 +354,7 @@ export class Gabc {
 
       if (notationWithLyrics === null)
         return new ChantMapping(word, notations, sourceIndex);
-    
+
       if (alText.length)
         notationWithLyrics.alText = alText;
 
@@ -374,7 +374,7 @@ export class Gabc {
         continue;
 
       var proposedLyricType;
-      
+
       // if it's not a neume or a TextOnly notation, then make the lyrics a directive
       if (!cne.isNeume && cne.constructor !== TextOnly)
         proposedLyricType = LyricType.Directive;
@@ -438,7 +438,7 @@ export class Gabc {
 
           // strip out the brackets...is this better than string.replace?
           lyricText = lyricText.substring(0, centerStartIndex) +
-            lyricText.substring(centerStartIndex + 1, indexClosingBracket) + 
+            lyricText.substring(centerStartIndex + 1, indexClosingBracket) +
             lyricText.substring(indexClosingBracket + 1, lyricText.length);
         } else
           centerStartIndex = -1; // if there's no closing bracket, don't enable centering
@@ -695,7 +695,7 @@ export class Gabc {
             accidental.trailingSpace = ctxt.intraNeumeSpacing * ctxt.accidentalSpaceMultiplier;
 
             ctxt.activeClef.activeAccidental = accidental;
-            
+
             addNotation(accidental);
           } else if (atom.length > 1 && atom[0]==='{') {
             trailingSpace = 0;
@@ -723,7 +723,7 @@ export class Gabc {
   }
 
   static createNeumesFromNotes(ctxt, notes, finalTrailingSpace) {
-    
+
     var neumes = [];
     var firstNoteIndex = 0;
     var currNoteIndex = 0;
@@ -805,7 +805,7 @@ export class Gabc {
         return new Neumes.Punctum();
       },
       handle: function(currNote, prevNote, notesRemaining) {
-        
+
         if (currNote.shape) {
           var neume = new Neumes.Punctum();
           var state = createNeume(neume, false);
@@ -816,7 +816,7 @@ export class Gabc {
             neume.trailingSpace = 0;
           return state;
         }
-        
+
         if (currNote.staffPosition > prevNote.staffPosition) {
           if (currNote.ictus) currNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
             return podatusState;
@@ -852,7 +852,7 @@ export class Gabc {
         return new Neumes.Oriscus();
       },
       handle: function(currNote, prevNote) {
-        
+
         if (currNote.shape === NoteShape.Default) {
 
           if (currNote.staffPosition > prevNote.staffPosition) {
@@ -885,7 +885,7 @@ export class Gabc {
         if (currNote.staffPosition > prevNote.staffPosition) {
           if (currNote.ictus) currNote.ictus.positionHint = Markings.MarkingPositionHint.Above;
           if (prevNote.ictus) prevNote.ictus.positionHint = Markings.MarkingPositionHint.Below;
-          
+
           if (prevNote.shape === NoteShape.Oriscus)
             return salicusState;
           else
@@ -945,7 +945,7 @@ export class Gabc {
         return new Neumes.PesSubpunctis();
       },
       handle: function(currNote, prevNote) {
-    
+
         if (currNote.shape !== NoteShape.Inclinatum)
           return createNeume(new Neumes.PesSubpunctis(), false);
         else
@@ -1007,7 +1007,7 @@ export class Gabc {
         return new Neumes.Virga();
       },
       handle: function(currNote, prevNote) {
-    
+
         if (currNote.shape === NoteShape.Inclinatum && currNote.staffPosition < prevNote.staffPosition)
           return climacusState;
         else if (currNote.shape === NoteShape.Virga && currNote.staffPosition === prevNote.staffPosition)
@@ -1022,7 +1022,7 @@ export class Gabc {
         return new Neumes.Bivirga();
       },
       handle: function(currNote, prevNote) {
-    
+
         if (currNote.shape === NoteShape.Virga && currNote.staffPosition === prevNote.staffPosition)
           return createNeume(new Neumes.Trivirga(), true);
         else
@@ -1197,12 +1197,12 @@ export class Gabc {
             mark.positionHint = Markings.MarkingPositionHint.Above;
           else if (haveLookahead && lookahead === '0')
             mark.positionHint = Markings.MarkingPositionHint.Below;
-          
+
           note.morae.push(mark);
           break;
 
         case '_':
-    
+
           var episemaHadModifier = false;
 
           mark = new Markings.HorizontalEpisema(episemaNote);
@@ -1236,7 +1236,7 @@ export class Gabc {
 
             i++;
             haveLookahead = i + 1 < data.length;
-      
+
             if (haveLookahead)
               lookahead = data[i + 1];
           }
@@ -1263,7 +1263,7 @@ export class Gabc {
             mark.positionHint = Markings.MarkingPositionHint.Below;
           else if (note.shape === NoteShape.Virga) // ictus on a virga goes above by default:
             mark.positionHint = Markings.MarkingPositionHint.Above;
-          
+
           note.ictus = mark;
           break;
 
@@ -1289,7 +1289,7 @@ export class Gabc {
             note = newNote;
             episemaNoteIndex++; // since a new note was added, increase the index here
           }
-          
+
           note.shape = NoteShape.Stropha;
           break;
 
@@ -1490,7 +1490,7 @@ export class Gabc {
 
     var syllables = [];
     var matches = [];
-    
+
     syllables.wordLength = gabcWord.length;
 
     while ((match = __syllablesRegex.exec(gabcWord)))
