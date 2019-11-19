@@ -251,7 +251,7 @@ export class DoClef extends Clef {
   }
 }
 
-var __defaultDoClef = new DoClef(1, 2);
+var __defaultDoClef = new DoClef(3, 2);
 
 export class FaClef extends Clef {
 
@@ -407,14 +407,13 @@ export class ChantScore {
     // find the starting clef...
     // start with a default clef in case the notations don't provide one.
     this.startingClef = null;
-    var defaultClef = new DoClef(1, 2);
 
     for (i = 0; i < this.notations.length; i++) {
 
       // if there are neumes before the clef, then we just keep the default clef above
       if (this.notations[i].isNeume) {
-        this.startingClef = defaultClef;
-        break;        
+        this.startingClef = Clef.default();
+        break;
       }
 
       // otherwise, if we find a clef, before neumes then we use that as our default
@@ -431,7 +430,7 @@ export class ChantScore {
     // if we've reached this far and we *still* don't have a clef, then there aren't even
     // any neumes in the score. still, set the default clef just for good measure
     if (!this.startingClef)
-      this.startingClef = defaultClef;
+      this.startingClef = Clef.default();
 
     // update drop cap
     if (this.useDropCap)
@@ -441,6 +440,7 @@ export class ChantScore {
   }
 
   recreateDropCap(ctxt) {
+    this.dropCap = null;
 
     // find the first notation with lyrics to use
     for (var i = 0; i < this.notations.length; i++) {
@@ -448,7 +448,7 @@ export class ChantScore {
         this.dropCap = this.notations[i].lyrics[0].generateDropCap(ctxt);
         return;
       }
-    } 
+    }
   }
 
   // this is the the synchronous version of performLayout that
@@ -625,7 +625,7 @@ export class ChantScore {
 
     node.source = this;
     this.svg = node;
-    
+
     return node;
   }
 
@@ -738,7 +738,7 @@ export class ChantScore {
     else
       data.annotation = "";
 
-    
+
 
     return data;
   }

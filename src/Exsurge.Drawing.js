@@ -96,7 +96,7 @@ export let GlyphCode = {
 
 export var QuickSvg = {
 
-  // namespaces  
+  // namespaces
   ns: 'http://www.w3.org/2000/svg',
   xmlns: 'http://www.w3.org/2000/xmlns/',
   xlink: 'http://www.w3.org/1999/xlink',
@@ -109,7 +109,7 @@ export var QuickSvg = {
   svg: function(width, height) {
     var node = document.createElementNS(this.ns,'svg');
 
-    node.setAttribute('xmlns', this.ns); 
+    node.setAttribute('xmlns', this.ns);
     node.setAttribute('version', '1.1');
     node.setAttributeNS(this.xmlns, 'xmlns:xlink', this.xlink);
 
@@ -128,7 +128,7 @@ export var QuickSvg = {
 
       while (node.hasChildNodes())
         node.removeChild(node.lastChild);
-      
+
       node.appendChild(defs);
     }
 
@@ -270,7 +270,7 @@ export var QuickSvg = {
       // transplant nodes
       for (var i = 0, il = well.firstChild.childNodes.length; i < il; i++)
         container.appendChild(well.firstChild.firstChild)
-      
+
       return container;
     }
   },
@@ -399,7 +399,7 @@ export class ChantContext {
     // staff line size of 0.5 in. Really what we should do is scale the punctum size based
     // on the text metrics, right? 1 punctum ~ x height size?
     this.setGlyphScaling(1.0 / 16.0);
-    
+
     // minimum space between puncta of different syllables, in multiples of this.intraNeumeSpacing
     this.interSyllabicMultiplier = 2.5;
 
@@ -516,8 +516,12 @@ export class ChantContext {
     this.minLyricWordSpacing = multiplier * this.hyphenWidth;
   }
 
+  setStaffHeight(staffHeight) {
+    setGlyphScaling(staffHeight / 600);
+  }
+
   setGlyphScaling(glyphScaling) {
-    this.glyphScaling = glyphScaling; 
+    this.glyphScaling = glyphScaling;
 
     this.staffInterval = this.glyphPunctumWidth * this.glyphScaling;
 
@@ -1001,7 +1005,7 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
     // up it here.
     var dp = 2;
     return   "M " + x1.toFixed(dp)  + " " + y.toFixed(dp) +
-            " C " + cx1.toFixed(dp) + " " + cy.toFixed(dp) + 
+            " C " + cx1.toFixed(dp) + " " + cy.toFixed(dp) +
             " "   + cx2.toFixed(dp) + " " + cy.toFixed(dp) +
             " "   + x2.toFixed(dp)  + " " + y.toFixed(dp);
   }
@@ -1117,10 +1121,10 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
     // up it here.
     var dp = 2;
     return   "M " + x1.toFixed(dp)  + " " + y.toFixed(dp) +
-            " Q " + x1.toFixed(dp) + " " + qy1.toFixed(dp) + " " + qx2.toFixed(dp) + " " + qy2.toFixed(dp) + 
+            " Q " + x1.toFixed(dp) + " " + qy1.toFixed(dp) + " " + qx2.toFixed(dp) + " " + qy2.toFixed(dp) +
             " T " + tx1.toFixed(dp) + " " + ty1.toFixed(dp) +
             " M " + x2.toFixed(dp)  + " " + y.toFixed(dp) +
-            " Q " + x2.toFixed(dp) + " " + qy3.toFixed(dp) + " " + qx4.toFixed(dp) + " " + qy4.toFixed(dp) + 
+            " Q " + x2.toFixed(dp) + " " + qy3.toFixed(dp) + " " + qx4.toFixed(dp) + " " + qy4.toFixed(dp) +
             " T " + tx1.toFixed(dp) + " " + ty1.toFixed(dp);
   }
 }
@@ -1766,7 +1770,7 @@ export class Lyric extends TextElement {
         }
       });
     }
-      
+
     super.recalculateMetrics(ctxt);
 
     this.widthWithoutConnector = this.bounds.width;
@@ -1823,7 +1827,7 @@ export class Lyric extends TextElement {
 
         // Non-directive elements are lined up to the chant notation based on vowel segments,
         var result = activeLanguage.findVowelSegment(this.text, startIndex);
-      
+
         if (result.found !== true) {
           var match = this.text.slice(startIndex).match(/[a-z]+/i);
           if(match) {
@@ -2136,7 +2140,7 @@ export class ChantNotationElement extends ChantLayoutElement {
 
   // some subclasses have internal dependencies on other notations (for example,
   // a custos can depend on a later neume which it uses to set its height).
-  // subclasses can override this function so that when the notations are 
+  // subclasses can override this function so that when the notations are
   // altered, the subclass can correctly invalidate (and later restore) its own
   // depedencies
   resetDependencies() {

@@ -75,9 +75,8 @@ export class ChantLine extends ChantLayoutElement {
   performLayout(ctxt) {
 
     // start off with a rectangle that holds at least the four staff lines
-    // we fudge the 3 to 3.1 so that the svg doesn't crop off the upper/lower staff lines...
-    this.notationBounds = new Rect(this.staffLeft, -(3.1 + ctxt.minSpaceAboveStaff) * ctxt.staffInterval,
-      this.staffRight - this.staffLeft, (6.2 + ctxt.minSpaceAboveStaff + ctxt.minSpaceBelowStaff) * ctxt.staffInterval);
+    this.notationBounds = new Rect(this.staffLeft, -(ctxt.staffLineWeight/2 + 3 + ctxt.minSpaceAboveStaff) * ctxt.staffInterval,
+      this.staffRight - this.staffLeft, (ctxt.staffLineWeight + 6 + ctxt.minSpaceAboveStaff + ctxt.minSpaceBelowStaff) * ctxt.staffInterval);
 
     // run through all the elements of the line and calculate the bounds of the notations,
     // as well as the bounds of each text track we will use
@@ -166,7 +165,7 @@ export class ChantLine extends ChantLayoutElement {
     var extraTextOnlyLyricIndex = this.extraTextOnlyLyricIndex;
     if(this.extraTextOnlyIndex === null) {
       // even if extraTextOnlyIndex is null, there might be extra lines on the last lyric if it is TextOnly:
-      let lastNotation = notations[lastNeumeIndex - 1];
+      let lastNotation = notations[lastNeumeIndex - 1] || {};
       if(lastNotation.constructor === ChantLineBreak) lastNotation = notations[lastNeumeIndex - 2];
       if(lastNotation.constructor === TextOnly && lastNotation.lyrics.length === 1 && lastNotation.lyrics[0].bounds.height > this.lyricLineHeight) {
         this.extraTextOnlyHeight = lastNotation.lyrics[extraTextOnlyLyricIndex].bounds.height - this.lyricLineHeight;
@@ -259,7 +258,7 @@ export class ChantLine extends ChantLayoutElement {
     }
     // Ensure that there is at least minSpaceBelowStaff below the lowest staff line:
     this.notationBounds.union(
-      new Rect(0, 0, 0, (3.1 + ctxt.minSpaceBelowStaff) * ctxt.staffInterval)
+      new Rect(0, 0, 0, (3 + (ctxt.staffLineWeight / 2) + ctxt.minSpaceBelowStaff) * ctxt.staffInterval)
     );
     var totalHeight = this.notationBounds.height;
 
@@ -572,7 +571,7 @@ export class ChantLine extends ChantLayoutElement {
     // set up the clef...
     // if the first notation on the line is a starting clef, then we treat it a little differently...
     // the clef becomes this line's starting clef and we skip over the clef in the notations array
-    if (notations[newElementStart].isClef) {
+    if (notations.length && notations[newElementStart].isClef) {
       ctxt.activeClef = notations[newElementStart].clone();
       newElementStart++;
       this.notationsStartIndex++;
@@ -633,7 +632,19 @@ export class ChantLine extends ChantLayoutElement {
 
       // First check if we're already beyond the rightNotationBoundary (due to condensing that hasn't yet happened) and have a good element to end with
       // but if we have 2 or fewer elements, or if the current element is a line break or a custos, we'll go ahead and try for them anyway.
-      var forceBreak = (!curr.isDivider && curr.constructor !== ChantLineBreak && curr.constructor !== Custos && !(curr.constructor === TextOnly && /^[*†]$/.test(curr.lyrics[0].text)) && lastNotationIndex - i > 1 && !prevNeume.keepWithNext && prevNeume.bounds.right() >= rightNotationBoundary);
+      var forceBreak =
+        !curr.isDivider &&
+        curr.constructor !== ChantLineBreak &&
+        curr.constructor !== Custos &&
+        !(
+          curr.constructor === TextOnly &&
+          curr.hasLyrics() &&
+          /^[*†]$/.test(curr.lyrics[0].text)
+        ) &&
+        lastNotationIndex - i > 1 &&
+        !prevNeume.keepWithNext &&
+        prevNeume.bounds.right() >= rightNotationBoundary;
+
 
       // also force a break if we've run into extra TextOnly elements, but the current notation is not a TextOnly and has lyrics
       forceBreak = forceBreak || (this.extraTextOnlyIndex !== null && curr.constructor !== TextOnly && curr.constructor !== ChantLineBreak && curr.constructor !== Custos && curr.hasLyrics());
@@ -819,8 +830,8 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine - 1;
-    var last = notations[lastIndex];
-    while(lastIndex && (last.constructor === ChantLineBreak || last.constructor === Custos || last.constructor === TextOnly)) {
+    var last = notations[lastIndex] || {};
+    while(lastIndex > 0 && (last.constructor === ChantLineBreak || last.constructor === Custos || last.constructor === TextOnly)) {
       last = notations[--lastIndex];
     }
     var isLastLine = this.notationsStartIndex + this.numNotationsOnLine === notations.length;
