@@ -517,7 +517,7 @@ export class ChantContext {
   }
 
   setStaffHeight(staffHeight) {
-    setGlyphScaling(staffHeight / 600);
+    this.setGlyphScaling(staffHeight / 600);
   }
 
   setGlyphScaling(glyphScaling) {
@@ -526,7 +526,7 @@ export class ChantContext {
     this.staffInterval = this.glyphPunctumWidth * this.glyphScaling;
 
     // setup the line weights for the various elements.
-    this.staffLineWeight = Math.round(this.staffInterval / 8);
+    this.staffLineWeight = this.staffInterval / 8;
     this.neumeLineWeight = this.staffLineWeight; // the weight of connecting lines in the glyphs.
     this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
     this.episemaLineWeight = this.neumeLineWeight * 1.25; // of horizontal episemata

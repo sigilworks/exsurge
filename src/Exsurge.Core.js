@@ -37,11 +37,11 @@ export var Units = {
   ToDeviceIndependent: function (n, inputUnits) {
     switch (inputUnits) {
       case Centimeters:
-        return n * DIU_PER_CENTIMETER;
+        return n * Units.DIU_PER_CENTIMETER;
       case Millimeters:
-        return n * DIU_PER_CENTIMETER / 10;
+        return n * Units.DIU_PER_CENTIMETER / 10;
       case Inches:
-        return n * DIU_PER_INCH;
+        return n * Units.DIU_PER_INCH;
       default:
         return n;
     }
@@ -50,11 +50,11 @@ export var Units = {
   FromDeviceIndependent: function (n, outputUnits) {
     switch (outputUnits) {
       case Centimeters:
-        return n / DIU_PER_CENTIMETER;
+        return n / Units.DIU_PER_CENTIMETER;
       case Millimeters:
-        return n / DIU_PER_CENTIMETER * 10;
+        return n / Units.DIU_PER_CENTIMETER * 10;
       case Inches:
-        return n / DIU_PER_INCH;
+        return n / Units.DIU_PER_INCH;
       default:
         return n;
     }
@@ -65,31 +65,31 @@ export var Units = {
     switch (s.ToLower()) {
       case "in":
       case "inches":
-        return Inches;
+        return Units.Inches;
 
       case "cm":
       case "centimeters":
-        return Centimeters;
+        return Units.Centimeters;
 
       case "mm":
       case "millimeters":
-        return Millimeters;
+        return Units.Millimeters;
 
       case "di":
       case "device-independent":
-        return DeviceIndepenedent;
+        return Units.DeviceIndepenedent;
 
       default:
-        return DeviceIndepenedent;
+        return Units.DeviceIndepenedent;
     }
   },
 
   UnitsTypeToString: function(units) {
     switch (units) {
-      case Inches: return "in";
-      case Centimeters: return "cm";
-      case Millimeters: return "mm";
-      case DeviceIndepenedent: return "device-independent";
+      case Units.Inches: return "in";
+      case Units.Centimeters: return "cm";
+      case Units.Millimeters: return "mm";
+      case Units.DeviceIndepenedent: return "device-independent";
       default: return "device-independent";
     }
   }
@@ -289,7 +289,7 @@ export class Pitch {
     this.step = step;
     this.octave = octave;
   }
-  
+
   toInt() {
     return this.octave * 12 + this.step;
   }

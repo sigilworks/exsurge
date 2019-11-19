@@ -58,7 +58,7 @@ export class English extends Language {
   constructor() {
     super("English");
   }
-  
+
   /**
    * @param {String} s the string to search
    * @param {Number} startIndex The index at which to start searching for a vowel in the string
@@ -572,7 +572,7 @@ export class Spanish extends Language {
         if (d[0] === 'u' && index > 0) {
           var tripthong = s.substr(index - 1, 3).toLowerCase();
 
-          for (j = 0, endj = this.uDiphthongExceptions.length; i < endj; j++) {
+          for (let j = 0, endj = this.uDiphthongExceptions.length; i < endj; j++) {
             if (tripthong === this.uDiphthongExceptions[j]) {
               // search from after the u...
               return this.findVowelSegment(s, index + 1);

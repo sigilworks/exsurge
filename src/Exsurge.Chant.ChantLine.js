@@ -754,7 +754,7 @@ export class ChantLine extends ChantLayoutElement {
         }
 
         // if for some reason not a single notation can fit on the line, we'd better put it on anyway, to avoid an infinite loop:
-        if(this.numNotationsOnLine === 0) numNotationsOnLine = 1;
+        if(this.numNotationsOnLine === 0) this.numNotationsOnLine = 1;
 
         // determine the neumes we can space apart, if we do end up justifying
         curr = this.findNeumesToJustify(prevLyrics);

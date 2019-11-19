@@ -435,6 +435,8 @@ export class ChantScore {
     // update drop cap
     if (this.useDropCap)
       this.recreateDropCap(ctxt);
+    else
+      this.dropCap = null;
 
     this.needsLayout = true;
   }
@@ -445,7 +447,14 @@ export class ChantScore {
     // find the first notation with lyrics to use
     for (var i = 0; i < this.notations.length; i++) {
       if (this.notations[i].hasLyrics() && this.notations[i].lyrics[0] !== null) {
-        this.dropCap = this.notations[i].lyrics[0].generateDropCap(ctxt);
+        let lyrics = this.notations[i].lyrics[0];
+        if(this.useDropCap) {
+          this.dropCap = lyrics.generateDropCap(ctxt);
+        } else {
+          lyrics.dropCap = null;
+          lyrics.generateSpansFromText(ctxt, lyrics.originalText);
+          lyrics.recalculateMetrics(ctxt);
+        }
         return;
       }
     }
@@ -713,7 +722,7 @@ export class ChantScore {
     return fragment;
   }
 
-  unserializeFromJson(data) {
+  unserializeFromJson(data, ctxt) {
     this.autoColoring = data['auto-coloring'];
 
     if (data.annotation !== null && data.annotation !== "") {
