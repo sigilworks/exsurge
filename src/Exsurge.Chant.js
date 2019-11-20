@@ -447,14 +447,15 @@ export class ChantScore {
     // find the first notation with lyrics to use
     for (var i = 0; i < this.notations.length; i++) {
       if (this.notations[i].hasLyrics() && this.notations[i].lyrics[0] !== null) {
-        let lyrics = this.notations[i].lyrics[0];
+        let notation = this.notations[i],
+            lyrics = notation.lyrics[0];
         if(this.useDropCap) {
           this.dropCap = lyrics.generateDropCap(ctxt);
         } else {
           lyrics.dropCap = null;
           lyrics.generateSpansFromText(ctxt, lyrics.originalText);
-          lyrics.recalculateMetrics(ctxt);
         }
+        notation.needsLayout = true;
         return;
       }
     }
@@ -463,9 +464,9 @@ export class ChantScore {
   // this is the the synchronous version of performLayout that
   // process everything without yielding to any other workers/threads.
   // good for server side processing or very small chant pieces.
-  performLayout(ctxt) {
+  performLayout(ctxt, force) {
 
-    if (this.needsLayout === false)
+    if (!force && this.needsLayout === false)
       return; // nothing to do here!
 
     ctxt.updateHyphenWidth();
@@ -483,7 +484,7 @@ export class ChantScore {
 
     for (var i = 0; i < this.notations.length; i++) {
       var notation = this.notations[i];
-      if(notation.needsLayout) {
+      if(force || notation.needsLayout) {
         ctxt.currNotationIndex = i;
         notation.performLayout(ctxt);
       }

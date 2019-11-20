@@ -36,7 +36,7 @@ function getFontFilenameForProperties(properties = {}, url = '{}') {
 
 
 // load in the web font for special chant characters here:
-var __exsurgeCharactersFont = require("url?limit=30000!../assets/fonts/ExsurgeChar.otf")
+// var __exsurgeCharactersFont = require("url?limit=30000!../assets/fonts/ExsurgeChar.otf")
 
 const canAccessDOM = typeof document !== 'undefined';
 
@@ -526,7 +526,7 @@ export class ChantContext {
     this.staffInterval = this.glyphPunctumWidth * this.glyphScaling;
 
     // setup the line weights for the various elements.
-    this.staffLineWeight = this.staffInterval / 8;
+    this.staffLineWeight = Math.round(5 * this.staffInterval / 8) / 5;
     this.neumeLineWeight = this.staffLineWeight; // the weight of connecting lines in the glyphs.
     this.dividerLineWeight = this.neumeLineWeight; // of quarter bar, half bar, etc.
     this.episemaLineWeight = this.neumeLineWeight * 1.25; // of horizontal episemata
@@ -557,7 +557,7 @@ export class ChantContext {
       styleElement = document.createElement('style');
       styleElement.id = 'exsurge-fonts';
 
-      styleElement.appendChild(document.createTextNode("@font-face{font-family: 'Exsurge Characters';font-weight: normal;font-style: normal;src: url(" + __exsurgeCharactersFont + ") format('opentype');}"));
+      // styleElement.appendChild(document.createTextNode("@font-face{font-family: 'Exsurge Characters';font-weight: normal;font-style: normal;src: url(" + __exsurgeCharactersFont + ") format('opentype');}"));
 
       document.head.appendChild(styleElement);
     }
@@ -831,36 +831,36 @@ export class GlyphVisualizer extends ChantLayoutElement {
 
   setGlyph(ctxt, glyphCode) {
 
-    if (this.glyphCode === glyphCode)
-      return;
+    if (this.glyphCode !== glyphCode) {
 
-    if (typeof glyphCode === 'undefined' || glyphCode === null || glyphCode === "")
-      this.glyphCode = GlyphCode.None;
-    else
-      this.glyphCode = glyphCode;
+      if (typeof glyphCode === 'undefined' || glyphCode === null || glyphCode === "")
+        this.glyphCode = GlyphCode.None;
+      else
+        this.glyphCode = glyphCode;
 
-    this.glyph = Glyphs[this.glyphCode];
+      this.glyph = Glyphs[this.glyphCode];
 
-    // if this glyph hasn't been used yet, then load it up in the defs section for sharing
-    if (!ctxt.defs.hasOwnProperty(this.glyphCode)) {
-      var makeDef = () => {
-        var options = {
-          id: this.glyphCode,
-          'class': 'glyph'
+      // if this glyph hasn't been used yet, then load it up in the defs section for sharing
+      if (!ctxt.defs.hasOwnProperty(this.glyphCode)) {
+        var makeDef = () => {
+          var options = {
+            id: this.glyphCode,
+            'class': 'glyph'
+          };
+          if(ctxt.scaleDefs === true) {
+            options.transform = 'scale(' + ctxt.glyphScaling + ')';
+          }
+          // create the ref
+          ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', options, QuickSvg.svgFragmentForGlyph(this.glyph));
+
+          if(ctxt.defsNode) ctxt.defsNode.appendChild( QuickSvg.createNode('g', options, QuickSvg.nodesForGlyph(this.glyph)));
         };
-        if(ctxt.scaleDefs === true) {
-          options.transform = 'scale(' + ctxt.glyphScaling + ')';
-        }
-        // create the ref
-        ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', options, QuickSvg.svgFragmentForGlyph(this.glyph));
+        makeDef();
+        ctxt.makeDefs.push(makeDef);
+      }
 
-        if(ctxt.defsNode) ctxt.defsNode.appendChild( QuickSvg.createNode('g', options, QuickSvg.nodesForGlyph(this.glyph)));
-      };
-      makeDef();
-      ctxt.makeDefs.push(makeDef);
+      this.align = this.glyph.align;
     }
-
-    this.align = this.glyph.align;
 
     this.origin.x = this.glyph.origin.x * ctxt.glyphScaling;
     this.origin.y = this.glyph.origin.y * ctxt.glyphScaling;
@@ -872,7 +872,7 @@ export class GlyphVisualizer extends ChantLayoutElement {
   }
 
   setStaffPosition(ctxt, staffPosition) {
-    this.bounds.y += ctxt.calculateHeightFromStaffPosition(staffPosition);
+    this.bounds.y = ctxt.calculateHeightFromStaffPosition(staffPosition) - this.origin.y;
   }
 
   draw(ctxt) {
