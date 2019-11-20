@@ -1270,7 +1270,11 @@ export class TextElement extends ChantLayoutElement {
     if(properties['font-style'] === 'italic') font += 'italic ';
     if(properties['font-variant'] === 'small-caps') font += 'small-caps ';
     if(properties['font-weight'] === 'bold') font += 'bold ';
-    font += (properties['font-size'] || `${this.fontSize(ctxt) * (this.resize||1)}px`) + ' ';
+    let fontSize = parseFloat(properties['font-size']) || this.fontSize(ctxt);
+    if (/%$/.test(properties["font-size"])) {
+      fontSize *= this.fontSize(ctxt) / 100;
+    }
+    font += `${fontSize * (this.resize||1)}px `;
     font += properties['font-family'] || this.fontFamily(ctxt);
     return font;
   }
@@ -1343,6 +1347,9 @@ export class TextElement extends ChantLayoutElement {
           options.features.smcp = true;
         }
         let spanFontSize = parseFloat(span.properties['font-size']) || fontSize;
+        if (/%$/.test(span.properties["font-size"])) {
+          spanFontSize *= fontSize / 100;
+        }
         let subBbox = font.getPath(myText, width, fontSize * (numLines - 1), spanFontSize, options).getBoundingBox();
         let subWidth = font.getAdvanceWidth(myText, spanFontSize, options);
 
