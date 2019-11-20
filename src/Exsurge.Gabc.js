@@ -25,7 +25,7 @@
 //
 
 import { Units, Pitch, Point, Rect, Margins, Size, Step } from './Exsurge.Core.js'
-import { LyricType, Lyric, LyricArray, AboveLinesText, TranslationText } from './Exsurge.Drawing.js'
+import { LyricType, Lyric, LyricArray, AboveLinesText, TranslationText, DefaultTrailingSpace } from './Exsurge.Drawing.js'
 import { Note, LiquescentType, NoteShape, NoteShapeModifiers, ChantMapping, ChantScore, ChantDocument, Clef, DoClef, FaClef, TextOnly, ChantLineBreak } from './Exsurge.Chant.js'
 import * as Markings from './Exsurge.Chant.Markings.js'
 import * as Signs from './Exsurge.Chant.Signs.js'
@@ -49,6 +49,9 @@ var __bracketedCommandRegex = /^([a-z]+):(.*)/
 //  4. { or } to indicate opening/closing (this group will be null if the metric version is used)
 //  5. a float indicating the millimeter length of the brace (not supported yet)
 var __braceSpecRegex = /([ou])(b|cb|cba):([01])(?:([{}])|;(\d*(?:\.\d+)?)mm)/;
+
+const TrailingSpaceForAccidental = ctxt => ctxt.intraNeumeSpacing * ctxt.accidentalSpaceMultiplier;
+const TrailingSpaceMultiple = multiplier => ctxt => ctxt.intraNeumeSpacing * multiplier;
 
 export class Gabc {
 
@@ -506,7 +509,7 @@ export class Gabc {
     var baseSourceIndex = sourceIndex;
     var notations = [];
     var notes = [];
-    var trailingSpace = -1;
+    var trailingSpace = DefaultTrailingSpace;
 
     var addNotation = (notation) => {
 
@@ -522,7 +525,7 @@ export class Gabc {
       }
 
       // reset the trailing space
-      trailingSpace = -1;
+      trailingSpace = DefaultTrailingSpace;
 
       // then, if we're passed a notation, let's add it
       // also, perform chant logic here
@@ -531,13 +534,13 @@ export class Gabc {
         notation.sourceIndex = sourceIndex;
         if (notation.isClef) {
           ctxt.activeClef = notation;
-          if (prevNotation && prevNotation.trailingSpace < 0 && prevNotation.isDivider) {
-            prevNotation.trailingSpace = ctxt.intraNeumeSpacing * ctxt.accidentalSpaceMultiplier;
+          if (prevNotation && prevNotation.trailingSpace.isDefault && prevNotation.isDivider) {
+            prevNotation.trailingSpace = TrailingSpaceForAccidental;
           }
         } else if (notation.isAccidental) {
           ctxt.activeClef.activeAccidental = notation;
-        } else if (notation.trailingSpace < 0 && notation instanceof Signs.Custos) {
-          notation.trailingSpace = ctxt.intraNeumeSpacing * ctxt.accidentalSpaceMultiplier;
+        } else if (notation.trailingSpace.isDefault && notation instanceof Signs.Custos) {
+          notation.trailingSpace = TrailingSpaceForAccidental;
         }
         else if (notation.resetsAccidentals)
           ctxt.activeClef.resetAccidentals();
@@ -652,7 +655,7 @@ export class Gabc {
         case ' ':
           // fixme: is this correct? logically what is the difference in gabc
           // between putting a space between notes vs putting '//' between notes?
-          trailingSpace = ctxt.intraNeumeSpacing * 2;
+          trailingSpace = TrailingSpaceMultiple(2);
           addNotation(null);
           break;
 
@@ -660,7 +663,7 @@ export class Gabc {
         default:
           // might be a number of slashes, a custos, might be an accidental, or might be a note
           if (atom[0] === '/') {
-            trailingSpace = ctxt.intraNeumeSpacing * atom.length;
+            trailingSpace = TrailingSpaceMultiple(atom.length);
             addNotation(null);
           } else if (atom.length > 1 && atom[1] === '+') {
             // custos
@@ -692,7 +695,7 @@ export class Gabc {
             var accidental = new Signs.Accidental(noteArray[0].staffPosition, accidentalType);
             accidental.pitch = this.gabcHeightToExsurgePitch(ctxt.activeClef, atom[0]);
             accidental.sourceIndex = sourceIndex;
-            accidental.trailingSpace = ctxt.intraNeumeSpacing * ctxt.accidentalSpaceMultiplier;
+            accidental.trailingSpace = TrailingSpaceForAccidental;
 
             ctxt.activeClef.activeAccidental = accidental;
 
@@ -771,7 +774,7 @@ export class Gabc {
         if (notes[currNoteIndex+1].shape === NoteShape.Quilisma)
           neume.trailingSpace = 0;
         else {
-          neume.trailingSpace = ctxt.intraNeumeSpacing;
+          neume.trailingSpace = TrailingSpaceMultiple(1);
           neume.allowLineBreakBeforeNext = true;
         }
       }
@@ -1120,11 +1123,11 @@ export class Gabc {
     }
 
     if (neumes.length > 0) {
-      if (finalTrailingSpace >= 0) {
+      if (!finalTrailingSpace.isDefault) {
         neumes[neumes.length - 1].trailingSpace = finalTrailingSpace;
         neumes[neumes.length - 1].keepWithNext = true;
 
-        if (finalTrailingSpace >= ctxt.intraNeumeSpacing)
+        if (finalTrailingSpace > 0)
           neumes[neumes.length - 1].allowLineBreakBeforeNext = neumes[neumes.length - 1].keepWithNext = true;
       }
     }

@@ -856,7 +856,7 @@ export class ChantLine extends ChantLayoutElement {
             // Put the custos at the very end of the line
             this.custos.bounds.x = this.staffRight - this.custos.bounds.width - this.custos.leadingSpace;
           } else {
-            this.custos.bounds.x = prevNeume.bounds.right() + prevNeume.trailingSpace;
+            this.custos.bounds.x = prevNeume.bounds.right() + prevNeume.calculatedTrailingSpace;
           }
           // nothing more to see here...
           break;
@@ -1009,7 +1009,7 @@ export class ChantLine extends ChantLayoutElement {
       lastIndex = this.extraTextOnlyIndex;
       last = notations[lastIndex - 1];
     }
-    var lastRightNeume = last? last.bounds.right() + last.trailingSpace : 0;
+    var lastRightNeume = last? last.bounds.right() + last.calculatedTrailingSpace : 0;
     var lastLyrics = this.lastLyricsBeforeTextOnly || this.lastLyrics;
     var lastRightLyric = lastLyrics.length? LyricArray.getRight(lastLyrics) : 0;
 
@@ -1035,7 +1035,7 @@ export class ChantLine extends ChantLayoutElement {
     // move the custos over.
     // We do this first so that if it opens up any new whitespace, that gets accounted for when we do the justification
     var lastNotation = notations[this.notationsStartIndex + this.numNotationsOnLine - 1];
-    var extraSpaceBeforeCustos = this.staffRight < Infinity && this.custos && lastNotation.keepWithNext && (this.custos.bounds.x - lastNotation.bounds.right() - lastNotation.trailingSpace);
+    var extraSpaceBeforeCustos = this.staffRight < Infinity && this.custos && lastNotation.keepWithNext && (this.custos.bounds.x - lastNotation.bounds.right() - lastNotation.calculatedTrailingSpace);
     if (extraSpaceBeforeCustos > 0) {
       // first, shrink the hyphen(s) if applicable, to move the neumes closer to the custos:
       i = 0;
@@ -1051,7 +1051,7 @@ export class ChantLine extends ChantLayoutElement {
         }
         ++i;
       }
-      this.custos.bounds.x = lastNotation.bounds.right() + lastNotation.trailingSpace;
+      this.custos.bounds.x = lastNotation.bounds.right() + lastNotation.calculatedTrailingSpace;
     }
 
     // first step of justification is to determine how much space we have to use up
@@ -1113,7 +1113,7 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     if (extraSpaceBeforeCustos > 0) {
-      this.custos.bounds.x = lastNotation.bounds.right() + lastNotation.trailingSpace;
+      this.custos.bounds.x = lastNotation.bounds.right() + lastNotation.calculatedTrailingSpace;
     }
   }
 
@@ -1388,16 +1388,16 @@ export class ChantLine extends ChantLayoutElement {
       curr.bounds.x = prev.bounds.right();
     }
 
-    if ((curr.constructor === TextOnly && this.extraTextOnlyIndex === null) || (!curr.hasLyrics() && prev.trailingSpace < 0)) {
+    if ((curr.constructor === TextOnly && this.extraTextOnlyIndex === null) || (!curr.hasLyrics() && prev.calculatedTrailingSpace < 0)) {
       // We transfer over the trailing space from the previous neume if the current neume is text only,
       // so that the text only neume has a better chance at not needing a connector.
-      curr.trailingSpace = prev.trailingSpace;
-      if (curr.hasLyrics()) curr.trailingSpace -= curr.lyrics[0].bounds.width;
+      curr.calculatedTrailingSpace = prev.calculatedTrailingSpace;
+      if (curr.hasLyrics()) curr.calculatedTrailingSpace -= curr.lyrics[0].bounds.width;
       if(curr.constructor === TextOnly && curr.lyrics.length === 1) {
         curr.lyrics[0].setMaxWidth(ctxt, this.staffRight, this.staffRight - LyricArray.getRight(prevLyrics) - ctxt.minLyricWordSpacing);
       }
     } else if (!fixedX) {
-      curr.bounds.x += prev.trailingSpace;
+      curr.bounds.x += prev.calculatedTrailingSpace;
     }
 
     if(curr.hasLyrics() && !prev.isDivider && !prev.isAccidental && this.numNotationsOnLine > 0 &&
@@ -1418,7 +1418,7 @@ export class ChantLine extends ChantLayoutElement {
     // current notation with lyrics is in the bounds of the line
     if (prevLyrics.length === 0) {
 
-      var maxRight = curr.bounds.right() + curr.trailingSpace;
+      var maxRight = curr.bounds.right() + curr.calculatedTrailingSpace;
 
       // if the lyric left is negative, then offset the neume appropriately
       for (i = 0; i < curr.lyrics.length; i++) {
@@ -1453,7 +1453,7 @@ export class ChantLine extends ChantLayoutElement {
     // if the curr notation has no lyrics, then simply check whether there is enough room
     if (curr.hasLyrics() === false) {
 
-      if (curr.bounds.right() + curr.trailingSpace > rightNotationBoundary + condensableSpaces.sum + space.condensable)
+      if (curr.bounds.right() + curr.calculatedTrailingSpace > rightNotationBoundary + condensableSpaces.sum + space.condensable)
         return false;
       condensableSpaces.push(space);
       condensableSpaces.sum += space.condensable;
@@ -1566,11 +1566,11 @@ export class ChantLine extends ChantLayoutElement {
       }
     }
 
-    if (curr.bounds.right() + curr.trailingSpace < (rightNotationBoundary + condensableSpaces.sum + space.condensable) &&
+    if (curr.bounds.right() + curr.calculatedTrailingSpace < (rightNotationBoundary + condensableSpaces.sum + space.condensable) &&
         LyricArray.getRight(curr.lyrics, true) <= this.staffRight + condensableSpaces.sum + space.condensable) {
       if(prev.isAccidental) {
         // move the previous accidental up next to the current note:
-        let shift = (curr.bounds.x - prev.bounds.width - prev.trailingSpace) - prev.bounds.x;
+        let shift = (curr.bounds.x - prev.bounds.width - prev.calculatedTrailingSpace) - prev.bounds.x;
         prev.bounds.x += shift;
         if(Math.abs(shift) > 0.1) {
           let lastCondensable = condensableSpaces[condensableSpaces.length - 1];

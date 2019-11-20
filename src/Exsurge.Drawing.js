@@ -40,6 +40,9 @@ function getFontFilenameForProperties(properties = {}, url = '{}') {
 
 const canAccessDOM = typeof document !== 'undefined';
 
+export const DefaultTrailingSpace = ctxt => ctxt.intraNeumeSpacing * ctxt.interSyllabicMultiplier;
+DefaultTrailingSpace.isDefault = true;
+
 export let GlyphCode = {
 
   None: "None",
@@ -2053,7 +2056,7 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     //double
     this.leadingSpace = 0.0;
-    this.trailingSpace = -1; // if less than zero, this is automatically calculated at layout time
+    this.trailingSpace = DefaultTrailingSpace;
     this.keepWithNext = false;
     this.needsLayout = true;
 
@@ -2128,8 +2131,9 @@ export class ChantNotationElement extends ChantLayoutElement {
   // all valid and prepared for higher level layout.
   performLayout(ctxt) {
 
-    if (this.trailingSpace < 0)
-      this.trailingSpace = ctxt.intraNeumeSpacing * ctxt.interSyllabicMultiplier;
+    if (typeof this.trailingSpace === "function")
+      this.calculatedTrailingSpace = this.trailingSpace(ctxt);
+    else this.calculatedTrailingSpace = this.trailingSpace;
 
     // reset the bounds and the staff notations before doing a layout
     this.visualizers = [];

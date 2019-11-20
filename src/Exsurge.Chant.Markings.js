@@ -73,7 +73,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
     super();
 
     this.note = note;
-    
+
     this.positionHint = MarkingPositionHint.Default;
     this.terminating = false; // indicates if this episema should terminate itself or not
     this.alignment = HorizontalEpisemaAlignment.Default;
@@ -97,7 +97,7 @@ export class HorizontalEpisema extends ChantLayoutElement {
         punctumInclinatumShorten = true;
       }
     }
-    
+
     if (this.positionHint === MarkingPositionHint.Below) {
       y = this.note.bounds.bottom() + minDistanceAway; // the highest the line could be at
       if (glyphCode === GlyphCode.None) // correction for episema under the second note of a porrectus
@@ -324,7 +324,7 @@ export class Mora extends GlyphVisualizer {
               }
             }
           } else if (this.note.shape !== NoteShape.Inclinatum) {
-            this.note.neume.trailingSpace += this.origin.x;
+            this.note.neume.calculatedTailingSpace += this.origin.x;
           }
         }
       }
