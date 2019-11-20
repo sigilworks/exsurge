@@ -1265,13 +1265,13 @@ export class TextElement extends ChantLayoutElement {
       closeSpan(text);
   }
 
-  getCanvasFontForProperties(properties = {}) {
+  getCanvasFontForProperties(ctxt, properties = {}) {
     var font = '';
     if(properties['font-style'] === 'italic') font += 'italic ';
     if(properties['font-variant'] === 'small-caps') font += 'small-caps ';
     if(properties['font-weight'] === 'bold') font += 'bold ';
-    font += (properties['font-size'] || `${this.fontSize * (this.resize||1)}px`) + ' ';
-    font += properties['font-family'] || this.fontFamily;
+    font += (properties['font-size'] || `${this.fontSize(ctxt) * (this.resize||1)}px`) + ' ';
+    font += properties['font-family'] || this.fontFamily(ctxt);
     return font;
   }
 
@@ -1293,7 +1293,7 @@ export class TextElement extends ChantLayoutElement {
     var newLineSpans = [this.spans[0]];
     var subStringLength = 0;
     var numLines = 1;
-    var fontSize = this.fontSize * (this.resize || 1);
+    var fontSize = this.fontSize(ctxt) * (this.resize || 1);
     var bbox = new Rect(0, -fontSize, 0, fontSize);
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i],
@@ -1309,7 +1309,7 @@ export class TextElement extends ChantLayoutElement {
         width = 0;
       }
       if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
-        canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
+        canvasCtxt.font = this.getCanvasFontForProperties(ctxt, span.properties);
         let metrics = canvasCtxt.measureText(myText, width, fontSize * (numLines - 1));
         width += metrics.width;
         if('actualBoundingBoxAscent' in metrics) {
@@ -1337,7 +1337,7 @@ export class TextElement extends ChantLayoutElement {
         }
       } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS && ctxt.fontDictionary) {
         // get the bounding box for the substring, placing it at x = width, y = fontSize * (numLines - 1)
-        let font = ctxt.getFontForProperties(span.properties, span.properties['font-family'] || this.fontFamily);
+        let font = ctxt.getFontForProperties(span.properties, span.properties['font-family'] || this.fontFamily(ctxt));
         let options = { features: { liga: true } };
         if(span.properties['font-variant'] === 'small-caps') {
           options.features.smcp = true;
@@ -1490,15 +1490,15 @@ export class TextElement extends ChantLayoutElement {
       var span = this.spans[i];
       var xOffset = span.properties.xOffset || 0;
       if(span.properties.newLine) {
-        canvasCtxt.translate(translateWidth + xOffset, this.fontSize);
+        canvasCtxt.translate(translateWidth + xOffset, this.fontSize(ctxt));
         translateWidth = -xOffset;
-        translateHeight -= this.fontSize;
+        translateHeight -= this.fontSize(ctxt);
       } else if(xOffset) {
         canvasCtxt.translate(translateWidth + xOffset, 0);
         translateWidth = -xOffset;
       }
       var properties = Object.assign({}, this.getExtraStyleProperties(ctxt), span.properties);
-      canvasCtxt.font = this.getCanvasFontForProperties(properties);
+      canvasCtxt.font = this.getCanvasFontForProperties(ctxt, properties);
       canvasCtxt.fillStyle = properties.fill || '#000';
       canvasCtxt.fillText(span.text, this.bounds.x, this.bounds.y, span.properties.textLength || undefined);
       var metrics = canvasCtxt.measureText(span.text, this.bounds.x, this.bounds.y);
@@ -1530,7 +1530,7 @@ export class TextElement extends ChantLayoutElement {
         options.y = this.bounds.y;
       }
       if(this.resize) {
-        options['font-size'] = span.properties['font-size'] || (this.fontSize * this.resize);
+        options['font-size'] = span.properties['font-size'] || (this.fontSize(ctxt) * this.resize);
       }
 
       spans.push( QuickSvg.createNode('tspan', options, span.text) );
@@ -1571,10 +1571,10 @@ export class TextElement extends ChantLayoutElement {
         options.y = this.bounds.y;
       }
       if(this.resize) {
-        options['font-size'] = span.properties['font-size'] || (this.fontSize * this.resize);
+        options['font-size'] = span.properties['font-size'] || (this.fontSize(ctxt) * this.resize);
       }
       if(ctxt.setFontFamilyAttributes) {
-        options['font-family'] = span.properties['font-family'] || getFontFilenameForProperties(span.properties, this.fontFamily);
+        options['font-family'] = span.properties['font-family'] || getFontFilenameForProperties(span.properties, this.fontFamily(ctxt));
         let properties = Object.assign({}, span.properties);
         delete properties['font-weight'];
         delete properties['font-style'];
@@ -1597,7 +1597,7 @@ export class TextElement extends ChantLayoutElement {
       'style': styleProperties
     };
     if (ctxt.setFontFamilyAttributes) {
-      options['font-size'] = this.fontSize
+      options['font-size'] = this.fontSize(ctxt)
     }
 
     return QuickSvg.createFragment('text', options, spans);
@@ -1671,7 +1671,7 @@ export var LyricArray = {
 
 export class Lyric extends TextElement {
   constructor(ctxt, text, lyricType, notation, notations, sourceIndex) {
-    super(ctxt, (ctxt.lyricTextStyle || '') + text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start', sourceIndex);
+    super(ctxt, (ctxt.lyricTextStyle || '') + text, ctxt => ctxt.lyricTextFont, ctxt => ctxt.lyricTextSize, 'start', sourceIndex);
 
     // save the original text in case we need to later use the lyric
     // in a dropcap...
@@ -1903,7 +1903,7 @@ export class AboveLinesText extends TextElement {
    * @param {String} text
    */
   constructor(ctxt, text, sourceIndex) {
-    super(ctxt, (ctxt.alTextStyle || '') + text, ctxt.alTextFont, ctxt.alTextSize, 'start', sourceIndex);
+    super(ctxt, (ctxt.alTextStyle || '') + text, ctxt => ctxt.alTextFont, ctxt => ctxt.alTextSize, 'start', sourceIndex);
 
     this.padding = ctxt.staffInterval / 2;
   }
@@ -1926,7 +1926,7 @@ export class TranslationText extends TextElement {
     } else {
       text = (ctxt.translationTextStyle || '') + text;
     }
-    super(ctxt, text, ctxt.translationTextFont, ctxt.translationTextSize, anchor, sourceIndex);
+    super(ctxt, text, ctxt => ctxt.translationTextFont, ctxt => ctxt.translationTextSize, anchor, sourceIndex);
 
     this.padding = ctxt.staffInterval / 2;
   }
@@ -1942,7 +1942,7 @@ export class DropCap extends TextElement {
    * @param {String} text
    */
   constructor(ctxt, text, sourceIndex) {
-    super(ctxt, text, (ctxt.dropCapTextStyle || '') + ctxt.dropCapTextFont, ctxt.dropCapTextSize, 'middle', sourceIndex);
+    super(ctxt, (ctxt.dropCapTextStyle || '') + text, ctxt => ctxt.dropCapTextFont, ctxt => ctxt.dropCapTextSize, 'middle', sourceIndex);
 
     this.padding = ctxt.staffInterval * ctxt.dropCapPadding;
   }
@@ -1958,7 +1958,7 @@ export class Annotation extends TextElement {
    * @param {String} text
    */
   constructor(ctxt, text) {
-    super(ctxt, (ctxt.annotationTextStyle || '') + text, ctxt.annotationTextFont, ctxt.annotationTextSize, 'middle');
+    super(ctxt, (ctxt.annotationTextStyle || '') + text, ctxt => ctxt.annotationTextFont, ctxt => ctxt.annotationTextSize, 'middle');
     this.padding = ctxt.staffInterval * ctxt.annotationPadding;
     this.dominantBaseline = 'hanging'; // so that annotations can be aligned at the top.
   }
