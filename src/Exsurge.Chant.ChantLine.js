@@ -187,7 +187,7 @@ export class ChantLine extends ChantLayoutElement {
         notation.bounds.x += xOffset;
       }
       if (lastLyrics) {
-        this.extraTextOnlyHeight = lastLyrics.origin.y + lastLyrics.bounds.height - (lastLyrics.fontSize * 1.2);
+        this.extraTextOnlyHeight = lastLyrics.origin.y + lastLyrics.bounds.height - (lastLyrics.fontSize(ctxt) * 1.2);
       }
     }
 
@@ -217,7 +217,7 @@ export class ChantLine extends ChantLayoutElement {
         this.score.annotation.bounds.x = this.staffLeft / 2;
         this.score.annotation.bounds.y = - ctxt.staffInterval * 3;
         if(this.score.dropCap !== null) {
-          var lowestPossibleAnnotationY = this.score.dropCap.bounds.y - this.score.annotation.bounds.height - (this.score.dropCap.fontSize * 0.65);
+          var lowestPossibleAnnotationY = this.score.dropCap.bounds.y - this.score.annotation.bounds.height - ctxt.staffInterval * ctxt.annotationPadding - this.score.dropCap.bounds.height;
           // if the annotation would overlap with the drop cap, move the annotation higher.
           // otherwise, center the annotation in the vertical space between the top of the drop cap and the top of the staff.
           if(lowestPossibleAnnotationY < this.score.annotation.bounds.y) {
@@ -230,7 +230,7 @@ export class ChantLine extends ChantLayoutElement {
             this.notationBounds.height += this.notationBounds.y - this.score.annotation.bounds.y;
           }
         }
-        this.score.annotation.bounds.y += this.score.annotation.origin.y * 0.65;
+        this.score.annotation.bounds.y += this.score.annotation.origin.y;
       }
     }
 
