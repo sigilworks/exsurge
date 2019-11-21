@@ -1334,7 +1334,7 @@ export class TextElement extends ChantLayoutElement {
     var subStringLength = 0;
     var numLines = 1;
     var fontSize = this.fontSize(ctxt) * (this.resize || 1);
-    var bbox = new Rect(0, -fontSize, 0, fontSize);
+    var bbox = new Rect(0, 0, 0, 0);
     for (var i = 0; i < this.spans.length; i++) {
       var span = this.spans[i],
           myText = span.text.slice(0, length - subStringLength);
@@ -1351,12 +1351,11 @@ export class TextElement extends ChantLayoutElement {
       if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
         canvasCtxt.font = this.getCanvasFontForProperties(ctxt, span.properties);
         let metrics = canvasCtxt.measureText(myText, width, fontSize * (numLines - 1));
-        width += metrics.width;
         if('actualBoundingBoxAscent' in metrics) {
           let left = metrics.actualBoundingBoxLeft;
           bbox.union(
             new Rect(
-              width - metrics.width - left,
+              width - left,
               fontSize * (numLines - 1) - metrics.actualBoundingBoxAscent,
               metrics.width + left,
               metrics.actualBoundingBoxDescent + metrics.actualBoundingBoxAscent
@@ -1368,13 +1367,14 @@ export class TextElement extends ChantLayoutElement {
         } else {
           bbox.union(
             new Rect(
-              width - metrics.width,
+              width,
               fontSize * (numLines - 2),
               metrics.width,
               fontSize
             )
           );
         }
+        width += metrics.width;
       } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.OpenTypeJS && ctxt.fontDictionary) {
         // get the bounding box for the substring, placing it at x = width, y = fontSize * (numLines - 1)
         let font = ctxt.getFontForProperties(span.properties, span.properties['font-family'] || this.fontFamily(ctxt));

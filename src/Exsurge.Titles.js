@@ -55,35 +55,40 @@ export class Titles extends ChantLayoutElement {
       midX = width / 2;
     if (this.supertitle) {
       this.supertitle.recalculateMetrics(ctxt);
-      y += this.supertitle.bounds.height + this.supertitle.padding(ctxt);
       this.supertitle.bounds.x = midX;
       this.supertitle.bounds.y = y;
       this.bounds.union(this.supertitle.bounds);
+      this.supertitle.bounds.y += this.supertitle.origin.y;
+      y += this.supertitle.bounds.height + this.supertitle.padding(ctxt);
     }
     if (this.title) {
       this.title.recalculateMetrics(ctxt);
-      y += this.title.bounds.height + this.title.padding(ctxt);
       this.title.bounds.x = midX;
       this.title.bounds.y = y;
       this.bounds.union(this.title.bounds);
+      this.title.bounds.y += this.title.origin.y;
+      y += this.title.bounds.height + this.title.padding(ctxt);
     }
     if (this.subtitle) {
       this.subtitle.recalculateMetrics(ctxt);
-      y += this.subtitle.bounds.height + this.subtitle.padding(ctxt);
       this.subtitle.bounds.x = midX;
       this.subtitle.bounds.y = y;
       this.bounds.union(this.subtitle.bounds);
+      this.subtitle.bounds.y += this.subtitle.origin.y;
+      y += this.subtitle.bounds.height + this.subtitle.padding(ctxt);
     }
     if (this.textLeft) {
       this.textLeft.recalculateMetrics(ctxt);
-      this.textLeft.bounds.y = y + this.textLeft.bounds.height;
+      this.textLeft.bounds.y = y;
       this.bounds.union(this.textLeft.bounds);
+      this.textLeft.bounds.y += this.textLeft.origin.y;
     }
     if (this.textRight) {
       this.textRight.recalculateMetrics(ctxt);
       this.textRight.bounds.x = width;
-      this.textRight.bounds.y = y + this.textRight.bounds.height;
+      this.textRight.bounds.y = y;
       this.bounds.union(this.textRight.bounds);
+      this.textRight.bounds.y += this.textRight.origin.y;
     }
     return this.bounds.height;
   }
@@ -176,7 +181,6 @@ export class Titles extends ChantLayoutElement {
     }
 
     fragment = QuickSvg.createFragment("g", {}, fragment);
-console.info(fragment)
     return fragment;
   }
 }
