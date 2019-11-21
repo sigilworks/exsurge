@@ -2102,7 +2102,7 @@ export class Annotations extends ChantLayoutElement {
       annotation.recalculateMetrics(ctxt);
       this.bounds.width = Math.max(this.bounds.width, annotation.bounds.width);
       annotation.bounds.y += this.bounds.height;
-      this.bounds.height += annotation.bounds.height / 1.2;
+      this.bounds.height += annotation.bounds.height;
       this.origin.y = this.origin.y || annotation.origin.y;
     }
   }

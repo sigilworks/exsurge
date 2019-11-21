@@ -202,22 +202,12 @@ export class ChantLine extends ChantLayoutElement {
     // dropCap and the annotations
     if (this.notationsStartIndex === 0) {
 
-      if (this.score.dropCap !== null) {
-
-        // drop caps and annotations are drawn from their center, so aligning them
-        // horizontally is as easy as this.staffLeft / 2
-        this.score.dropCap.bounds.x = this.staffLeft / 2;
-        this.score.dropCap.bounds.y = this.lyricLineBaseline - this.score.dropCap.origin.y;
-        this.notationBounds.union(this.score.dropCap.bounds);
-        this.score.dropCap.bounds.y = this.lyricLineBaseline;
-      }
-
       if (this.score.annotation !== null) {
         // annotations use dominant-baseline to align text to the top
         this.score.annotation.bounds.x = this.staffLeft / 2;
         this.score.annotation.bounds.y = - ctxt.staffInterval * 3;
         if(this.score.dropCap !== null) {
-          var lowestPossibleAnnotationY = this.score.dropCap.bounds.y - this.score.annotation.bounds.height - ctxt.staffInterval * ctxt.annotationPadding - this.score.dropCap.bounds.height;
+          var lowestPossibleAnnotationY = this.lyricLineBaseline - this.score.annotation.bounds.height - ctxt.staffInterval * ctxt.annotationPadding - this.score.dropCap.origin.y;
           // if the annotation would overlap with the drop cap, move the annotation higher.
           // otherwise, center the annotation in the vertical space between the top of the drop cap and the top of the staff.
           if(lowestPossibleAnnotationY < this.score.annotation.bounds.y) {
@@ -232,6 +222,16 @@ export class ChantLine extends ChantLayoutElement {
         }
         this.score.annotation.bounds.y += this.score.annotation.origin.y;
       }
+
+      if (this.score.dropCap !== null) {
+        // drop caps and annotations are drawn from their center, so aligning them
+        // horizontally is as easy as this.staffLeft / 2
+        this.score.dropCap.bounds.x = this.staffLeft / 2;
+        this.score.dropCap.bounds.y = this.lyricLineBaseline - this.score.dropCap.origin.y;
+        this.notationBounds.union(this.score.dropCap.bounds);
+        this.score.dropCap.bounds.y = this.lyricLineBaseline;
+      }
+
     }
 
     if(this.numLyricLines > 0) {
