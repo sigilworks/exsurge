@@ -324,7 +324,7 @@ export class Mora extends GlyphVisualizer {
               }
             }
           } else if (this.note.shape !== NoteShape.Inclinatum) {
-            this.note.neume.calculatedTailingSpace += this.origin.x;
+            this.note.neume.calculatedTrailingSpace += this.origin.x;
           }
         }
       }

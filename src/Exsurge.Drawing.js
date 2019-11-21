@@ -40,6 +40,34 @@ function getFontFilenameForProperties(properties = {}, url = '{}') {
 
 const canAccessDOM = typeof document !== 'undefined';
 
+/**
+ * List of types of text and their defaults relative to lyrics
+ * @type Array
+ */
+// TODO: make use of these in the setFont() function
+export const TextTypes = {
+  lyric: {
+    display: "Lyric",
+    default: size => size
+  },
+  al: {
+    display: "Above Staff",
+    default: size => size
+  },
+  translation: {
+    display: "Translation",
+    default: size => size
+  },
+  dropCap: {
+    display: "DropCap",
+    default: size => size * 4
+  },
+  annotation: {
+    display: "Annotation",
+    default: size => (size * 2) / 3
+  }
+};
+
 export const DefaultTrailingSpace = ctxt => ctxt.intraNeumeSpacing * ctxt.interSyllabicMultiplier;
 DefaultTrailingSpace.isDefault = true;
 

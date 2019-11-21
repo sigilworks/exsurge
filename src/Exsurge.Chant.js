@@ -323,7 +323,7 @@ export class ChantLineBreak extends ChantNotationElement {
 
   constructor(justify) {
     super();
-
+    this.calculatedTrailingSpace = this.trailingSpace = 0;
     this.justify = justify;
   }
 
