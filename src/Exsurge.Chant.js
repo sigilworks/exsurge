@@ -30,6 +30,7 @@ import { ChantLine } from './Exsurge.Chant.ChantLine.js'
 import { AccidentalType } from './Exsurge.Chant.Signs.js'
 import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema } from './Exsurge.Chant.Markings.js'
 import { Gabc } from './Exsurge.Gabc.js'
+import { Titles } from './Exsurge.Titles.js'
 
 export var LiquescentType = {
   None: 0,
@@ -369,6 +370,7 @@ export class ChantScore {
 
     this.lines = [];
     this.notes = [];
+    this.titles = new Titles(ctxt);
 
     this.startingClef = null;
 
@@ -394,6 +396,9 @@ export class ChantScore {
 
     // flatten all mappings into one array for N(0) access to notations
     this.notations = [];
+    this.hasLyrics = false;
+    this.hasAboveLinesText = false;
+    this.hasTranslations = false;
     for(i = 0; i < this.mappings.length; i++) {
       mapping = this.mappings[i];
       for(j = 0; j < mapping.notations.length; j++) {
@@ -401,6 +406,9 @@ export class ChantScore {
         notation.score = this;
         notation.mapping = mapping;
         this.notations.push(notation);
+        if(!this.hasLyrics && notation.hasLyrics()) this.hasLyrics = true;
+        if(!this.hasAboveLinesText && notation.alText) this.hasAboveLinesText = true;
+        if(!this.hasTranslations && notation.translationText) this.hasTranslations = true;
       }
     }
 
@@ -461,16 +469,11 @@ export class ChantScore {
     }
   }
 
-  // this is the the synchronous version of performLayout that
-  // process everything without yielding to any other workers/threads.
-  // good for server side processing or very small chant pieces.
-  performLayout(ctxt, force) {
-
-    if (!force && this.needsLayout === false)
-      return; // nothing to do here!
-
-    ctxt.updateHyphenWidth();
-
+  /**
+   * Shared layout initialization method for performLayout() and performLayoutAsync()
+   * @param  {ChantContext} ctxt
+   */
+  initializeLayout(ctxt) {
     // setup the context
     ctxt.activeClef = this.startingClef;
     ctxt.notations = this.notations;
@@ -481,9 +484,22 @@ export class ChantScore {
 
     if (this.annotation)
       this.annotation.recalculateMetrics(ctxt);
+  }
 
-    for (var i = 0; i < this.notations.length; i++) {
-      var notation = this.notations[i];
+  // this is the the synchronous version of performLayout that
+  // process everything without yielding to any other workers/threads.
+  // good for server side processing or very small chant pieces.
+  performLayout(ctxt, force) {
+
+    if (!force && this.needsLayout === false)
+      return; // nothing to do here!
+
+    ctxt.updateHyphenWidth();
+
+    this.initializeLayout(ctxt);
+
+    for (let i = 0; i < this.notations.length; i++) {
+      let notation = this.notations[i];
       if(force || notation.needsLayout) {
         ctxt.currNotationIndex = i;
         notation.performLayout(ctxt);
@@ -519,16 +535,7 @@ export class ChantScore {
       return;
     }
 
-    // setup the context
-    ctxt.activeClef = this.startingClef;
-    ctxt.notations = this.notations;
-    ctxt.currNotationIndex = 0;
-
-    if (this.dropCap)
-      this.dropCap.recalculateMetrics(ctxt);
-
-    if (this.annotation)
-      this.annotation.recalculateMetrics(ctxt);
+    this.initializeLayout(ctxt);
 
     setTimeout(() => this.layoutElementsAsync(ctxt, 0, finishedCallback), 0);
   }
@@ -567,7 +574,7 @@ export class ChantScore {
 
     this.lines = [];
 
-    var y = 0;
+    var y = width > 0? this.titles.layoutTitles(ctxt, width) : 0;
     var currIndex = 0;
 
     ctxt.activeClef = this.startingClef;
@@ -607,6 +614,8 @@ export class ChantScore {
 
     canvasCtxt.translate(this.bounds.x, this.bounds.y);
 
+    this.titles.draw(ctxt);
+
     for (var i = 0; i < this.lines.length; i++)
       this.lines[i].draw(ctxt);
 
@@ -618,6 +627,8 @@ export class ChantScore {
     // create defs section
     var node = [ctxt.defsNode.cloneNode(true)];
     node[0].appendChild(ctxt.createStyleNode());
+
+    node.push( this.titles.createSvgNode(ctxt) );
 
     for (var i = 0; i < this.lines.length; i++)
       node.push( this.lines[i].createSvgNode(ctxt) );
@@ -650,6 +661,8 @@ export class ChantScore {
     fragment += ctxt.createStyle();
 
     fragment = QuickSvg.createFragment('defs', {}, fragment);
+
+    fragment += this.titles.createSvgFragment(ctxt);
 
     for (var i = 0; i < this.lines.length; i++)
       fragment += this.lines[i].createSvgFragment(ctxt);

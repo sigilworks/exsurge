@@ -44,27 +44,51 @@ const canAccessDOM = typeof document !== 'undefined';
  * List of types of text and their defaults relative to lyrics
  * @type Array
  */
-// TODO: make use of these in the setFont() function
 export const TextTypes = {
   lyric: {
     display: "Lyric",
-    default: size => size
+    default: size => size,
+    containedInScore: score => score.hasLyrics
   },
   al: {
     display: "Above Staff",
-    default: size => size
+    default: size => size,
+    containedInScore: score => score.hasAboveLinesText
   },
   translation: {
     display: "Translation",
-    default: size => size
+    default: size => size,
+    containedInScore: score => score.hasTranslations
   },
   dropCap: {
-    display: "DropCap",
-    default: size => size * 4
+    display: "Drop Cap",
+    default: size => size * 4,
+    containedInScore: score => !!score.dropCap
   },
   annotation: {
     display: "Annotation",
-    default: size => (size * 2) / 3
+    default: size => (size * 2) / 3,
+    containedInScore: score => !!score.annotation
+  },
+  supertitle: {
+    display: "Supertitle",
+    default: size => size * 7 / 6, // 14pt
+    containedInScore: score => score.titles.hasSupertitle()
+  },
+  title: {
+    display: "Title",
+    default: size => size * 3 / 2, // 18pt
+    containedInScore: score => score.titles.hasTitle()
+  },
+  subtitle: {
+    display: "Subtitle",
+    default: size => size, // 12pt
+    containedInScore: score => score.titles.hasSubtitle()
+  },
+  leftRight: {
+    display: "Left / Right Text",
+    default: size => size,
+    containedInScore: score => (score.titles.hasTextLeft() || score.titles.hasTextRight())
   }
 };
 
@@ -339,8 +363,7 @@ export class ChantContext {
     }
 
     // font styles
-    this.lyricTextSize = 16; // in pixels
-    this.lyricTextFont = "'Palatino Linotype', 'Book Antiqua', Palatino, serif";
+    this.setFont("'Palatino Linotype', 'Book Antiqua', Palatino, serif", 16);
     this.lyricTextColor = "#000";
 
     this.rubricColor = "#d00";
@@ -366,23 +389,15 @@ export class ChantContext {
       }
     };
 
-    this.alTextSize = this.lyricTextSize;
-    this.alTextFont = this.lyricTextFont;
     this.alTextColor = this.lyricTextColor;
     this.alTextStyle = '<i>';
 
-    this.translationTextSize = this.lyricTextSize;
-    this.translationTextFont = this.lyricTextFont;
     this.translationTextColor = this.lyricTextColor;
     this.translationTextStyle = '<i>';
 
-    this.dropCapTextSize = 64;
-    this.dropCapTextFont = this.lyricTextFont;
     this.dropCapTextColor = this.lyricTextColor;
     this.dropCapPadding = 1; // minimum padding on either side of drop cap in staffIntervals
 
-    this.annotationTextSize = 13;
-    this.annotationTextFont = this.lyricTextFont;
     this.annotationTextColor = this.lyricTextColor;
     this.annotationPadding = 1;  // minimum padding on either side of annotation in staffIntervals
 
@@ -478,20 +493,10 @@ export class ChantContext {
   }
 
   setFont(font, size = 16, baseStyle = {}, opentypeFontDictionary) {
-    this.lyricTextSize = size;
-    this.lyricTextFont = font;
-
-    this.alTextSize = size;
-    this.alTextFont = font;
-
-    this.translationTextSize = size;
-    this.translationTextFont = font;
-
-    this.dropCapTextSize = size * 4;
-    this.dropCapTextFont = font;
-
-    this.annotationTextSize = size * 2 / 3;
-    this.annotationTextFont = font;
+    for(let [key, textType] of Object.entries(TextTypes)) {
+      this[`${key}TextSize`] = textType.default(size);
+      this[`${key}TextFont`] = font;
+    }
 
     this.baseTextStyle = baseStyle;
 
@@ -1987,6 +1992,60 @@ export class DropCap extends TextElement {
 
   getCssClasses() {
     return "dropCap " + super.getCssClasses();
+  }
+}
+
+export class Supertitle extends TextElement {
+  constructor(ctxt, text, sourceIndex) {
+    super(ctxt, (ctxt.dropCapTextStyle || '') + text, ctxt => ctxt.supertitleTextFont, ctxt => ctxt.supertitleTextSize, 'middle', sourceIndex);
+
+    this.padding = ctxt => ctxt.titleTextSize / 2;
+  }
+
+  getCssClasses() {
+    return "supertitle " + super.getCssClasses();
+  }
+}
+
+export class Title extends TextElement {
+  constructor(ctxt, text, sourceIndex) {
+    super(ctxt, (ctxt.dropCapTextStyle || '') + text, ctxt => ctxt.titleTextFont, ctxt => ctxt.titleTextSize, 'middle', sourceIndex);
+
+    this.padding = ctxt => ctxt.titleTextSize / 2;
+  }
+
+  getCssClasses() {
+    return "title " + super.getCssClasses();
+  }
+}
+
+export class Subtitle extends TextElement {
+  constructor(ctxt, text, sourceIndex) {
+    super(ctxt, (ctxt.dropCapTextStyle || '') + text, ctxt => ctxt.subtitleTextFont, ctxt => ctxt.subtitleTextSize, 'middle', sourceIndex);
+
+    this.padding = ctxt => ctxt.titleTextSize / 2;
+  }
+
+  getCssClasses() {
+    return "subtitle " + super.getCssClasses();
+  }
+}
+
+export class TextLeftRight extends TextElement {
+  constructor(ctxt, text, type, sourceIndex) {
+    super(
+      ctxt,
+      (ctxt.dropCapTextStyle || "") + text,
+      ctxt => ctxt.leftRightTextFont,
+      ctxt => ctxt.leftRightTextSize,
+      type === "textLeft" ? "start" : "end",
+      sourceIndex
+    );
+    this.extraClass = type === "textLeft"? "textleft" : "textright";
+  }
+
+  getCssClasses() {
+    return this.extraClass + " " + super.getCssClasses();
   }
 }
 

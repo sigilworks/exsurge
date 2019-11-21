@@ -25,67 +25,67 @@
 
 'use strict';
 
-import { Annotation, ChantContext } from './Exsurge.Drawing.js'
-import { Gabc } from './Exsurge.Gabc.js'
-
-// client side support
-
-if (typeof document !== 'undefined' && document.registerElement) {
-  var ChantVisualElementPrototype = Object.create(HTMLElement.prototype);
-
-  ChantVisualElementPrototype.createdCallback = function() {
-    var ctxt = new ChantContext();
-    
-    ctxt.setFont("'Crimson Text', serif", 19.2);
-
-    var useDropCap = true;
-    var useDropCapAttr = this.getAttribute("use-drop-cap");
-    if (useDropCapAttr === 'false')
-      useDropCap = false;
-
-    var score = Gabc.loadChantScore(ctxt, this.innerText, useDropCap);
-
-    var annotationAttr = this.getAttribute("annotation");
-    if (annotationAttr) {
-      // add an annotation
-      score.annotation = new Annotation(ctxt, annotationAttr);
-    }
-
-    var _element = this;
-
-    var width = 0;
-    var doLayout = function() {
-      var newWidth = _element.parentElement.clientWidth;
-      if(width === newWidth) return;
-      width = newWidth;
-      // perform layout on the chant
-      score.performLayout(ctxt, function() {
-        score.layoutChantLines(ctxt, width, function() {
-          // render the score to svg code
-          _element.appendElement(score.createSvgNode(ctxt));
-        });
-      });
-    }
-    doLayout();
-    if (window.addEventListener)
-      window.addEventListener('resize',doLayout,false);
-    else if (window.attachEvent)
-      window.attachEvent('onresize',doLayout);
-  }
-
-  ChantVisualElementPrototype.attachedCallback = function() {
-    
-  }
-
-  // register the custom element
-  // if(window.customElements && window.customElements.define) {
-  //   window.customElements.define('chant-visual', ChantVisualElementPrototype);
-  // } else {
-    document.registerElement('chant-visual', {
-      prototype: ChantVisualElementPrototype
-    });
-  // }
-}
+// import { Annotation, ChantContext } from './Exsurge.Drawing.js'
+// import { Gabc } from './Exsurge.Gabc.js'
+//
+// // client side support
+//
+// if (typeof document !== 'undefined' && document.registerElement) {
+//   var ChantVisualElementPrototype = Object.create(HTMLElement.prototype);
+//
+//   ChantVisualElementPrototype.createdCallback = function() {
+//     var ctxt = new ChantContext();
+//
+//     ctxt.setFont("'Crimson Text', serif", 19.2);
+//
+//     var useDropCap = true;
+//     var useDropCapAttr = this.getAttribute("use-drop-cap");
+//     if (useDropCapAttr === 'false')
+//       useDropCap = false;
+//
+//     var score = Gabc.loadChantScore(ctxt, this.innerText, useDropCap);
+//
+//     var annotationAttr = this.getAttribute("annotation");
+//     if (annotationAttr) {
+//       // add an annotation
+//       score.annotation = new Annotation(ctxt, annotationAttr);
+//     }
+//
+//     var _element = this;
+//
+//     var width = 0;
+//     var doLayout = function() {
+//       var newWidth = _element.parentElement.clientWidth;
+//       if(width === newWidth) return;
+//       width = newWidth;
+//       // perform layout on the chant
+//       score.performLayout(ctxt, function() {
+//         score.layoutChantLines(ctxt, width, function() {
+//           // render the score to svg code
+//           _element.appendElement(score.createSvgNode(ctxt));
+//         });
+//       });
+//     }
+//     doLayout();
+//     if (window.addEventListener)
+//       window.addEventListener('resize',doLayout,false);
+//     else if (window.attachEvent)
+//       window.attachEvent('onresize',doLayout);
+//   }
+//
+//   ChantVisualElementPrototype.attachedCallback = function() {
+//
+//   }
+//
+//   // register the custom element
+//   // if(window.customElements && window.customElements.define) {
+//   //   window.customElements.define('chant-visual', ChantVisualElementPrototype);
+//   // } else {
+//     document.registerElement('chant-visual', {
+//       prototype: ChantVisualElementPrototype
+//     });
+//   // }
+// }
 
 export * from './Exsurge.Core.js'
 export * from './Exsurge.Text.js'
@@ -96,4 +96,4 @@ export * from './Exsurge.Chant.Markings.js'
 export * from './Exsurge.Chant.Signs.js'
 export * from './Exsurge.Chant.Neumes.js'
 export * from './Exsurge.Gabc.js'
-
+export * from './Exsurge.Titles.js'
