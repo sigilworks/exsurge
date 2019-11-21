@@ -82,12 +82,107 @@ const TrailingSpaceForAccidental = ctxt =>
 const TrailingSpaceMultiple = multiplier => ctxt =>
   ctxt.intraNeumeSpacing * multiplier;
 
+const regexHeaderEnd = /(?:^|\n)%%\s?\n/;
+const regexHeaderLine = /^([\w-_.]+):\s*((?:[^;\r\n]|;[ \t])*)(?:;|$)/i;
+const regexHeaderComment = /^%.*/;
+export class GabcHeader {
+  constructor(text) {
+    if (typeof text !== "string") text = "";
+    this.comments = [];
+    this.cValues = {};
+    this.original = "";
+    let match = text.match(regexHeaderEnd);
+    if (match) {
+      let txtHeader = (this.original = text.slice(
+        0,
+        match.index + match[0].length
+      ));
+      var lines = txtHeader.split(/\r?\n/g);
+      for (var i = 0; i < lines.length; ++i) {
+        let line = lines[i],
+          match = regexHeaderLine.exec(line);
+        if (match) {
+          var key = match[1].replace(/-([a-z])/g, function(a, letter) {
+            return letter.toUpperCase();
+          });
+          if (this[match[1]]) {
+            var arrayName = match[1] + "Array";
+            if (!this[arrayName]) {
+              this[arrayName] = [this[match[1]]];
+            }
+            this[arrayName].push(match[2]);
+          } else {
+            this[match[1]] = match[2];
+          }
+          if (key !== match[1]) this[key] = this[match[1]];
+        } else if ((match = regexHeaderComment.exec(line))) {
+          if (line !== "%%") {
+            match = regexHeaderLine.exec(line.slice(1));
+            if (match) {
+              let key = match[1].replace(/-([a-z])/g, function(a, letter) {
+                return letter.toUpperCase();
+              });
+              this.cValues[match[1]] = match[2];
+              if (key !== match[1]) this.cValues[key] = match[2];
+            } else {
+              this.comments[i] = line;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  toString() {
+    var result = [];
+    for (key in this) {
+      if (
+        typeof this[key] !== "string" ||
+        /^(length|original|comments|cValues)$/.test(key)
+      ) {
+        continue;
+      }
+      var alternateKey = key.replace(/[A-Z]/g, function(letter) {
+        return "-" + letter.toLowerCase();
+      });
+      if (alternateKey !== key && alternateKey in this) continue;
+      var array = this[key + "Array"];
+      if (array) {
+        for (var i = 0; i < array.length; ++i) {
+          result.push(key + ": " + array[i] + ";");
+        }
+      } else {
+        result.push(key + ": " + this[key] + ";");
+      }
+    }
+    for (key in this.cValues) {
+      if (key.length === 0 || !this.cValues.hasOwnProperty(key)) continue;
+      result.push("%" + key + ": " + this.cValues[key] + ";");
+    }
+    for (i in this.comments) {
+      if (!this.comments.hasOwnProperty(i)) continue;
+      try {
+        result.splice(i, 0, this.comments[i]);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+    return result.join("\n") + "\n%%\n";
+  }
+}
+
 export class Gabc {
+  static stripHeader(gabc) {
+    let match = gabc.match(regexHeaderEnd);
+    return match ? gabc.slice(match.index + match[0].length) : gabc;
+  }
+
   // takes gabc source code (without the header info) and returns an array
   // of ChantMappings describing the chant. A chant score can then be created
   // fron the chant mappings and later updated via updateMappings() if need
   // be...
   static createMappingsFromSource(ctxt, gabcSource) {
+    gabcSource = Gabc.stripHeader(gabcSource);
     var words = this.splitWords(gabcSource);
 
     // set the default clef
@@ -193,6 +288,7 @@ export class Gabc {
   // the mappings array passed in is changed in place to be updated from the
   // new source
   static updateMappingsFromSource(ctxt, mappings, newGabcSource) {
+    newGabcSource = Gabc.stripHeader(newGabcSource);
     // always remove the last old mapping since it's spacing/trailingSpace is handled specially
     mappings.pop();
 
