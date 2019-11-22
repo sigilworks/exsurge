@@ -253,7 +253,6 @@ export class ChantLine extends ChantLayoutElement {
         0,
         this.altLineHeight * this.numAltLines
       );
-      console.info(lyricAndTextRect, altLineTextRect, this.notationBounds);
       this.notationBounds.union(altLineTextRect);
     }
     // Ensure that there is at least minSpaceBelowStaff below the lowest staff line:

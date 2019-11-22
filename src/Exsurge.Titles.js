@@ -62,6 +62,7 @@ export class Titles extends ChantLayoutElement {
       y += this.supertitle.bounds.height + this.supertitle.padding(ctxt);
     }
     if (this.title) {
+      if(y) y += this.title.padding(ctxt);
       this.title.recalculateMetrics(ctxt);
       this.title.bounds.x = midX;
       this.title.bounds.y = y;
@@ -70,6 +71,7 @@ export class Titles extends ChantLayoutElement {
       y += this.title.bounds.height + this.title.padding(ctxt);
     }
     if (this.subtitle) {
+      if(y) y += this.subtitle.padding(ctxt);
       this.subtitle.recalculateMetrics(ctxt);
       this.subtitle.bounds.x = midX;
       this.subtitle.bounds.y = y;
@@ -77,11 +79,13 @@ export class Titles extends ChantLayoutElement {
       this.subtitle.bounds.y += this.subtitle.origin.y;
       y += this.subtitle.bounds.height + this.subtitle.padding(ctxt);
     }
+    let finalY = y;
     if (this.textLeft) {
       this.textLeft.recalculateMetrics(ctxt);
       this.textLeft.bounds.y = y;
       this.bounds.union(this.textLeft.bounds);
       this.textLeft.bounds.y += this.textLeft.origin.y;
+      finalY = y + this.textLeft.bounds.height;
     }
     if (this.textRight) {
       this.textRight.recalculateMetrics(ctxt);
@@ -89,8 +93,9 @@ export class Titles extends ChantLayoutElement {
       this.textRight.bounds.y = y;
       this.bounds.union(this.textRight.bounds);
       this.textRight.bounds.y += this.textRight.origin.y;
+      finalY = Math.max(finalY, y + this.textRight.bounds.height);
     }
-    return this.bounds.height;
+    return finalY;
   }
 
   setSupertitle(ctxt, supertitle) {
