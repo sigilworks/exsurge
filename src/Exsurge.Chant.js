@@ -23,14 +23,28 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from './Exsurge.Core.js'
-import { Step, Pitch, Rect, Point, Margins } from './Exsurge.Core.js'
-import { QuickSvg, ChantLayoutElement, ChantNotationElement, GlyphCode, GlyphVisualizer, Lyric, Annotation, DropCap } from './Exsurge.Drawing.js'
-import { ChantLine } from './Exsurge.Chant.ChantLine.js'
-import { AccidentalType } from './Exsurge.Chant.Signs.js'
-import { MarkingPositionHint, HorizontalEpisemaAlignment, HorizontalEpisema } from './Exsurge.Chant.Markings.js'
-import { Gabc } from './Exsurge.Gabc.js'
-import { Titles } from './Exsurge.Titles.js'
+import * as Exsurge from "./Exsurge.Core.js";
+import { Step, Pitch, Rect, Point, Margins } from "./Exsurge.Core.js";
+import {
+  QuickSvg,
+  ChantLayoutElement,
+  ChantNotationElement,
+  GlyphCode,
+  GlyphVisualizer,
+  Lyric,
+  Annotation,
+  DropCap,
+  TextLeftRight
+} from "./Exsurge.Drawing.js";
+import { ChantLine } from "./Exsurge.Chant.ChantLine.js";
+import { AccidentalType } from "./Exsurge.Chant.Signs.js";
+import {
+  MarkingPositionHint,
+  HorizontalEpisemaAlignment,
+  HorizontalEpisema
+} from "./Exsurge.Chant.Markings.js";
+import { Gabc } from "./Exsurge.Gabc.js";
+import { Titles } from "./Exsurge.Titles.js";
 
 export var LiquescentType = {
   None: 0,
@@ -44,48 +58,44 @@ export var LiquescentType = {
   InitioDebilis: 1 << 4,
 
   // handy liquescent types
-  LargeAscending: 1 << 0 | 1 << 2,
-  LargeDescending: 1 << 0 | 1 << 3,
-  SmallAscending: 1 << 1 | 1 << 2,
-  SmallDescending: 1 << 1 | 1 << 3
+  LargeAscending: (1 << 0) | (1 << 2),
+  LargeDescending: (1 << 0) | (1 << 3),
+  SmallAscending: (1 << 1) | (1 << 2),
+  SmallDescending: (1 << 1) | (1 << 3)
 };
 
 export var NoteShape = {
   // shapes
-  Default:    0,
-  Virga:      1,
+  Default: 0,
+  Virga: 1,
   Inclinatum: 2,
-  Quilisma:   3,
-  Stropha:    4,
-  Oriscus:    5
+  Quilisma: 3,
+  Stropha: 4,
+  Oriscus: 5
 };
 
 export var NoteShapeModifiers = {
-
   // flags which modify the shape
   // not all of them apply to every shape of course
-  None:       0,
-  Ascending:  1 << 0,
+  None: 0,
+  Ascending: 1 << 0,
   Descending: 1 << 1,
-  Cavum:      1 << 2,
-  Stemmed:    1 << 3
+  Cavum: 1 << 2,
+  Stemmed: 1 << 3
 };
 
 /**
  * @class
  */
 export class Note extends ChantLayoutElement {
-
   /**
    * @para {Pitch} pitch
    */
   constructor(pitch) {
     super();
 
-    if (typeof pitch !== 'undefined')
-      this.pitch = pitch;
-    else
-      this.pitch = null;
+    if (typeof pitch !== "undefined") this.pitch = pitch;
+    else this.pitch = null;
 
     this.glyphVisualizer = null;
 
@@ -114,10 +124,8 @@ export class Note extends ChantLayoutElement {
   }
 
   setGlyph(ctxt, glyphCode) {
-    if (this.glyphVisualizer)
-      this.glyphVisualizer.setGlyph(ctxt, glyphCode);
-    else
-      this.glyphVisualizer = new GlyphVisualizer(ctxt, glyphCode);
+    if (this.glyphVisualizer) this.glyphVisualizer.setGlyph(ctxt, glyphCode);
+    else this.glyphVisualizer = new GlyphVisualizer(ctxt, glyphCode);
 
     this.glyphVisualizer.setStaffPosition(ctxt, this.staffPosition);
 
@@ -135,12 +143,10 @@ export class Note extends ChantLayoutElement {
   shapeModifierMatches(shapeModifier) {
     if (shapeModifier === NoteShapeModifiers.None)
       return this.shapeModifier === NoteShapeModifiers.None;
-    else
-      return this.shapeModifier & shapeModifier !== 0;
+    else return this.shapeModifier & (shapeModifier !== 0);
   }
 
   draw(ctxt) {
-
     this.glyphVisualizer.bounds.x = this.bounds.x;
     this.glyphVisualizer.bounds.y = this.bounds.y;
 
@@ -148,7 +154,6 @@ export class Note extends ChantLayoutElement {
   }
 
   createSvgNode(ctxt) {
-
     this.glyphVisualizer.bounds.x = this.bounds.x;
     this.glyphVisualizer.bounds.y = this.bounds.y;
     this.svgNode = this.glyphVisualizer.createSvgNode(ctxt, this);
@@ -156,7 +161,6 @@ export class Note extends ChantLayoutElement {
   }
 
   createSvgFragment(ctxt) {
-
     this.glyphVisualizer.bounds.x = this.bounds.x;
     this.glyphVisualizer.bounds.y = this.bounds.y;
     return this.glyphVisualizer.createSvgFragment(ctxt, this);
@@ -164,7 +168,6 @@ export class Note extends ChantLayoutElement {
 }
 
 export class Clef extends ChantNotationElement {
-
   constructor(staffPosition, octave, defaultAccidental = null) {
     super();
 
@@ -180,26 +183,22 @@ export class Clef extends ChantNotationElement {
     this.activeAccidental = this.defaultAccidental;
   }
 
-  pitchToStaffPosition(pitch) {
-
-  }
+  pitchToStaffPosition(pitch) {}
 
   performLayout(ctxt) {
-
     ctxt.activeClef = this;
 
-    if (this.defaultAccidental)
-      this.defaultAccidental.performLayout(ctxt);
+    if (this.defaultAccidental) this.defaultAccidental.performLayout(ctxt);
 
     super.performLayout(ctxt);
   }
 
   finishLayout(ctxt) {
-
     // if we have a default accidental, then add a glyph for it now
     if (this.defaultAccidental) {
       var accidentalGlyph = this.defaultAccidental.createGlyphVisualizer(ctxt);
-      accidentalGlyph.bounds.x += this.visualizers[0].bounds.right() + ctxt.intraNeumeSpacing;
+      accidentalGlyph.bounds.x +=
+        this.visualizers[0].bounds.right() + ctxt.intraNeumeSpacing;
       this.addVisualizer(accidentalGlyph);
     }
 
@@ -212,7 +211,6 @@ export class Clef extends ChantNotationElement {
 }
 
 export class DoClef extends Clef {
-
   constructor(staffPosition, octave, defaultAccidental = null) {
     super(staffPosition, octave, defaultAccidental);
 
@@ -220,9 +218,12 @@ export class DoClef extends Clef {
   }
 
   pitchToStaffPosition(pitch) {
-    return (pitch.octave - this.octave) * 7 + this.staffPosition +
-            Pitch.stepToStaffOffset(pitch.step) -
-            Pitch.stepToStaffOffset(Step.Do);
+    return (
+      (pitch.octave - this.octave) * 7 +
+      this.staffPosition +
+      Pitch.stepToStaffOffset(pitch.step) -
+      Pitch.stepToStaffOffset(Step.Do)
+    );
   }
 
   staffPositionToPitch(staffPosition) {
@@ -231,7 +232,10 @@ export class DoClef extends Clef {
 
     var step = Pitch.staffOffsetToStep(offset);
 
-    if (this.activeAccidental && this.activeAccidental.staffPosition === staffPosition)
+    if (
+      this.activeAccidental &&
+      this.activeAccidental.staffPosition === staffPosition
+    )
       step += this.activeAccidental.accidentalType;
 
     return new Pitch(step, this.octave + octaveOffset);
@@ -255,7 +259,6 @@ export class DoClef extends Clef {
 var __defaultDoClef = new DoClef(3, 2);
 
 export class FaClef extends Clef {
-
   constructor(staffPosition, octave, defaultAccidental = null) {
     super(staffPosition, octave, defaultAccidental);
 
@@ -265,9 +268,12 @@ export class FaClef extends Clef {
   }
 
   pitchToStaffPosition(pitch) {
-    return (pitch.octave - this.octave) * 7 + this.staffPosition +
-            Pitch.stepToStaffOffset(pitch.step) -
-            Pitch.stepToStaffOffset(Step.Fa);
+    return (
+      (pitch.octave - this.octave) * 7 +
+      this.staffPosition +
+      Pitch.stepToStaffOffset(pitch.step) -
+      Pitch.stepToStaffOffset(Step.Fa)
+    );
   }
 
   staffPositionToPitch(staffPosition) {
@@ -276,7 +282,10 @@ export class FaClef extends Clef {
 
     var step = Pitch.staffOffsetToStep(offset);
 
-    if (this.activeAccidental && this.activeAccidental.staffPosition === staffPosition)
+    if (
+      this.activeAccidental &&
+      this.activeAccidental.staffPosition === staffPosition
+    )
       step += this.activeAccidental.accidentalType;
 
     return new Pitch(step, this.octave + octaveOffset);
@@ -301,7 +310,6 @@ export class FaClef extends Clef {
  * TextOnly
  */
 export class TextOnly extends ChantNotationElement {
-
   constructor() {
     super();
     this.trailingSpace = 0;
@@ -321,7 +329,6 @@ export class TextOnly extends ChantNotationElement {
 }
 
 export class ChantLineBreak extends ChantNotationElement {
-
   constructor(justify) {
     super();
     this.calculatedTrailingSpace = this.trailingSpace = 0;
@@ -329,7 +336,6 @@ export class ChantLineBreak extends ChantNotationElement {
   }
 
   performLayout(ctxt) {
-
     // reset the bounds before doing a layout
     this.bounds = new Rect(0, 0, 0, 0);
   }
@@ -346,7 +352,6 @@ export class ChantLineBreak extends ChantNotationElement {
 // tracking how a chant language (e.g., gabc) has been
 // mapped to exsurge notations.
 export class ChantMapping {
-
   // source can be any object type. in the case of gabc, source is a text
   // string that maps to a gabc word (e.g.: "no(g)bis(fg)").
   // notations is an array of ChantNotationElements
@@ -357,20 +362,17 @@ export class ChantMapping {
   }
 }
 
-
 /*
  * Score, document
  */
 export class ChantScore {
-
   // mappings is an array of ChantMappings.
   constructor(ctxt, mappings = [], useDropCap) {
-
     this.mappings = mappings;
 
     this.lines = [];
     this.notes = [];
-    this.titles = new Titles(ctxt);
+    this.titles = new Titles(ctxt, this);
 
     this.startingClef = null;
 
@@ -391,7 +393,6 @@ export class ChantScore {
   }
 
   updateNotations(ctxt) {
-
     var i, j, mapping, notation;
 
     // flatten all mappings into one array for N(0) access to notations
@@ -399,16 +400,18 @@ export class ChantScore {
     this.hasLyrics = false;
     this.hasAboveLinesText = false;
     this.hasTranslations = false;
-    for(i = 0; i < this.mappings.length; i++) {
+    for (i = 0; i < this.mappings.length; i++) {
       mapping = this.mappings[i];
-      for(j = 0; j < mapping.notations.length; j++) {
+      for (j = 0; j < mapping.notations.length; j++) {
         notation = mapping.notations[j];
         notation.score = this;
         notation.mapping = mapping;
         this.notations.push(notation);
-        if(!this.hasLyrics && notation.hasLyrics()) this.hasLyrics = true;
-        if(!this.hasAboveLinesText && notation.alText) this.hasAboveLinesText = true;
-        if(!this.hasTranslations && notation.translationText) this.hasTranslations = true;
+        if (!this.hasLyrics && notation.hasLyrics()) this.hasLyrics = true;
+        if (!this.hasAboveLinesText && notation.alText)
+          this.hasAboveLinesText = true;
+        if (!this.hasTranslations && notation.translationText)
+          this.hasTranslations = true;
       }
     }
 
@@ -417,7 +420,6 @@ export class ChantScore {
     this.startingClef = null;
 
     for (i = 0; i < this.notations.length; i++) {
-
       // if there are neumes before the clef, then we just keep the default clef above
       if (this.notations[i].isNeume) {
         this.startingClef = Clef.default();
@@ -437,14 +439,11 @@ export class ChantScore {
 
     // if we've reached this far and we *still* don't have a clef, then there aren't even
     // any neumes in the score. still, set the default clef just for good measure
-    if (!this.startingClef)
-      this.startingClef = Clef.default();
+    if (!this.startingClef) this.startingClef = Clef.default();
 
     // update drop cap
-    if (this.useDropCap)
-      this.recreateDropCap(ctxt);
-    else
-      this.dropCap = null;
+    if (this.useDropCap) this.recreateDropCap(ctxt);
+    else this.dropCap = null;
 
     this.needsLayout = true;
   }
@@ -454,10 +453,13 @@ export class ChantScore {
 
     // find the first notation with lyrics to use
     for (var i = 0; i < this.notations.length; i++) {
-      if (this.notations[i].hasLyrics() && this.notations[i].lyrics[0] !== null) {
+      if (
+        this.notations[i].hasLyrics() &&
+        this.notations[i].lyrics[0] !== null
+      ) {
         let notation = this.notations[i],
-            lyrics = notation.lyrics[0];
-        if(this.useDropCap) {
+          lyrics = notation.lyrics[0];
+        if (this.useDropCap) {
           this.dropCap = lyrics.generateDropCap(ctxt);
         } else {
           lyrics.dropCap = null;
@@ -479,20 +481,16 @@ export class ChantScore {
     ctxt.notations = this.notations;
     ctxt.currNotationIndex = 0;
 
-    if (this.dropCap)
-      this.dropCap.recalculateMetrics(ctxt);
+    if (this.dropCap) this.dropCap.recalculateMetrics(ctxt);
 
-    if (this.annotation)
-      this.annotation.recalculateMetrics(ctxt);
+    if (this.annotation) this.annotation.recalculateMetrics(ctxt);
   }
 
   // this is the the synchronous version of performLayout that
   // process everything without yielding to any other workers/threads.
   // good for server side processing or very small chant pieces.
   performLayout(ctxt, force) {
-
-    if (!force && this.needsLayout === false)
-      return; // nothing to do here!
+    if (!force && this.needsLayout === false) return; // nothing to do here!
 
     ctxt.updateHyphenWidth();
 
@@ -500,7 +498,7 @@ export class ChantScore {
 
     for (let i = 0; i < this.notations.length; i++) {
       let notation = this.notations[i];
-      if(force || notation.needsLayout) {
+      if (force || notation.needsLayout) {
         ctxt.currNotationIndex = i;
         notation.performLayout(ctxt);
       }
@@ -513,22 +511,22 @@ export class ChantScore {
   // apppropriate that the above performLayout, since it will process
   // the notations without locking up the UI thread.
   performLayoutAsync(ctxt, finishedCallback) {
-
     if (this.needsLayout === false) {
-      if (finishedCallback)
-        setTimeout(() => finishedCallback(), 0);
+      if (finishedCallback) setTimeout(() => finishedCallback(), 0);
 
       return; // nothing to do here!
     }
 
     if (ctxt.onFontLoaded) {
-      ctxt.onFontLoaded.push(() => this.performLayoutAsync(ctxt, finishedCallback));
+      ctxt.onFontLoaded.push(() =>
+        this.performLayoutAsync(ctxt, finishedCallback)
+      );
       return;
     }
 
     // check for sane value of hyphen width:
     ctxt.updateHyphenWidth();
-    if(!ctxt.hyphenWidth || ctxt.hyphenWidth / ctxt.lyricTextSize > 0.6) {
+    if (!ctxt.hyphenWidth || ctxt.hyphenWidth / ctxt.lyricTextSize > 0.6) {
       setTimeout(() => {
         this.performLayoutAsync(ctxt, finishedCallback);
       }, 100);
@@ -541,18 +539,15 @@ export class ChantScore {
   }
 
   layoutElementsAsync(ctxt, index, finishedCallback) {
-
     if (index >= this.notations.length) {
       this.needsLayout = false;
 
-      if (finishedCallback)
-        setTimeout(() => finishedCallback(), 0);
+      if (finishedCallback) setTimeout(() => finishedCallback(), 0);
 
       return;
     }
 
-    if (index === 0)
-      ctxt.activeClef = this.startingClef;
+    if (index === 0) ctxt.activeClef = this.startingClef;
 
     var timeout = new Date().getTime() + 50; // process for fifty milliseconds
     do {
@@ -563,24 +558,38 @@ export class ChantScore {
       }
 
       index++;
-
     } while (index < this.notations.length && new Date().getTime() < timeout);
 
     // schedule the next block of processing
-    setTimeout(() => this.layoutElementsAsync(ctxt, index, finishedCallback), 0);
+    setTimeout(
+      () => this.layoutElementsAsync(ctxt, index, finishedCallback),
+      0
+    );
   }
 
   layoutChantLines(ctxt, width, finishedCallback) {
-
     this.lines = [];
 
-    var y = width > 0? this.titles.layoutTitles(ctxt, width) : 0;
+    if (ctxt.mergeAnnotationWithTextLeft && this.annotation && !this.dropCap) {
+      let annotation = this.annotation,
+        annotationSpans = annotation.annotations
+          ? annotation.annotations.map(annotation => annotation.spans)
+          : [annotation.spans];
+      this.overrideTextLeft = new TextLeftRight(ctxt, "", "textLeft");
+      this.overrideTextLeft.spans = ctxt.mergeAnnotationWithTextLeft(
+        ...annotationSpans,
+        this.titles.textLeft && this.titles.textLeft.spans
+      );
+    } else {
+      this.overrideTextLeft = null;
+    }
+
+    var y = width > 0 ? this.titles.layoutTitles(ctxt, width) : 0;
     var currIndex = 0;
 
     ctxt.activeClef = this.startingClef;
 
     do {
-
       var line = new ChantLine(this);
 
       line.buildFromChantNotationIndex(ctxt, currIndex, width);
@@ -590,7 +599,6 @@ export class ChantScore {
 
       line.bounds.y = -line.bounds.y + y;
       y += line.bounds.height + ctxt.staffInterval * 1.5;
-
     } while (currIndex < this.notations.length);
 
     var lastLine = this.lines[this.lines.length - 1];
@@ -600,12 +608,10 @@ export class ChantScore {
     this.bounds.width = lastLine.bounds.width;
     this.bounds.height = y;
 
-    if (finishedCallback)
-      finishedCallback(this);
+    if (finishedCallback) finishedCallback(this);
   }
 
   draw(ctxt, scale = 1) {
-
     ctxt.setCanvasSize(this.bounds.width, this.bounds.height, scale);
 
     var canvasCtxt = ctxt.canvasCtxt;
@@ -616,33 +622,35 @@ export class ChantScore {
 
     this.titles.draw(ctxt);
 
-    for (var i = 0; i < this.lines.length; i++)
-      this.lines[i].draw(ctxt);
+    for (var i = 0; i < this.lines.length; i++) this.lines[i].draw(ctxt);
 
     canvasCtxt.translate(-this.bounds.x, -this.bounds.y);
   }
 
   createSvgNode(ctxt) {
-
     // create defs section
     var node = [ctxt.defsNode.cloneNode(true)];
     node[0].appendChild(ctxt.createStyleNode());
 
-    node.push( this.titles.createSvgNode(ctxt) );
+    node.push(this.titles.createSvgNode(ctxt));
 
     for (var i = 0; i < this.lines.length; i++)
-      node.push( this.lines[i].createSvgNode(ctxt) );
+      node.push(this.lines[i].createSvgNode(ctxt));
 
-    node = QuickSvg.createNode('g', {}, node);
+    node = QuickSvg.createNode("g", {}, node);
 
-    node = QuickSvg.createNode('svg', {
-      'xmlns': 'http://www.w3.org/2000/svg',
-      'version': '1.1',
-      'class': 'ChantScore',
-      'width': this.bounds.width,
-      'height': this.bounds.height,
-      'viewBox': [0,0,this.bounds.width,this.bounds.height].join(' ')
-    }, node);
+    node = QuickSvg.createNode(
+      "svg",
+      {
+        xmlns: "http://www.w3.org/2000/svg",
+        version: "1.1",
+        class: "ChantScore",
+        width: this.bounds.width,
+        height: this.bounds.height,
+        viewBox: [0, 0, this.bounds.width, this.bounds.height].join(" ")
+      },
+      node
+    );
 
     node.source = this;
     this.svg = node;
@@ -651,54 +659,62 @@ export class ChantScore {
   }
 
   createSvg(ctxt) {
-
     var fragment = "";
 
     // create defs section
     for (var def in ctxt.defs)
-      if (ctxt.defs.hasOwnProperty(def))
-        fragment += ctxt.defs[def];
+      if (ctxt.defs.hasOwnProperty(def)) fragment += ctxt.defs[def];
     fragment += ctxt.createStyle();
 
-    fragment = QuickSvg.createFragment('defs', {}, fragment);
+    fragment = QuickSvg.createFragment("defs", {}, fragment);
 
     fragment += this.titles.createSvgFragment(ctxt);
 
     for (var i = 0; i < this.lines.length; i++)
       fragment += this.lines[i].createSvgFragment(ctxt);
 
-    fragment = QuickSvg.createFragment('g', {}, fragment);
+    fragment = QuickSvg.createFragment("g", {}, fragment);
 
-    fragment = QuickSvg.createFragment('svg', {
-      'xmlns': 'http://www.w3.org/2000/svg',
-      'version': '1.1',
-      'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-      'class': 'ChantScore',
-      'width': this.bounds.width,
-      'height': this.bounds.height
-    }, fragment);
+    fragment = QuickSvg.createFragment(
+      "svg",
+      {
+        xmlns: "http://www.w3.org/2000/svg",
+        version: "1.1",
+        "xmlns:xlink": "http://www.w3.org/1999/xlink",
+        class: "ChantScore",
+        width: this.bounds.width,
+        height: this.bounds.height
+      },
+      fragment
+    );
 
     return fragment;
   }
 
   createSvgNodeForEachLine(ctxt) {
-
     var node = [];
 
     var top = 0;
     for (var i = 0; i < this.lines.length; i++) {
-      var lineFragment = [ctxt.defsNode.cloneNode(true), this.lines[i].createSvgNode(ctxt, top)];
+      var lineFragment = [
+        ctxt.defsNode.cloneNode(true),
+        this.lines[i].createSvgNode(ctxt, top)
+      ];
       lineFragment[0].appendChild(ctxt.createStyleNode());
       var height = this.lines[i].bounds.height + ctxt.staffInterval * 1.5;
-      lineFragment = QuickSvg.createNode('g', {}, lineFragment);
-      lineFragment = QuickSvg.createNode('svg', {
-        'xmlns': 'http://www.w3.org/2000/svg',
-        'version': '1.1',
-        'class': 'ChantScore',
-        'width': this.bounds.width,
-        'height': height,
-        'viewBox': [0,0,this.bounds.width,height].join(' ')
-      }, lineFragment);
+      lineFragment = QuickSvg.createNode("g", {}, lineFragment);
+      lineFragment = QuickSvg.createNode(
+        "svg",
+        {
+          xmlns: "http://www.w3.org/2000/svg",
+          version: "1.1",
+          class: "ChantScore",
+          width: this.bounds.width,
+          height: height,
+          viewBox: [0, 0, this.bounds.width, height].join(" ")
+        },
+        lineFragment
+      );
       node.push(lineFragment);
       top += height;
     }
@@ -706,30 +722,33 @@ export class ChantScore {
   }
 
   createSvgForEachLine(ctxt) {
-
     var fragment = "",
-        fragmentDefs = "";
+      fragmentDefs = "";
 
     // create defs section
     for (var def in ctxt.defs)
-      if (ctxt.defs.hasOwnProperty(def))
-        fragmentDefs += ctxt.defs[def];
+      if (ctxt.defs.hasOwnProperty(def)) fragmentDefs += ctxt.defs[def];
     fragmentDefs += ctxt.createStyle();
 
-    fragmentDefs = QuickSvg.createFragment('defs', {}, fragmentDefs);
+    fragmentDefs = QuickSvg.createFragment("defs", {}, fragmentDefs);
     var top = 0;
     for (var i = 0; i < this.lines.length; i++) {
-      var lineFragment = fragmentDefs + this.lines[i].createSvgFragment(ctxt, top);
+      var lineFragment =
+        fragmentDefs + this.lines[i].createSvgFragment(ctxt, top);
       var height = this.lines[i].bounds.height + ctxt.staffInterval * 1.5;
-      lineFragment = QuickSvg.createFragment('g', {}, lineFragment);
-      lineFragment = QuickSvg.createFragment('svg', {
-        'xmlns': 'http://www.w3.org/2000/svg',
-        'version': '1.1',
-        'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-        'class': 'ChantScore',
-        'width': this.bounds.width,
-        'height': height
-      }, lineFragment);
+      lineFragment = QuickSvg.createFragment("g", {}, lineFragment);
+      lineFragment = QuickSvg.createFragment(
+        "svg",
+        {
+          xmlns: "http://www.w3.org/2000/svg",
+          version: "1.1",
+          "xmlns:xlink": "http://www.w3.org/1999/xlink",
+          class: "ChantScore",
+          width: this.bounds.width,
+          height: height
+        },
+        lineFragment
+      );
       fragment += lineFragment;
       top += height;
     }
@@ -737,15 +756,14 @@ export class ChantScore {
   }
 
   unserializeFromJson(data, ctxt) {
-    this.autoColoring = data['auto-coloring'];
+    this.autoColoring = data["auto-coloring"];
 
     if (data.annotation !== null && data.annotation !== "") {
       // create the annotation
       this.annotation = new Annotation(ctxt, data.annotation);
-    } else
-      this.annotation = null;
+    } else this.annotation = null;
 
-    var createDropCap = data['drop-cap'] === 'auto' ? true : false;
+    var createDropCap = data["drop-cap"] === "auto" ? true : false;
 
     Gabc.parseChantNotations(data.notations, this, createDropCap);
   }
@@ -753,15 +771,12 @@ export class ChantScore {
   serializeToJson() {
     var data = {};
 
-    data['type'] = "score";
-    data['auto-coloring'] = true;
+    data["type"] = "score";
+    data["auto-coloring"] = true;
 
     if (this.annotation !== null)
       data.annotation = this.annotation.unsanitizedText;
-    else
-      data.annotation = "";
-
-
+    else data.annotation = "";
 
     return data;
   }
@@ -769,21 +784,20 @@ export class ChantScore {
 
 export class ChantDocument {
   constructor() {
-
     var defaults = {
       layout: {
         units: "mm",
-        'default-font': {
-          'font-family': "Crimson",
-          'font-size': 14
+        "default-font": {
+          "font-family": "Crimson",
+          "font-size": 14
         },
         page: {
           width: 8.5,
           height: 11,
-          'margin-left': 0,
-          'margin-top': 0,
-          'margin-right': 0,
-          'margin-bottom': 0
+          "margin-left": 0,
+          "margin-top": 0,
+          "margin-right": 0,
+          "margin-bottom": 0
         }
       },
       scores: []
@@ -796,26 +810,24 @@ export class ChantDocument {
   }
 
   copyLayout(to, from) {
-
     to.layout = {
       units: from.layout.units,
-      'default-font': {
-        'font-family': from.layout['default-font']['font-family'],
-        'font-size': from.layout['default-font']['font-size']
+      "default-font": {
+        "font-family": from.layout["default-font"]["font-family"],
+        "font-size": from.layout["default-font"]["font-size"]
       },
       page: {
         width: from.layout.page.width,
         height: from.layout.page.height,
-        'margin-left': from.layout.page['margin-left'],
-        'margin-top': from.layout.page['margin-top'],
-        'margin-right': from.layout.page['margin-right'],
-        'margin-bottom': from.layout.page['margin-bottom']
+        "margin-left": from.layout.page["margin-left"],
+        "margin-top": from.layout.page["margin-top"],
+        "margin-right": from.layout.page["margin-right"],
+        "margin-bottom": from.layout.page["margin-bottom"]
       }
     };
   }
 
   unserializeFromJson(data) {
-
     this.copyLayout(this, data);
 
     this.scores = [];

@@ -369,6 +369,18 @@ export var TextMeasuringStrategy = {
   OpenTypeJS: 2
 };
 
+const __connectorSpan = new TextSpan(" • "),
+  __mergeAnnotationWithTextLeft = (...annotationSpans) =>
+    annotationSpans.reduce((result, spans) => {
+      if (result && result.length) {
+        if (spans && spans.length) return result.concat(__connectorSpan, spans);
+        else return result;
+      } else if (spans && spans.length) {
+        return spans;
+      }
+      return [];
+    });
+
 /*
  * ChantContext
  */
@@ -384,6 +396,7 @@ export class ChantContext {
     if (QuickSvg.hasDOMAccess()) {
       this.defsNode = QuickSvg.createNode("defs");
     }
+    this.mergeAnnotationWithTextLeft = __mergeAnnotationWithTextLeft;
 
     // font styles
     this.setFont("'Palatino Linotype', 'Book Antiqua', Palatino, serif", 16);
@@ -1262,12 +1275,12 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
   }
 }
 
-var TextSpan = function(text, properties) {
+export function TextSpan(text, properties) {
   if (typeof properties === "undefined" || properties === null) properties = {};
 
   this.text = text;
   this.properties = properties;
-};
+}
 
 function MarkupStackFrame(tagName, startIndex, properties = {}) {
   this.tagName = tagName;
@@ -2290,7 +2303,8 @@ export class TextLeftRight extends TextElement {
       type === "textLeft" ? "start" : "end",
       sourceIndex
     );
-    this.extraClass = "textLeftRight " + (type === "textLeft" ? "textLeft" : "textRight");
+    this.extraClass =
+      "textLeftRight " + (type === "textLeft" ? "textLeft" : "textRight");
   }
 
   getCssClasses() {

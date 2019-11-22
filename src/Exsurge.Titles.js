@@ -35,8 +35,9 @@ import {
 } from "./Exsurge.Drawing.js";
 
 export class Titles extends ChantLayoutElement {
-  constructor(ctxt, { supertitle, title, subtitle, textLeft, textRight } = {}) {
+  constructor(ctxt, score, { supertitle, title, subtitle, textLeft, textRight } = {}) {
     super();
+    this.score = score;
     this.setSupertitle(ctxt, supertitle);
     this.setTitle(ctxt, title);
     this.setSubtitle(ctxt, subtitle);
@@ -79,13 +80,13 @@ export class Titles extends ChantLayoutElement {
       this.subtitle.bounds.y += this.subtitle.origin.y;
       y += this.subtitle.bounds.height + this.subtitle.padding(ctxt);
     }
-    let finalY = y;
-    if (this.textLeft) {
-      this.textLeft.recalculateMetrics(ctxt);
-      this.textLeft.bounds.y = y;
-      this.bounds.union(this.textLeft.bounds);
-      this.textLeft.bounds.y += this.textLeft.origin.y;
-      finalY = y + this.textLeft.bounds.height;
+    let finalY = y, textLeft = this.score.overrideTextLeft || this.textLeft;
+    if (textLeft) {
+      textLeft.recalculateMetrics(ctxt);
+      textLeft.bounds.y = y;
+      this.bounds.union(textLeft.bounds);
+      textLeft.bounds.y += textLeft.origin.y;
+      finalY = y + textLeft.bounds.height;
     }
     if (this.textRight) {
       this.textRight.recalculateMetrics(ctxt);
@@ -141,7 +142,7 @@ export class Titles extends ChantLayoutElement {
       this.supertitle,
       this.title,
       this.subtitle,
-      this.textLeft,
+      this.score.overrideTextLeft || this.textLeft,
       this.textRight
     ]) {
       if (el) el.draw(ctxt);
@@ -158,7 +159,7 @@ export class Titles extends ChantLayoutElement {
       this.supertitle,
       this.title,
       this.subtitle,
-      this.textLeft,
+      this.score.overrideTextLeft || this.textLeft,
       this.textRight
     ]) {
       if (el) node.push(el.createSvgNode(ctxt));
@@ -179,7 +180,7 @@ export class Titles extends ChantLayoutElement {
       this.supertitle,
       this.title,
       this.subtitle,
-      this.textLeft,
+      this.score.overrideTextLeft || this.textLeft,
       this.textRight
     ]) {
       if (el) fragment += el.createSvgFragment(ctxt);

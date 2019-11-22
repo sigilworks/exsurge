@@ -378,10 +378,12 @@ export class ChantLine extends ChantLayoutElement {
     if (this.notationsStartIndex === 0) {
       if (this.score.dropCap !== null) this.score.dropCap.draw(ctxt);
 
-      if (this.score.annotation !== null)
-        if (!ctxt.mergeAnnotationWithTextLeft || this.score.dropCap)
-          // only draw it if there is a dropCap or there is no mergeAnnotationWithTextLeft
-          this.score.annotation.draw(ctxt);
+      if (
+        this.score.annotation !== null &&
+        (!ctxt.mergeAnnotationWithTextLeft || this.score.dropCap)
+      )
+        // only draw it if there is a dropCap or there is no mergeAnnotationWithTextLeft
+        this.score.annotation.draw(ctxt);
     }
 
     // draw the notations
@@ -448,7 +450,11 @@ export class ChantLine extends ChantLayoutElement {
       if (this.score.dropCap !== null)
         inner.push(this.score.dropCap.createSvgNode(ctxt));
 
-      if (this.score.annotation !== null)
+      if (
+        this.score.annotation !== null &&
+        (!ctxt.mergeAnnotationWithTextLeft || this.score.dropCap)
+      )
+        // only draw it if there is a dropCap or there is no mergeAnnotationWithTextLeft
         inner = inner.concat(this.score.annotation.createSvgNode(ctxt));
     }
 
@@ -520,7 +526,11 @@ export class ChantLine extends ChantLayoutElement {
       if (this.score.dropCap !== null)
         inner += this.score.dropCap.createSvgFragment(ctxt);
 
-      if (this.score.annotation !== null)
+      if (
+        this.score.annotation !== null &&
+        (!ctxt.mergeAnnotationWithTextLeft || this.score.dropCap)
+      )
+        // only draw it if there is a dropCap or there is no mergeAnnotationWithTextLeft
         inner += this.score.annotation.createSvgFragment(ctxt);
     }
 
@@ -643,7 +653,10 @@ export class ChantLine extends ChantLayoutElement {
         padding =
           this.score.dropCap.bounds.width + this.score.dropCap.padding * 2;
 
-      if (this.score.annotation !== null)
+      if (
+        this.score.annotation !== null &&
+        (!ctxt.mergeAnnotationWithTextLeft || this.score.dropCap)
+      )
         padding = Math.max(
           padding,
           this.score.annotation.bounds.width + this.score.annotation.padding * 2
