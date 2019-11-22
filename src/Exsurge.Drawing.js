@@ -79,7 +79,7 @@ export const TextTypes = {
   annotation: {
     display: "Annotation",
     default: size => (size * 2) / 3,
-    containedInScore: score => !!score.annotation
+    containedInScore: score => !!score.annotation && (!score.mergeAnnotationWithTextLeft || score.dropCap)
   },
   supertitle: {
     display: "Supertitle",
@@ -369,18 +369,6 @@ export var TextMeasuringStrategy = {
   OpenTypeJS: 2
 };
 
-const __connectorSpan = new TextSpan(" • "),
-  __mergeAnnotationWithTextLeft = (...annotationSpans) =>
-    annotationSpans.reduce((result, spans) => {
-      if (result && result.length) {
-        if (spans && spans.length) return result.concat(__connectorSpan, spans);
-        else return result;
-      } else if (spans && spans.length) {
-        return spans;
-      }
-      return [];
-    });
-
 /*
  * ChantContext
  */
@@ -396,7 +384,6 @@ export class ChantContext {
     if (QuickSvg.hasDOMAccess()) {
       this.defsNode = QuickSvg.createNode("defs");
     }
-    this.mergeAnnotationWithTextLeft = __mergeAnnotationWithTextLeft;
 
     // font styles
     this.setFont("'Palatino Linotype', 'Book Antiqua', Palatino, serif", 16);

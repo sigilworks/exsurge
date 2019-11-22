@@ -34,7 +34,8 @@ import {
   Lyric,
   Annotation,
   DropCap,
-  TextLeftRight
+  TextLeftRight,
+  TextSpan
 } from "./Exsurge.Drawing.js";
 import { ChantLine } from "./Exsurge.Chant.ChantLine.js";
 import { AccidentalType } from "./Exsurge.Chant.Signs.js";
@@ -362,6 +363,18 @@ export class ChantMapping {
   }
 }
 
+const __connectorSpan = new TextSpan(" • "),
+  __mergeAnnotationWithTextLeft = (...annotationSpans) =>
+    annotationSpans.reduce((result, spans) => {
+      if (result && result.length) {
+        if (spans && spans.length) return result.concat(__connectorSpan, spans);
+        else return result;
+      } else if (spans && spans.length) {
+        return spans;
+      }
+      return [];
+    });
+
 /*
  * Score, document
  */
@@ -388,6 +401,8 @@ export class ChantScore {
 
     // valid after chant lines are created...
     this.bounds = new Rect();
+
+    this.mergeAnnotationWithTextLeft = __mergeAnnotationWithTextLeft;
 
     this.updateNotations(ctxt);
   }
@@ -570,13 +585,13 @@ export class ChantScore {
   layoutChantLines(ctxt, width, finishedCallback) {
     this.lines = [];
 
-    if (ctxt.mergeAnnotationWithTextLeft && this.annotation && !this.dropCap) {
+    if (this.mergeAnnotationWithTextLeft && this.annotation && !this.dropCap) {
       let annotation = this.annotation,
         annotationSpans = annotation.annotations
           ? annotation.annotations.map(annotation => annotation.spans)
           : [annotation.spans];
       this.overrideTextLeft = new TextLeftRight(ctxt, "", "textLeft");
-      this.overrideTextLeft.spans = ctxt.mergeAnnotationWithTextLeft(
+      this.overrideTextLeft.spans = this.mergeAnnotationWithTextLeft(
         ...annotationSpans,
         this.titles.textLeft && this.titles.textLeft.spans
       );
