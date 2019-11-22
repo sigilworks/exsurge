@@ -55,32 +55,6 @@ const canAccessDOM = typeof document !== "undefined";
  * @type Array
  */
 export const TextTypes = {
-  lyric: {
-    display: "Lyric",
-    default: size => size,
-    containedInScore: score => score.hasLyrics
-  },
-  al: {
-    display: "Above Staff",
-    styleName: "aboveLinesText",
-    default: size => size,
-    containedInScore: score => score.hasAboveLinesText
-  },
-  translation: {
-    display: "Translation",
-    default: size => size,
-    containedInScore: score => score.hasTranslations
-  },
-  dropCap: {
-    display: "Drop Cap",
-    default: size => size * 4,
-    containedInScore: score => !!score.dropCap
-  },
-  annotation: {
-    display: "Annotation",
-    default: size => (size * 2) / 3,
-    containedInScore: score => !!score.annotation && (!score.mergeAnnotationWithTextLeft || score.dropCap)
-  },
   supertitle: {
     display: "Supertitle",
     default: size => (size * 7) / 6, // 14pt
@@ -102,6 +76,34 @@ export const TextTypes = {
     default: size => size,
     containedInScore: score =>
       score.titles.hasTextLeft() || score.titles.hasTextRight()
+  },
+  annotation: {
+    display: "Annotation",
+    default: size => (size * 2) / 3,
+    containedInScore: score =>
+      !!score.annotation &&
+      (!score.mergeAnnotationWithTextLeft || score.dropCap)
+  },
+  dropCap: {
+    display: "Drop Cap",
+    default: size => size * 4,
+    containedInScore: score => !!score.dropCap
+  },
+  al: {
+    display: "Above Staff",
+    styleName: "aboveLinesText",
+    default: size => size,
+    containedInScore: score => score.hasAboveLinesText
+  },
+  lyric: {
+    display: "Lyric",
+    default: size => size,
+    containedInScore: score => score.hasLyrics
+  },
+  translation: {
+    display: "Translation",
+    default: size => size,
+    containedInScore: score => score.hasTranslations
   }
 };
 
@@ -2527,12 +2529,6 @@ export class ChantNotationElement extends ChantLayoutElement {
   createSvgNode(ctxt) {
     var inner = [];
 
-    for (var i = 0; i < this.visualizers.length; i++)
-      inner.push(this.visualizers[i].createSvgNode(ctxt, this));
-    if (inner.length) {
-      inner = [QuickSvg.createNode("g", { class: "Notations" }, inner)];
-    }
-
     for (i = 0; i < this.lyrics.length; i++)
       inner.push(this.lyrics[i].createSvgNode(ctxt));
 
@@ -2543,6 +2539,14 @@ export class ChantNotationElement extends ChantLayoutElement {
     if (this.alText)
       for (i = 0; i < this.alText.length; i++)
         inner.push(this.alText[i].createSvgNode(ctxt));
+
+    if (this.visualizers.length) {
+      let visualizers = [];
+      for (var i = 0; i < this.visualizers.length; i++)
+        visualizers.push(this.visualizers[i].createSvgNode(ctxt, this));
+
+      inner.push(QuickSvg.createNode("g", { class: "Notations" }, visualizers));
+    }
 
     return QuickSvg.createNode(
       "g",
@@ -2559,9 +2563,6 @@ export class ChantNotationElement extends ChantLayoutElement {
   createSvgFragment(ctxt) {
     var inner = "";
 
-    for (var i = 0; i < this.visualizers.length; i++)
-      inner += this.visualizers[i].createSvgFragment(ctxt, this);
-
     for (i = 0; i < this.lyrics.length; i++)
       inner += this.lyrics[i].createSvgFragment(ctxt);
 
@@ -2572,6 +2573,9 @@ export class ChantNotationElement extends ChantLayoutElement {
     if (this.alText)
       for (i = 0; i < this.alText.length; i++)
         inner += this.alText[i].createSvgFragment(ctxt);
+
+    for (var i = 0; i < this.visualizers.length; i++)
+      inner += this.visualizers[i].createSvgFragment(ctxt, this);
 
     return QuickSvg.createFragment(
       "g",

@@ -86,6 +86,11 @@ const regexHeaderEnd = /(?:^|\n)%%\s?\n/;
 const regexHeaderLine = /^([\w-_.]+):\s*((?:[^;\r\n]|;[ \t])*)(?:;|$)/i;
 const regexHeaderComment = /^%.*/;
 export class GabcHeader {
+  static getLength(gabc) {
+    let match = gabc.match(regexHeaderEnd);
+    return match ? match.index + match[0].length : 0;
+  }
+
   constructor(text) {
     if (typeof text !== "string") text = "";
     this.comments = [];
@@ -172,17 +177,14 @@ export class GabcHeader {
 }
 
 export class Gabc {
-  static stripHeader(gabc) {
-    let match = gabc.match(regexHeaderEnd);
-    return match ? gabc.slice(match.index + match[0].length) : gabc;
-  }
 
   // takes gabc source code (without the header info) and returns an array
   // of ChantMappings describing the chant. A chant score can then be created
   // fron the chant mappings and later updated via updateMappings() if need
   // be...
   static createMappingsFromSource(ctxt, gabcSource) {
-    gabcSource = Gabc.stripHeader(gabcSource);
+    var sourceIndex = GabcHeader.getLength(gabc);
+    gabcSource = gabcSource.slice(sourceIndex);
     var words = this.splitWords(gabcSource);
 
     // set the default clef
@@ -288,7 +290,8 @@ export class Gabc {
   // the mappings array passed in is changed in place to be updated from the
   // new source
   static updateMappingsFromSource(ctxt, mappings, newGabcSource) {
-    newGabcSource = Gabc.stripHeader(newGabcSource);
+    var headerLength = GabcHeader.getLength(newGabcSource);
+    newGabcSource = newGabcSource.slice(headerLength);
     // always remove the last old mapping since it's spacing/trailingSpace is handled specially
     mappings.pop();
 
@@ -436,6 +439,8 @@ export class Gabc {
       mappings[mappings.length - 1].notations[
         mappings[mappings.length - 1].notations.length - 1
       ].trailingSpace = 0;
+
+    return headerLength;
   }
 
   // takes an array of gabc words (like that returned by splitWords below)
