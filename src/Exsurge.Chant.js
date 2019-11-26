@@ -407,14 +407,25 @@ export class ChantScore {
     this.updateNotations(ctxt);
   }
 
+  updateSelection(selection) {
+    this.selection = selection;
+    const elementSelection = (this.selection && this.selection.element) || [];
+    for (let i = 0; i < this.notes.length; ++i) {
+      let element = this.notes[i];
+      element.selected = elementSelection.includes(i);
+    }
+  }
+
   updateNotations(ctxt) {
     var i, j, mapping, notation;
 
     // flatten all mappings into one array for N(0) access to notations
     this.notations = [];
+    this.notes = [];
     this.hasLyrics = false;
     this.hasAboveLinesText = false;
     this.hasTranslations = false;
+    const elementSelection = (this.selection && this.selection.element) || [];
     for (i = 0; i < this.mappings.length; i++) {
       mapping = this.mappings[i];
       for (j = 0; j < mapping.notations.length; j++) {
@@ -427,6 +438,14 @@ export class ChantScore {
           this.hasAboveLinesText = true;
         if (!this.hasTranslations && notation.translationText)
           this.hasTranslations = true;
+
+        // Update this.notes and find element indices:
+        let elements = notation.notes || [notation];
+        for (let element of elements) {
+          let elementIndex = (element.elementIndex =
+            this.notes.push(element) - 1);
+          element.selected = elementSelection.includes(elementIndex);
+        }
       }
     }
 

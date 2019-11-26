@@ -177,14 +177,13 @@ export class GabcHeader {
 }
 
 export class Gabc {
-
   // takes gabc source code (without the header info) and returns an array
   // of ChantMappings describing the chant. A chant score can then be created
   // fron the chant mappings and later updated via updateMappings() if need
   // be...
   static createMappingsFromSource(ctxt, gabcSource) {
-    var sourceIndex = GabcHeader.getLength(gabc);
-    gabcSource = gabcSource.slice(sourceIndex);
+    var headerLength = GabcHeader.getLength(gabcSource);
+    gabcSource = gabcSource.slice(headerLength);
     var words = this.splitWords(gabcSource);
 
     // set the default clef
@@ -322,7 +321,8 @@ export class Gabc {
           1;
       if (resultCode === "=") {
         var sourceIndexDiff = sourceIndex - mappings[index].sourceIndex;
-        // skip over ones that haven't changed, but updating the clef and source index (and pitch in case clef or accidentals have changed) as we go
+        // skip over ones that haven't changed, but updating the clef and source
+        // index (and pitch in case clef or accidentals have changed) as we go
         for (j = 0; j < resultValues.length; j++, index++) {
           mapping = mappings[index];
           mapping.sourceIndex += sourceIndexDiff;
@@ -479,7 +479,7 @@ export class Gabc {
     var notations = [];
     var currSyllable = 0;
     var makeAlText = function(text, sourceIndex) {
-      return new AboveLinesText(ctxt, text, sourceIndex);
+      return new AboveLinesText(ctxt, text, sourceIndex, text.length);
     };
 
     while ((match = __syllablesRegex.exec(word))) matches.push(match);
@@ -692,7 +692,7 @@ export class Gabc {
           lyricType = LyricType.SingleSyllable;
 
         text = text.slice(0, -1);
-      } else if (text[text.length - 1] === "_") {
+      } else if (/<\/i>$/.test(text)) {
         // must be an elision
         elides = true;
         text = text.slice(0, -1);
@@ -722,6 +722,7 @@ export class Gabc {
     if (!data) return [new TextOnly()];
 
     var baseSourceIndex = sourceIndex;
+    var sourceLength = 0;
     var notations = [];
     var notes = [];
     var trailingSpace = DefaultTrailingSpace;
@@ -744,6 +745,10 @@ export class Gabc {
       if (notation !== null) {
         let prevNotation = notations[notations.length - 1];
         notation.sourceIndex = sourceIndex;
+        notation.sourceGabc = data.substr(
+          sourceIndex - baseSourceIndex,
+          sourceLength
+        );
         if (notation.isClef) {
           ctxt.activeClef = notation;
           if (
@@ -772,6 +777,7 @@ export class Gabc {
 
     while ((match = regex.exec(data))) {
       sourceIndex = baseSourceIndex + match.index;
+      sourceLength = match[0].length;
       var atom = match[0];
 
       // handle the clefs and dividers here
@@ -945,6 +951,7 @@ export class Gabc {
               atom[0]
             );
             accidental.sourceIndex = sourceIndex;
+            accidental.sourceLength = sourceLength;
             accidental.trailingSpace = TrailingSpaceForAccidental;
 
             ctxt.activeClef.activeAccidental = accidental;
@@ -1407,6 +1414,7 @@ export class Gabc {
   static createNoteFromData(ctxt, clef, data, notes, sourceIndex) {
     var note = new Note();
     note.sourceIndex = sourceIndex;
+    note.sourceGabc = data;
 
     if (data.length < 1) throw "Invalid note data: " + data;
 
@@ -1542,6 +1550,7 @@ export class Gabc {
             // quick stropha feature (e.g., gsss). create a new note
             let newNote = new Note();
             newNote.sourceIndex = sourceIndex + i;
+            newNote.sourceGabc = "s";
             newNote.staffPosition = note.staffPosition;
             newNote.pitch = note.pitch;
             notes.push(note);
@@ -1558,6 +1567,7 @@ export class Gabc {
             // quick virga feature (e.g., gvvv). create a new note
             let newNote = new Note();
             newNote.sourceIndex = sourceIndex + i;
+            newNote.sourceGabc = "v";
             newNote.staffPosition = note.staffPosition;
             newNote.pitch = note.pitch;
             notes.push(note);
@@ -1629,6 +1639,7 @@ export class Gabc {
 
         // gabc special item groups
         case "[":
+          note.sourceGabc = note.sourceGabc.slice(0, i);
           // read in the whole group and parse it
           var startIndex = ++i;
           while (i < data.length && data[i] !== "]") i++;
@@ -1682,7 +1693,8 @@ export class Gabc {
         note.alText = new AboveLinesText(
           ctxt,
           data,
-          note.sourceIndex + sourceIndexOffset
+          note.sourceIndex + sourceIndexOffset,
+          instruction.length
         );
         note.alText.alignToNote = true;
         return;
@@ -1745,8 +1757,8 @@ export class Gabc {
     // all whitespace with spaces, which prevents tabs and newlines from ending
     // up in the notation data.
     gabcNotations = gabcNotations
-      .trim()
-      .replace(/\s/g, " ")
+      // .trim()
+      // .replace(/\s/g, " ")
       .replace(/\) (?=[^\)]*(?:\(|$))/g, ")\n");
     return gabcNotations.split(/\n/g);
   }

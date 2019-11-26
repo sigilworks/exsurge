@@ -388,8 +388,8 @@ export class ChantContext {
     }
 
     // font styles
-    this.setFont("'Palatino Linotype', 'Book Antiqua', Palatino, serif", 16);
     this.lyricTextColor = "#000";
+    this.setFont("'Palatino Linotype', 'Book Antiqua', Palatino, serif", 16);
 
     this.rubricColor = "#d00";
     this.specialCharProperties = {
@@ -414,16 +414,12 @@ export class ChantContext {
       }
     };
 
-    this.alTextColor = this.lyricTextColor;
     this.alTextStyle = "<i>";
 
-    this.translationTextColor = this.lyricTextColor;
     this.translationTextStyle = "<i>";
 
-    this.dropCapTextColor = this.lyricTextColor;
     this.dropCapPadding = 1; // minimum padding on either side of drop cap in staffIntervals
 
-    this.annotationTextColor = this.lyricTextColor;
     this.annotationPadding = 1; // minimum padding on either side of annotation in staffIntervals
 
     this.minLedgerSeparation = 2; // multiple of staffInterval
@@ -529,6 +525,7 @@ export class ChantContext {
     for (let [key, textType] of Object.entries(TextTypes)) {
       this[`${key}TextSize`] = textType.default(size);
       this[`${key}TextFont`] = font;
+      this[`${key}TextColor`] = this.lyricTextColor || "#000";
     }
 
     this.baseTextStyle = baseStyle;
@@ -982,7 +979,9 @@ export class GlyphVisualizer extends ChantLayoutElement {
   getSvgAttributes(ctxt, source) {
     var result = {
       "source-index": source.sourceIndex,
-      "xlink:href": "#" + this.glyphCode
+      "element-index": source.elementIndex,
+      "xlink:href": "#" + this.glyphCode,
+      class: source.selected ? "selected" : ""
     };
     if (ctxt.scaleDefs === true) {
       result.x = this.bounds.x + this.origin.x;
