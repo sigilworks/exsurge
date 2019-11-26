@@ -45,7 +45,7 @@ export class AcuteAccent extends GlyphVisualizer {
 
   performLayout(ctxt) {
 
-    this.bounds.x = this.note.bounds.width / 2; // center on the note itself
+    this.bounds.x = this.note.bounds.x + this.bounds.width / 2; // center on the note itself
 
     // this puts the acute accent either over the staff lines, or over the note if the
     // note is above the staff lines
