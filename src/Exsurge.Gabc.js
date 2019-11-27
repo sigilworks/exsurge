@@ -727,6 +727,11 @@ export class Gabc {
     var notes = [];
     var trailingSpace = DefaultTrailingSpace;
 
+    var addToLastSourceGabc = gabc => {
+      if (notes.length > 0) {
+        notes[notes.length - 1].sourceGabc += gabc;
+      }
+    };
     var addNotation = notation => {
       // first, if we have any notes left over, we create a neume out of them
       if (notes.length > 0) {
@@ -745,10 +750,7 @@ export class Gabc {
       if (notation !== null) {
         let prevNotation = notations[notations.length - 1];
         notation.sourceIndex = sourceIndex;
-        notation.sourceGabc = data.substr(
-          sourceIndex - baseSourceIndex,
-          sourceLength
-        );
+        notation.sourceGabc = match[0];
         if (notation.isClef) {
           ctxt.activeClef = notation;
           if (
@@ -898,12 +900,14 @@ export class Gabc {
         // spacing indicators
         case "!":
           trailingSpace = 0;
+          addToLastSourceGabc(atom);
           addNotation(null);
           break;
         case " ":
           // fixme: is this correct? logically what is the difference in gabc
           // between putting a space between notes vs putting '//' between notes?
           trailingSpace = TrailingSpaceMultiple(2);
+          addToLastSourceGabc(atom);
           addNotation(null);
           break;
 
@@ -911,6 +915,7 @@ export class Gabc {
           // might be a number of slashes, a custos, might be an accidental, or might be a note
           if (atom[0] === "/") {
             trailingSpace = TrailingSpaceMultiple(atom.length);
+            addToLastSourceGabc(atom);
             addNotation(null);
           } else if (atom.length > 1 && atom[1] === "+") {
             // custos
@@ -1122,23 +1127,22 @@ export class Gabc {
             prevNote.shapeModifiers |= NoteShapeModifiers.Descending;
             return createNeume(new Neumes.Clivis(), true);
           }
-        } else {
-          // stand alone oriscus
-          var neume = new Neumes.Oriscus(),
-            state = createNeume(neume, false);
-          // if the current note is on a space within the staff AND the previous note is on the line below AND the previous note has a mora,
-          // then we went the trailing space at its default of intraNeumeSpacing to prevent the dot from running up into the current note.
-          // Otherwise, we want no trailing space.
-          if (
-            currNote.staffPosition > prevNote.staffPosition &&
-            (currNote.staffPosition % 2 === 1 ||
-              prevNote.staffPosition !== currNote.staffPosition - 1 ||
-              !prevNote.morae ||
-              prevNote.morae.length === 0)
-          )
-            neume.trailingSpace = 0;
-          return state;
         }
+        // stand alone oriscus
+        var neume = new Neumes.Oriscus(),
+          state = createNeume(neume, false);
+        // if the current note is on a space within the staff AND the previous note is on the line below AND the previous note has a mora,
+        // then we went the trailing space at its default of intraNeumeSpacing to prevent the dot from running up into the current note.
+        // Otherwise, we want no trailing space.
+        if (
+          currNote.staffPosition > prevNote.staffPosition &&
+          (currNote.staffPosition % 2 === 1 ||
+            prevNote.staffPosition !== currNote.staffPosition - 1 ||
+            !prevNote.morae ||
+            prevNote.morae.length === 0)
+        )
+          neume.trailingSpace = 0;
+        return state;
       }
     };
 
