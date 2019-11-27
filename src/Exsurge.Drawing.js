@@ -108,6 +108,7 @@ export const TextTypes = {
 };
 Object.entries(TextTypes).forEach(([key, entry]) => {
   entry.cssClass = entry.cssClass || key;
+  entry.key = key;
 });
 
 export const DefaultTrailingSpace = ctxt =>
