@@ -57,52 +57,52 @@ const canAccessDOM = typeof document !== "undefined";
 export const TextTypes = {
   supertitle: {
     display: "Supertitle",
-    default: size => (size * 7) / 6, // 14pt
+    defaultSize: size => (size * 7) / 6, // 14pt
     containedInScore: score => score.titles.hasSupertitle()
   },
   title: {
     display: "Title",
-    default: size => (size * 3) / 2, // 18pt
+    defaultSize: size => (size * 3) / 2, // 18pt
     containedInScore: score => score.titles.hasTitle()
   },
   subtitle: {
     display: "Subtitle",
-    default: size => size, // 12pt
+    defaultSize: size => size, // 12pt
     containedInScore: score => score.titles.hasSubtitle()
   },
   leftRight: {
     display: "Left / Right Text",
     cssClass: "textLeftRight",
-    default: size => size,
+    defaultSize: size => size,
     containedInScore: score =>
       score.titles.hasTextLeft() || score.titles.hasTextRight()
   },
   annotation: {
     display: "Annotation",
-    default: size => (size * 2) / 3,
+    defaultSize: size => (size * 2) / 3,
     containedInScore: score =>
       !!score.annotation &&
       (!score.mergeAnnotationWithTextLeft || score.dropCap)
   },
   dropCap: {
     display: "Drop Cap",
-    default: size => size * 4,
+    defaultSize: size => size * 4,
     containedInScore: score => !!score.dropCap
   },
   al: {
     display: "Above Staff",
     cssClass: "aboveLinesText",
-    default: size => size,
+    defaultSize: size => size,
     containedInScore: score => score.hasAboveLinesText
   },
   lyric: {
     display: "Lyric",
-    default: size => size,
+    defaultSize: size => size,
     containedInScore: score => score.hasLyrics
   },
   translation: {
     display: "Translation",
-    default: size => size,
+    defaultSize: size => size,
     containedInScore: score => score.hasTranslations
   }
 };
@@ -527,7 +527,7 @@ export class ChantContext {
 
   setFont(font, size = 16, baseStyle = {}, opentypeFontDictionary) {
     for (let [key, textType] of Object.entries(TextTypes)) {
-      this[`${key}TextSize`] = textType.default(size);
+      this[`${key}TextSize`] = textType.defaultSize(size);
       this[`${key}TextFont`] = font;
       this[`${key}TextColor`] = this.lyricTextColor || "#000";
     }
