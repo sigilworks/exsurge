@@ -72,7 +72,7 @@ export const TextTypes = {
   },
   leftRight: {
     display: "Left / Right Text",
-    styleName: "textLeftRight",
+    cssClass: "textLeftRight",
     default: size => size,
     containedInScore: score =>
       score.titles.hasTextLeft() || score.titles.hasTextRight()
@@ -91,7 +91,7 @@ export const TextTypes = {
   },
   al: {
     display: "Above Staff",
-    styleName: "aboveLinesText",
+    cssClass: "aboveLinesText",
     default: size => size,
     containedInScore: score => score.hasAboveLinesText
   },
@@ -106,6 +106,9 @@ export const TextTypes = {
     containedInScore: score => score.hasTranslations
   }
 };
+Object.entries(TextTypes).forEach(([key, entry]) => {
+  entry.cssClass = entry.cssClass || key;
+});
 
 export const DefaultTrailingSpace = ctxt =>
   ctxt.intraNeumeSpacing * ctxt.interSyllabicMultiplier;
@@ -553,11 +556,11 @@ export class ChantContext {
   createStyleCss() {
     var style = "";
     for (let [key, textType] of Object.entries(TextTypes)) {
-      var styleName = textType.styleName || key,
+      var cssClass = textType.cssClass,
         color = this[key + "TextColor"],
         font = this[key + "TextFont"],
         size = this[key + "TextSize"];
-      style += `.${styleName}{fill:${color};font-family:${font};font-size:${size}px;font-kerning:normal}`;
+      style += `.${cssClass}{fill:${color};font-family:${font};font-size:${size}px;font-kerning:normal}`;
     }
     return style;
   }
@@ -1642,7 +1645,7 @@ export class TextElement extends ChantLayoutElement {
   }
 
   getCssClasses() {
-    return "";
+    return this.textType && this.textType.cssClass || "";
   }
 
   getExtraStyleProperties(ctxt) {
@@ -1893,6 +1896,7 @@ export class Lyric extends TextElement {
       "start",
       sourceIndex
     );
+    this.textType = TextTypes.lyric;
 
     // save the original text in case we need to later use the lyric
     // in a dropcap...
@@ -2126,9 +2130,7 @@ export class Lyric extends TextElement {
   }
 
   getCssClasses() {
-    var classes = "lyric ";
-
-    if (this.lyricType === LyricType.Directive) classes += "directive ";
+    var classes = this.lyricType === LyricType.Directive ? "directive " : "";
 
     return classes + super.getCssClasses();
   }
@@ -2164,12 +2166,9 @@ export class AboveLinesText extends TextElement {
       "start",
       sourceIndex
     );
+    this.textType = TextTypes.al;
 
     this.padding = ctxt.staffInterval / 2;
-  }
-
-  getCssClasses() {
-    return "aboveLinesText " + super.getCssClasses();
   }
 }
 
@@ -2193,12 +2192,9 @@ export class TranslationText extends TextElement {
       anchor,
       sourceIndex
     );
+    this.textType = TextTypes.translation;
 
     this.padding = ctxt.staffInterval / 2;
-  }
-
-  getCssClasses() {
-    return "translation " + super.getCssClasses();
   }
 }
 
@@ -2215,12 +2211,9 @@ export class DropCap extends TextElement {
       "middle",
       sourceIndex
     );
+    this.textType = TextTypes.dropCap;
 
     this.padding = ctxt.staffInterval * ctxt.dropCapPadding;
-  }
-
-  getCssClasses() {
-    return "dropCap " + super.getCssClasses();
   }
 }
 
@@ -2234,12 +2227,9 @@ export class Supertitle extends TextElement {
       "middle",
       sourceIndex
     );
+    this.textType = TextTypes.supertitle;
 
     this.padding = ctxt => ctxt.supertitleTextSize / 3;
-  }
-
-  getCssClasses() {
-    return "supertitle " + super.getCssClasses();
   }
 }
 
@@ -2253,12 +2243,9 @@ export class Title extends TextElement {
       "middle",
       sourceIndex
     );
+    this.textType = TextTypes.title;
 
     this.padding = ctxt => ctxt.titleTextSize / 3;
-  }
-
-  getCssClasses() {
-    return "title " + super.getCssClasses();
   }
 }
 
@@ -2272,12 +2259,9 @@ export class Subtitle extends TextElement {
       "middle",
       sourceIndex
     );
+    this.textType = TextTypes.subtitle;
 
     this.padding = ctxt => ctxt.subtitleTextSize / 3;
-  }
-
-  getCssClasses() {
-    return "subtitle " + super.getCssClasses();
   }
 }
 
@@ -2291,8 +2275,8 @@ export class TextLeftRight extends TextElement {
       type === "textLeft" ? "start" : "end",
       sourceIndex
     );
-    this.extraClass =
-      "textLeftRight " + (type === "textLeft" ? "textLeft" : "textRight");
+    this.textType = TextTypes.leftRight;
+    this.extraClass = type === "textLeft" ? "textLeft" : "textRight";
   }
 
   getCssClasses() {
@@ -2312,12 +2296,9 @@ export class Annotation extends TextElement {
       ctxt => ctxt.annotationTextSize,
       "middle"
     );
+    this.textType = TextTypes.annotation;
     this.padding = ctxt.staffInterval * ctxt.annotationPadding;
     this.dominantBaseline = "hanging"; // so that annotations can be aligned at the top.
-  }
-
-  getCssClasses() {
-    return "annotation " + super.getCssClasses();
   }
 }
 
