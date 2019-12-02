@@ -35,7 +35,11 @@ import {
 } from "./Exsurge.Drawing.js";
 
 export class Titles extends ChantLayoutElement {
-  constructor(ctxt, score, { supertitle, title, subtitle, textLeft, textRight } = {}) {
+  constructor(
+    ctxt,
+    score,
+    { supertitle, title, subtitle, textLeft, textRight } = {}
+  ) {
     super();
     this.score = score;
     this.setSupertitle(ctxt, supertitle);
@@ -45,6 +49,24 @@ export class Titles extends ChantLayoutElement {
     this.setTextRight(ctxt, textRight);
   }
 
+  setBoundsX(ctxt, elementName, width) {
+    let element = this[elementName];
+    switch (ctxt[elementName + "TextAlignment"]) {
+      case "left":
+        element.textAnchor = "start";
+        element.bounds.x = 0;
+        break;
+      case "right":
+        element.textAnchor = "end";
+        element.bounds.x = width;
+        break;
+      case "center":
+      default:
+        element.textAnchor = "middle";
+        element.bounds.x = width / 2;
+    }
+  }
+
   /**
    * Lays out the titles, and returns their total height
    * @param  {ChantContext} ctxt
@@ -52,35 +74,36 @@ export class Titles extends ChantLayoutElement {
    */
   layoutTitles(ctxt, width) {
     this.bounds = new Rect(0, 0, 0, 0);
-    let y = 0,
-      midX = width / 2;
+    let y = 0;
     if (this.supertitle) {
       this.supertitle.recalculateMetrics(ctxt);
-      this.supertitle.bounds.x = midX;
+
+      this.setBoundsX(ctxt, "supertitle", width);
       this.supertitle.bounds.y = y;
       this.bounds.union(this.supertitle.bounds);
       this.supertitle.bounds.y += this.supertitle.origin.y;
       y += this.supertitle.bounds.height + this.supertitle.padding(ctxt);
     }
     if (this.title) {
-      if(y) y += this.title.padding(ctxt);
+      if (y) y += this.title.padding(ctxt);
       this.title.recalculateMetrics(ctxt);
-      this.title.bounds.x = midX;
+      this.setBoundsX(ctxt, "title", width);
       this.title.bounds.y = y;
       this.bounds.union(this.title.bounds);
       this.title.bounds.y += this.title.origin.y;
       y += this.title.bounds.height + this.title.padding(ctxt);
     }
     if (this.subtitle) {
-      if(y) y += this.subtitle.padding(ctxt);
+      if (y) y += this.subtitle.padding(ctxt);
       this.subtitle.recalculateMetrics(ctxt);
-      this.subtitle.bounds.x = midX;
+      this.setBoundsX(ctxt, "subtitle", width);
       this.subtitle.bounds.y = y;
       this.bounds.union(this.subtitle.bounds);
       this.subtitle.bounds.y += this.subtitle.origin.y;
       y += this.subtitle.bounds.height + this.subtitle.padding(ctxt);
     }
-    let finalY = y, textLeft = this.score.overrideTextLeft || this.textLeft;
+    let finalY = y,
+      textLeft = this.score.overrideTextLeft || this.textLeft;
     if (textLeft) {
       textLeft.recalculateMetrics(ctxt);
       textLeft.bounds.y = y;
