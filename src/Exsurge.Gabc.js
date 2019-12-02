@@ -59,9 +59,8 @@ import * as Signs from "./Exsurge.Chant.Signs.js";
 import * as Neumes from "./Exsurge.Chant.Neumes.js";
 
 // reusable reg exps
-var __syllablesRegex = /(?=.)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
-var __altRegex = /<alt>(.*?)<\/alt>/g;
-var __translationRegex = /\[(alt:)?(.*?)\]/g;
+var __syllablesRegex = /(?=\S)((?:[^(])*)(?:\(?([^)]*)\)?)?/g;
+var __altTranslationRegex = /<alt>(.*?)<\/alt>|\[(alt:)?(.*?)\]/g;
 
 var __notationsRegex = /z0|z|Z|::|:|[,;][1-6]?|`|[cf][1-4]|cb[1-4]|\/+| |\!|-?[a-mA-M][oOwWvVrRsxy#~\+><_\.'012345]*(?:\[[^\]]*\]?)*|\{([^}]+)\}?/g;
 var __notationsRegex_group_insideBraces = 1;
@@ -478,16 +477,13 @@ export class Gabc {
     var matches = [];
     var notations = [];
     var currSyllable = 0;
-    var makeAlText = function(text, sourceIndex) {
-      return new AboveLinesText(ctxt, text, sourceIndex, text.length);
-    };
 
     while ((match = __syllablesRegex.exec(word))) matches.push(match);
 
     for (var j = 0; j < matches.length; j++) {
       var match = matches[j];
 
-      var lyricText = match[1].replace(/^\s+/, "").replace(/~/g, " ");
+      var lyricText = match[1].replace(/~/g, " ");
       var alText = [];
       var translationText = [];
       var notationData = match[2];
@@ -512,27 +508,22 @@ export class Gabc {
       items[0].firstOfSyllable = !!lyricText;
       notations.push(...items);
 
-      var m = __altRegex.exec();
-      while ((m = __altRegex.exec(lyricText))) {
+      var m = __altTranslationRegex.exec();
+      let indexOffset = 0;
+      while ((m = __altTranslationRegex.exec(lyricText))) {
         let index = m.index;
         lyricText =
           lyricText.slice(0, index) + lyricText.slice(index + m[0].length);
-        alText.push(makeAlText(m[1], sourceIndex + index + 5));
-        __altRegex.exec();
-      }
-
-      m = __translationRegex.exec();
-      while ((m = __translationRegex.exec(lyricText))) {
-        let index = m.index;
-        lyricText =
-          lyricText.slice(0, index) + lyricText.slice(index + m[0].length);
-        index += sourceIndex + 1;
+        index += sourceIndex + indexOffset + 1;
         if (m[1]) {
-          alText.push(new AboveLinesText(ctxt, m[2], index + m[1].length));
+          alText.push(new AboveLinesText(ctxt, m[1], index + 4));
+        } else if (m[2]) {
+          alText.push(new AboveLinesText(ctxt, m[3], index + m[2].length));
         } else {
-          translationText.push(new TranslationText(ctxt, m[2], index));
+          translationText.push(new TranslationText(ctxt, m[3], index));
         }
-        __translationRegex.exec();
+        indexOffset += m[0].length;
+        __altTranslationRegex.exec();
       }
       if (lyricText === "" && alText.length === 0) continue;
 
