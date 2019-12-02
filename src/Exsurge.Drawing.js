@@ -529,7 +529,7 @@ export class ChantContext {
     for (let [key, textType] of Object.entries(TextTypes)) {
       this[`${key}TextSize`] = textType.defaultSize(size);
       this[`${key}TextFont`] = font;
-      this[`${key}TextColor`] = this.lyricTextColor || "#000";
+      this[`${key}TextColor`] = this.textColor || "#000";
     }
 
     this.baseTextStyle = baseStyle;
