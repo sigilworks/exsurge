@@ -2099,7 +2099,7 @@ export class Lyric extends TextElement {
     return this.notation.bounds.x + this.bounds.x;
   }
 
-  getRight(index) {
+  getRight() {
     return this.notation.bounds.x + this.bounds.x + this.bounds.width;
   }
 
@@ -2118,6 +2118,7 @@ export class Lyric extends TextElement {
         }
       });
     }
+    this.setNeedsConnector();
 
     super.recalculateMetrics(ctxt);
 
@@ -2125,7 +2126,6 @@ export class Lyric extends TextElement {
 
     this.connectorWidth = 0;
     this.defaultConnectorWidth = ctxt.hyphenWidth;
-    this.setNeedsConnector();
 
     var activeLanguage = this.language || ctxt.defaultLanguage;
 
