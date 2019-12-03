@@ -1344,11 +1344,12 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
   }
 }
 
-export function TextSpan(text, properties) {
+export function TextSpan(text, properties, activeTags) {
   if (typeof properties === "undefined" || properties === null) properties = {};
 
   this.text = text;
   this.properties = properties;
+  this.activeTags = activeTags || [];
 }
 
 function MarkupStackFrame(tagName, startIndex, properties = {}) {
@@ -1436,7 +1437,13 @@ export class TextElement extends ChantLayoutElement {
 
       if (extraProperties) Object.assign(properties, extraProperties);
 
-      this.spans.push(new TextSpan(spanText, properties));
+      this.spans.push(
+        new TextSpan(
+          spanText,
+          properties,
+          markupStack.map(frame => frame.tagName)
+        )
+      );
     };
 
     var markupRegex = /\\?([arv])(?:bar|\/\.)|<(\/)?([bciu]|ul|sc)>(?=(?:(.+?)<\/\3>)?)/gi;
@@ -1705,12 +1712,19 @@ export class TextElement extends ChantLayoutElement {
             this.rightAligned =
               max === firstLineMaxWidth && firstLineMaxWidth !== maxWidth;
             if (textLeft)
-              newSpans.push(new TextSpan(textLeft, splitSpan.properties));
+              newSpans.push(
+                new TextSpan(
+                  textLeft,
+                  splitSpan.properties,
+                  splitSpan.activeTags
+                )
+              );
             if (textRight) {
               newSpans.push(
                 new TextSpan(
                   textRight,
-                  Object.assign({}, splitSpan.properties, { newLine: true })
+                  Object.assign({}, splitSpan.properties, { newLine: true }),
+                  splitSpan.activeTags
                 )
               );
             } else if (this.spans[spanIndex + 1]) {
