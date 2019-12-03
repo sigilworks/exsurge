@@ -266,16 +266,14 @@ export var QuickSvg = {
     return svgSrc;
   },
 
-  nodesForGlyph: function(glyph) {
+  nodesForGlyph: function(glyph, functionName = "createNode") {
     var nodes = [];
     for (var i = 0; i < glyph.paths.length; ++i) {
       var path = glyph.paths[i];
-      nodes.push(
-        QuickSvg.createNode(path.data ? "path" : "g", {
-          d: path.data || undefined,
-          fill: path.type === "negative" ? "#fff" : undefined
-        })
-      );
+      let props = {};
+      if (path.data) props.d = path.data;
+      if (path.type === "negative") props.fill = "#fff";
+      nodes.push(QuickSvg[functionName](path.data ? "path" : "g", props));
     }
     return nodes;
   },
@@ -312,6 +310,24 @@ export var QuickSvg = {
       }
     }
     return node;
+  },
+
+  createReact(name, props, ...children) {
+    if ("class" in props) {
+      props.className = props.class;
+      delete props.class;
+    }
+    for (let key of Object.keys(props)) {
+      if (/[-:][a-z]/.test(key)) {
+        if(/^(source|element)-index$/.test(key)) continue;
+        let camelCase = key.replace(/[-:]([a-z])/g, (whole, letter) =>
+          letter.toUpperCase()
+        );
+        props[camelCase] = props[key];
+        delete props[key];
+      }
+    }
+    return this.react.createElement(name, props, ...children);
   },
 
   createFragment: function(name, attributes, child) {
@@ -572,6 +588,10 @@ export class ChantContext {
     return node;
   }
 
+  createStyleReact() {
+    return QuickSvg.react.createElement("style", {}, this.createStyleCss(this));
+  }
+
   createStyle() {
     return "<style>" + this.createStyleCss(this) + "</style>";
   }
@@ -735,26 +755,26 @@ export class DividerLineVisualizer extends ChantLayoutElement {
     );
   }
 
-  createSvgNode(ctxt) {
-    return QuickSvg.createNode("rect", {
+  getSvgProps(ctxt) {
+    return {
       x: this.bounds.x,
       y: this.bounds.y,
       width: ctxt.dividerLineWeight,
       height: this.bounds.height,
       fill: ctxt.dividerLineColor,
       class: "dividerLine"
-    });
+    };
+  }
+
+  createSvgNode(ctxt) {
+    return QuickSvg.createNode("rect", this.getSvgProps(ctxt));
+  }
+  createReact(ctxt) {
+    return QuickSvg.createReact("rect", this.getSvgProps(ctxt));
   }
 
   createSvgFragment(ctxt) {
-    return QuickSvg.createFragment("rect", {
-      x: this.bounds.x,
-      y: this.bounds.y,
-      width: ctxt.dividerLineWeight,
-      height: this.bounds.height,
-      fill: ctxt.dividerLineColor,
-      class: "dividerLine"
-    });
+    return QuickSvg.createFragment("rect", this.getSvgProps(ctxt));
   }
 }
 
@@ -814,26 +834,26 @@ export class NeumeLineVisualizer extends ChantLayoutElement {
     );
   }
 
-  createSvgNode(ctxt) {
-    return QuickSvg.createNode("rect", {
+  getSvgProps(ctxt) {
+    return {
       x: this.bounds.x,
       y: this.bounds.y,
       width: ctxt.neumeLineWeight,
       height: this.bounds.height,
       fill: ctxt.neumeLineColor,
       class: "neumeLine"
-    });
+    };
+  }
+
+  createSvgNode(ctxt) {
+    return QuickSvg.createNode("rect", this.getSvgProps(ctxt));
+  }
+  createReact(ctxt) {
+    return QuickSvg.createReact("rect", this.getSvgProps(ctxt));
   }
 
   createSvgFragment(ctxt) {
-    return QuickSvg.createFragment("rect", {
-      x: this.bounds.x,
-      y: this.bounds.y,
-      width: ctxt.neumeLineWeight,
-      height: this.bounds.height,
-      fill: ctxt.neumeLineColor,
-      class: "neumeLine"
-    });
+    return QuickSvg.createFragment("rect", this.getSvgProps(ctxt));
   }
 }
 
@@ -870,26 +890,26 @@ export class VirgaLineVisualizer extends ChantLayoutElement {
     );
   }
 
-  createSvgNode(ctxt) {
-    return QuickSvg.createNode("rect", {
+  getSvgProps(ctxt) {
+    return {
       x: this.bounds.x,
       y: this.bounds.y,
       width: ctxt.neumeLineWeight,
       height: this.bounds.height,
       fill: ctxt.neumeLineColor,
       class: "neumeLine"
-    });
+    };
+  }
+
+  createSvgNode(ctxt) {
+    return QuickSvg.createNode("rect", this.getSvgProps(ctxt));
+  }
+  createReact(ctxt) {
+    return QuickSvg.createReact("rect", this.getSvgProps(ctxt));
   }
 
   createSvgFragment(ctxt) {
-    return QuickSvg.createFragment("rect", {
-      x: this.bounds.x,
-      y: this.bounds.y,
-      width: ctxt.neumeLineWeight,
-      height: this.bounds.height,
-      fill: ctxt.neumeLineColor,
-      class: "neumeLine"
-    });
+    return QuickSvg.createFragment("rect", this.getSvgProps(ctxt));
   }
 }
 
@@ -916,7 +936,7 @@ export class GlyphVisualizer extends ChantLayoutElement {
 
       // if this glyph hasn't been used yet, then load it up in the defs section for sharing
       if (!ctxt.defs.hasOwnProperty(this.glyphCode)) {
-        var makeDef = () => {
+        var getDefProps = () => {
           var options = {
             id: this.glyphCode,
             class: "glyph"
@@ -924,6 +944,10 @@ export class GlyphVisualizer extends ChantLayoutElement {
           if (ctxt.scaleDefs === true) {
             options.transform = "scale(" + ctxt.glyphScaling + ")";
           }
+          return options;
+        };
+        var makeDef = () => {
+          let options = getDefProps();
           // create the ref
           ctxt.defs[this.glyphCode] = QuickSvg.createFragment(
             "g",
@@ -939,6 +963,13 @@ export class GlyphVisualizer extends ChantLayoutElement {
                 QuickSvg.nodesForGlyph(this.glyph)
               )
             );
+        };
+        makeDef.makeReact = () => {
+          return QuickSvg.createReact(
+            "g",
+            getDefProps(),
+            ...QuickSvg.nodesForGlyph(this.glyph, "createReact")
+          );
         };
         makeDef();
         ctxt.makeDefs.push(makeDef);
@@ -1003,6 +1034,11 @@ export class GlyphVisualizer extends ChantLayoutElement {
     attributes.source = source;
     return QuickSvg.createNode("use", attributes);
   }
+  createReact(ctxt, source) {
+    var attributes = this.getSvgAttributes(ctxt, source);
+    attributes.source = source;
+    return QuickSvg.createReact("use", attributes);
+  }
 
   createSvgFragment(ctxt, source) {
     return QuickSvg.createFragment("use", this.getSvgAttributes(ctxt, source));
@@ -1034,15 +1070,18 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
     this.origin.y = 0;
   }
 
-  createSvgNode(ctxt) {
-    var node = QuickSvg.createNode("path", {
+  getSvgPathProps(ctxt) {
+    return {
       d: this.generatePathString(),
       stroke: ctxt.neumeLineColor,
       "stroke-width": ctxt.staffLineWeight + "px",
       fill: "none",
       class: "brace"
-    });
+    };
+  }
 
+  createSvgNode(ctxt) {
+    var node = QuickSvg.createNode("path", this.getSvgPathProps(ctxt));
     if (this.acuteAccent) {
       return QuickSvg.createNode(
         "g",
@@ -1053,15 +1092,22 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
       );
     } else return node;
   }
+  createReact(ctxt) {
+    var node = QuickSvg.createReact("path", this.getSvgPathProps(ctxt));
+    if (this.acuteAccent) {
+      return QuickSvg.createReact(
+        "g",
+        {
+          class: "accentedBrace"
+        },
+        node,
+        this.acuteAccent.createReact(ctxt)
+      );
+    } else return node;
+  }
 
   createSvgFragment(ctxt) {
-    var fragment = QuickSvg.createFragment("path", {
-      d: this.generatePathString(),
-      stroke: ctxt.neumeLineColor,
-      "stroke-width": ctxt.staffLineWeight + "px",
-      fill: "none",
-      class: "brace"
-    });
+    var fragment = QuickSvg.createFragment("path", this.getSvgPathProps(ctxt));
 
     if (this.acuteAccent) {
       fragment += this.acuteAccent.createSvgFragment(ctxt);
@@ -1156,14 +1202,18 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
     this.origin.y = 0;
   }
 
-  createSvgNode(ctxt) {
-    var node = QuickSvg.createNode("path", {
+  getSvgPathProps(ctxt) {
+    return {
       d: this.generatePathString(),
       stroke: ctxt.neumeLineColor,
       "stroke-width": ctxt.staffLineWeight + "px",
       fill: "none",
       class: "brace"
-    });
+    };
+  }
+
+  createSvgNode(ctxt) {
+    var node = QuickSvg.createNode("path", this.getSvgPathProps(ctxt));
 
     if (this.acuteAccent) {
       return QuickSvg.createNode(
@@ -1171,19 +1221,26 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
         {
           class: "accentedBrace"
         },
-        [node, this.acuteAccent.createSvgFragment(ctxt)]
+        [node, this.acuteAccent.createNode(ctxt)]
+      );
+    } else return node;
+  }
+  createReact(ctxt) {
+    var node = QuickSvg.createReact("path", this.getSvgPathProps(ctxt));
+    if (this.acuteAccent) {
+      return QuickSvg.createReact(
+        "g",
+        {
+          class: "accentedBrace"
+        },
+        node,
+        this.acuteAccent.createReact(ctxt)
       );
     } else return node;
   }
 
   createSvgFragment(ctxt) {
-    var fragment = QuickSvg.createFragment("path", {
-      d: this.generatePathString(),
-      stroke: ctxt.neumeLineColor,
-      "stroke-width": ctxt.staffLineWeight + "px",
-      fill: "none",
-      class: "brace"
-    });
+    var fragment = QuickSvg.createFragment("path", this.getSvgPathProps(ctxt));
 
     if (this.acuteAccent) {
       fragment += this.acuteAccent.createSvgFragment(ctxt);
@@ -1646,7 +1703,7 @@ export class TextElement extends ChantLayoutElement {
   }
 
   getCssClasses() {
-    return this.textType && this.textType.cssClass || "";
+    return (this.textType && this.textType.cssClass) || "";
   }
 
   getExtraStyleProperties(ctxt) {
@@ -1702,6 +1759,17 @@ export class TextElement extends ChantLayoutElement {
     canvasCtxt.translate(translateWidth, translateHeight);
   }
 
+  getSvgProps() {
+    return {
+      "source-index": this.sourceIndex,
+      x: this.bounds.x,
+      y: this.bounds.y,
+      class: this.getCssClasses().trim(),
+      "text-anchor": this.textAnchor
+      //'dominant-baseline': this.dominantBaseline, // hanging baseline doesn't work in Safari
+    };
+  }
+
   createSvgNode(ctxt) {
     var spans = [];
 
@@ -1709,7 +1777,7 @@ export class TextElement extends ChantLayoutElement {
       var span = this.spans[i];
       var options = {};
 
-      options["style"] = getCssForProperties(span.properties);
+      options.style = getCssForProperties(span.properties);
       if (span.properties.newLine) {
         var xOffset = span.properties.xOffset || 0;
         options.dy = "1em";
@@ -1730,24 +1798,45 @@ export class TextElement extends ChantLayoutElement {
       spans.push(QuickSvg.createNode("tspan", options, span.text));
     }
 
-    var styleProperties = getCssForProperties(
-      this.getExtraStyleProperties(ctxt)
-    );
+    options = this.getSvgProps();
+    options.style = getCssForProperties(this.getExtraStyleProperties(ctxt));
+    options.source = this;
 
-    return QuickSvg.createNode(
-      "text",
-      {
-        source: this,
-        "source-index": this.sourceIndex,
-        x: this.bounds.x,
-        y: this.bounds.y,
-        class: this.getCssClasses().trim(),
-        "text-anchor": this.textAnchor,
-        //'dominant-baseline': this.dominantBaseline, // hanging baseline doesn't work in Safari
-        style: styleProperties
-      },
-      spans
-    );
+    return QuickSvg.createNode("text", options, ...spans);
+  }
+  createReact(ctxt) {
+    var spans = [];
+
+    for (var i = 0; i < this.spans.length; i++) {
+      var span = this.spans[i];
+      var options = {};
+
+      options.style = span.properties;
+      if (span.properties.newLine) {
+        var xOffset = span.properties.xOffset || 0;
+        options.dy = "1em";
+        options.x = this.bounds.x + xOffset;
+      } else if (span.properties.xOffset) {
+        options.x = this.bounds.x + span.properties.xOffset;
+      }
+      if (span.properties.textLength) {
+        options.textLength = span.properties.textLength;
+        options.lengthAdjust = "spacingAndGlyphs";
+        options.y = this.bounds.y;
+      }
+      if (this.resize) {
+        options["font-size"] =
+          span.properties["font-size"] || this.fontSize(ctxt) * this.resize;
+      }
+
+      spans.push(QuickSvg.createReact("tspan", options, span.text));
+    }
+
+    options = this.getSvgProps();
+    options.style = this.getExtraStyleProperties(ctxt);
+    options.source = this;
+
+    return QuickSvg.createReact("text", options, ...spans);
   }
 
   createSvgFragment(ctxt) {
@@ -1792,18 +1881,8 @@ export class TextElement extends ChantLayoutElement {
       );
     }
 
-    var styleProperties = getCssForProperties(
-      this.getExtraStyleProperties(ctxt)
-    );
-    options = {
-      "source-index": this.sourceIndex,
-      x: this.bounds.x,
-      y: this.bounds.y,
-      class: this.getCssClasses().trim(),
-      "text-anchor": this.textAnchor,
-      //'dominant-baseline': this.dominantBaseline, // hanging baseline doesn't work in Safari
-      style: styleProperties
-    };
+    options = this.getSvgProps();
+    options.style = getCssForProperties(this.getExtraStyleProperties(ctxt));
     if (ctxt.setFontFamilyAttributes) {
       options["font-size"] = this.fontSize(ctxt);
     }
@@ -2144,14 +2223,6 @@ export class Lyric extends TextElement {
 
     return props;
   }
-
-  createSvgNode(ctxt) {
-    return super.createSvgNode(ctxt);
-  }
-
-  createSvgFragment(ctxt) {
-    return super.createSvgFragment(ctxt);
-  }
 }
 
 export class AboveLinesText extends TextElement {
@@ -2366,6 +2437,18 @@ export class Annotations extends ChantLayoutElement {
     this.updateBounds(-1);
     return result;
   }
+  createReact(ctxt) {
+    this.updateBounds();
+    var result = this.annotations.map(function(annotation) {
+      return annotation.createReact(ctxt);
+    });
+    this.updateBounds(-1);
+    return QuickSvg.react.createElement(
+      QuickSvg.react.Fragment,
+      null,
+      ...result
+    );
+  }
 
   createSvgFragment(ctxt) {
     this.updateBounds();
@@ -2507,38 +2590,57 @@ export class ChantNotationElement extends ChantLayoutElement {
     canvasCtxt.translate(-this.bounds.x, 0);
   }
 
-  createSvgNode(ctxt) {
+  getInnerSvgNodes(ctxt, functionName = "createSvgNode") {
     var inner = [];
 
     for (i = 0; i < this.lyrics.length; i++)
-      inner.push(this.lyrics[i].createSvgNode(ctxt));
+      inner.push(this.lyrics[i][functionName](ctxt));
 
     if (this.translationText)
       for (i = 0; i < this.translationText.length; i++)
-        inner.push(this.translationText[i].createSvgNode(ctxt));
+        inner.push(this.translationText[i][functionName](ctxt));
 
     if (this.alText)
       for (i = 0; i < this.alText.length; i++)
-        inner.push(this.alText[i].createSvgNode(ctxt));
+        inner.push(this.alText[i][functionName](ctxt));
 
     if (this.visualizers.length) {
       let visualizers = [];
       for (var i = 0; i < this.visualizers.length; i++)
-        visualizers.push(this.visualizers[i].createSvgNode(ctxt, this));
+        visualizers.push(this.visualizers[i][functionName](ctxt, this));
 
-      inner.push(QuickSvg.createNode("g", { class: "Notations" }, visualizers));
+      if (functionName === "createReact") {
+        inner.push(
+          QuickSvg.createReact("g", { class: "Notations" }, ...visualizers)
+        );
+      } else {
+        inner.push(
+          QuickSvg.createNode("g", { class: "Notations" }, visualizers)
+        );
+      }
     }
+    return inner;
+  }
 
-    return QuickSvg.createNode(
-      "g",
-      {
-        source: this,
-        // this.constructor.name will not be the same after being mangled by UglifyJS
-        class: "ChantNotationElement " + this.constructor.name,
-        transform: "translate(" + this.bounds.x + "," + 0 + ")"
-      },
-      inner
-    );
+  getSvgProps() {
+    return {
+      // this.constructor.name will not be the same after being mangled by UglifyJS
+      class: "ChantNotationElement " + this.constructor.name,
+      transform: "translate(" + this.bounds.x + "," + 0 + ")"
+    };
+  }
+
+  createSvgNode(ctxt) {
+    var inner = this.getInnerSvgNodes(ctxt, "createSvgNode");
+    var svgProps = this.getSvgProps();
+    svgProps.source = this;
+    return QuickSvg.createNode("g", svgProps, inner);
+  }
+  createReact(ctxt) {
+    var inner = this.getInnerSvgNodes(ctxt, "createReact");
+    var svgProps = this.getSvgProps();
+    svgProps.source = this;
+    return QuickSvg.createReact("g", svgProps, ...inner);
   }
 
   createSvgFragment(ctxt) {
@@ -2558,14 +2660,6 @@ export class ChantNotationElement extends ChantLayoutElement {
     for (var i = 0; i < this.visualizers.length; i++)
       inner += this.visualizers[i].createSvgFragment(ctxt, this);
 
-    return QuickSvg.createFragment(
-      "g",
-      {
-        // this.constructor.name will not be the same after being mangled by UglifyJS
-        class: "ChantNotationElement " + this.constructor.name,
-        transform: "translate(" + this.bounds.x + "," + 0 + ")"
-      },
-      inner
-    );
+    return QuickSvg.createFragment("g", this.getSvgProps(), inner);
   }
 }

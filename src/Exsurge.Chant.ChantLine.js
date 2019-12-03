@@ -400,7 +400,11 @@ export class ChantLine extends ChantLayoutElement {
     canvasCtxt.translate(-this.bounds.x, -this.bounds.y);
   }
 
-  createSvgNode(ctxt, top = 0) {
+  getInnerNodes(
+    ctxt,
+    top = 0,
+    functionNames = { quickSvg: "createNode", elements: "createSvgNode" }
+  ) {
     var inner = [];
 
     // add the chant lines
@@ -411,7 +415,7 @@ export class ChantLine extends ChantLayoutElement {
     // create the staff lines
     for (i = -3; i <= 3; i += 2) {
       inner.push(
-        QuickSvg.createNode("line", {
+        QuickSvg[functionNames.quickSvg]("line", {
           x1: x1,
           y1: ctxt.staffInterval * i,
           x2: x2,
@@ -429,7 +433,7 @@ export class ChantLine extends ChantLayoutElement {
       var y = ctxt.calculateHeightFromStaffPosition(ledgerLine.staffPosition);
 
       inner.push(
-        QuickSvg.createNode("line", {
+        QuickSvg[functionNames.quickSvg]("line", {
           x1: ledgerLine.x1,
           y1: y,
           x2: ledgerLine.x2,
@@ -443,31 +447,41 @@ export class ChantLine extends ChantLayoutElement {
 
     // add any braces
     for (i = 0; i < this.braces.length; i++)
-      inner.push(this.braces[i].createSvgNode(ctxt));
+      inner.push(this.braces[i][functionNames.elements](ctxt));
 
     // dropCap and the annotations
     if (this.notationsStartIndex === 0) {
       if (this.score.dropCap !== null)
-        inner.push(this.score.dropCap.createSvgNode(ctxt));
+        inner.push(this.score.dropCap[functionNames.elements](ctxt));
 
       if (
         this.score.annotation !== null &&
         (!this.score.mergeAnnotationWithTextLeft || this.score.dropCap)
       )
         // only draw it if there is a dropCap or there is no mergeAnnotationWithTextLeft
-        inner = inner.concat(this.score.annotation.createSvgNode(ctxt));
+        inner = inner.concat(
+          this.score.annotation[functionNames.elements](ctxt)
+        );
     }
 
-    inner.push(this.startingClef.createSvgNode(ctxt));
+    inner.push(this.startingClef[functionNames.elements](ctxt));
 
     var notations = this.score.notations;
     var lastIndex = this.notationsStartIndex + this.numNotationsOnLine;
 
     // add all of the notations
     for (i = this.notationsStartIndex; i < lastIndex; i++)
-      inner.push(notations[i].createSvgNode(ctxt));
+      inner.push(notations[i][functionNames.elements](ctxt));
 
-    if (this.custos) inner.push(this.custos.createSvgNode(ctxt));
+    if (this.custos) inner.push(this.custos[functionNames.elements](ctxt));
+    return inner;
+  }
+
+  createSvgNode(ctxt, top = 0) {
+    let inner = this.getInnerNodes(ctxt, top, {
+      quickSvg: "createNode",
+      elements: "createSvgNode"
+    });
 
     return QuickSvg.createNode(
       "g",
@@ -477,6 +491,23 @@ export class ChantLine extends ChantLayoutElement {
           "translate(" + this.bounds.x + "," + (this.bounds.y - top) + ")"
       },
       inner
+    );
+  }
+
+  createReact(ctxt, top = 0) {
+    let inner = this.getInnerNodes(ctxt, top, {
+      quickSvg: "createReact",
+      elements: "createReact"
+    });
+
+    return QuickSvg.createReact(
+      "g",
+      {
+        class: "chantLine",
+        transform:
+          "translate(" + this.bounds.x + "," + (this.bounds.y - top) + ")"
+      },
+      ...inner
     );
   }
 

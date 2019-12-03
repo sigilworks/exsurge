@@ -160,6 +160,11 @@ export class Note extends ChantLayoutElement {
     this.svgNode = this.glyphVisualizer.createSvgNode(ctxt, this);
     return this.svgNode;
   }
+  createReact(ctxt) {
+    this.glyphVisualizer.bounds.x = this.bounds.x;
+    this.glyphVisualizer.bounds.y = this.bounds.y;
+    return this.glyphVisualizer.createReact(ctxt, this);
+  }
 
   createSvgFragment(ctxt) {
     this.glyphVisualizer.bounds.x = this.bounds.x;
@@ -661,6 +666,17 @@ export class ChantScore {
     canvasCtxt.translate(-this.bounds.x, -this.bounds.y);
   }
 
+  getSvgProps() {
+    return {
+      xmlns: "http://www.w3.org/2000/svg",
+      version: "1.1",
+      class: "ChantScore",
+      width: this.bounds.width,
+      height: this.bounds.height,
+      viewBox: [0, 0, this.bounds.width, this.bounds.height].join(" ")
+    };
+  }
+
   createSvgNode(ctxt) {
     // create defs section
     var node = [ctxt.defsNode.cloneNode(true)];
@@ -673,21 +689,34 @@ export class ChantScore {
 
     node = QuickSvg.createNode("g", {}, node);
 
-    node = QuickSvg.createNode(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        version: "1.1",
-        class: "ChantScore",
-        width: this.bounds.width,
-        height: this.bounds.height,
-        viewBox: [0, 0, this.bounds.width, this.bounds.height].join(" ")
-      },
-      node
-    );
+    node = QuickSvg.createNode("svg", this.getSvgProps(), node);
 
     node.source = this;
     this.svg = node;
+
+    return node;
+  }
+
+  createReact(ctxt) {
+    // create defs section
+    var node = [
+      QuickSvg.createReact(
+        "defs",
+        {},
+        ...ctxt.makeDefs.map(makeDef => makeDef.makeReact()),
+        ctxt.createStyleReact()
+      )
+    ];
+
+    node.push(this.titles.createReact(ctxt));
+
+    for (var i = 0; i < this.lines.length; i++)
+      node.push(this.lines[i].createReact(ctxt));
+
+    node = QuickSvg.createReact("g", {}, ...node);
+    let svgProps = this.getSvgProps();
+    svgProps.source = this;
+    node = QuickSvg.createReact("svg", svgProps, node);
 
     return node;
   }
@@ -709,18 +738,7 @@ export class ChantScore {
 
     fragment = QuickSvg.createFragment("g", {}, fragment);
 
-    fragment = QuickSvg.createFragment(
-      "svg",
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        version: "1.1",
-        "xmlns:xlink": "http://www.w3.org/1999/xlink",
-        class: "ChantScore",
-        width: this.bounds.width,
-        height: this.bounds.height
-      },
-      fragment
-    );
+    fragment = QuickSvg.createFragment("svg", this.getSvgProps(), fragment);
 
     return fragment;
   }

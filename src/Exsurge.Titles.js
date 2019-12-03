@@ -174,9 +174,8 @@ export class Titles extends ChantLayoutElement {
     canvasCtxt.translate(-this.bounds.x, -this.bounds.y);
   }
 
-  createSvgNode(ctxt) {
-    // create defs section
-    var node = [];
+  getInnerNodes(ctxt, functionName = "createSvgNode") {
+    var nodes = [];
 
     for (let el of [
       this.supertitle,
@@ -185,15 +184,26 @@ export class Titles extends ChantLayoutElement {
       this.score.overrideTextLeft || this.textLeft,
       this.textRight
     ]) {
-      if (el) node.push(el.createSvgNode(ctxt));
+      if (el) nodes.push(el[functionName](ctxt));
     }
+    return nodes
+  }
 
-    node = QuickSvg.createNode("g", { class: "Titles" }, node);
+  createSvgNode(ctxt) {
+    var nodes = this.getInnerNodes(ctxt, "createSvgNode");
+
+    var node = QuickSvg.createNode("g", { class: "Titles" }, nodes);
 
     node.source = this;
     this.svg = node;
 
     return node;
+  }
+
+  createReact(ctxt) {
+    var nodes = this.getInnerNodes(ctxt, "createReact");
+
+    return QuickSvg.createReact("g", { class: "Titles", source: this }, ...nodes);
   }
 
   createSvgFragment(ctxt) {
@@ -209,7 +219,7 @@ export class Titles extends ChantLayoutElement {
       if (el) fragment += el.createSvgFragment(ctxt);
     }
 
-    fragment = QuickSvg.createFragment("g", {}, fragment);
+    fragment = QuickSvg.createFragment("g", { class: "Titles" }, fragment);
     return fragment;
   }
 }
