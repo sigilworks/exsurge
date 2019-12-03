@@ -1835,7 +1835,7 @@ export class TextElement extends ChantLayoutElement {
     options.style = getCssForProperties(this.getExtraStyleProperties(ctxt));
     options.source = this;
 
-    return (this.svgNode = QuickSvg.createNode("text", options, ...spans));
+    return (this.svgNode = QuickSvg.createNode("text", options, spans));
   }
   createReact(ctxt) {
     var spans = [];
