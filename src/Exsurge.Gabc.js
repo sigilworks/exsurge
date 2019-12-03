@@ -508,25 +508,6 @@ export class Gabc {
       items[0].firstOfSyllable = !!lyricText;
       notations.push(...items);
 
-      var m = __altTranslationRegex.exec();
-      let indexOffset = 0;
-      while ((m = __altTranslationRegex.exec(lyricText))) {
-        let index = m.index;
-        lyricText =
-          lyricText.slice(0, index) + lyricText.slice(index + m[0].length);
-        index += sourceIndex + indexOffset + 1;
-        if (m[1]) {
-          alText.push(new AboveLinesText(ctxt, m[1], index + 4));
-        } else if (m[2]) {
-          alText.push(new AboveLinesText(ctxt, m[3], index + m[2].length));
-        } else {
-          translationText.push(new TranslationText(ctxt, m[3], index));
-        }
-        indexOffset += m[0].length;
-        __altTranslationRegex.exec();
-      }
-      if (lyricText === "" && alText.length === 0) continue;
-
       // add the lyrics and/or alText to the first notation that makes sense...
       var notationWithLyrics = null;
       for (var i = 0; i < items.length; i++) {
@@ -537,6 +518,38 @@ export class Gabc {
         notationWithLyrics = cne;
         break;
       }
+
+      var m = __altTranslationRegex.exec();
+      let indexOffset = 0;
+      while ((m = __altTranslationRegex.exec(lyricText))) {
+        let index = m.index;
+        lyricText =
+          lyricText.slice(0, index) + lyricText.slice(index + m[0].length);
+        index += sourceIndex + indexOffset + 1;
+        if (m[1]) {
+          let elem = new AboveLinesText(
+            ctxt,
+            m[1],
+            notationWithLyrics,
+            index + 4
+          );
+          elem.alIndex = alText.push(elem) - 1;
+        } else if (m[2]) {
+          let elem = new AboveLinesText(
+            ctxt,
+            m[3],
+            notationWithLyrics,
+            index + m[2].length
+          );
+          elem.alIndex = alText.push(elem) - 1;
+        } else {
+          let elem = new TranslationText(ctxt, m[3], notationWithLyrics, index);
+          elem.translationIndex = translationText.push(elem) - 1;
+        }
+        indexOffset += m[0].length;
+        __altTranslationRegex.exec();
+      }
+      if (lyricText === "" && alText.length === 0) continue;
 
       if (notationWithLyrics === null)
         return new ChantMapping(word, notations, sourceIndex);
@@ -658,7 +671,8 @@ export class Gabc {
         lyric.centerLength = centerLength;
       }
 
-      lyrics.push(lyric);
+      lyric.lyricIndex = lyrics.push(lyric) - 1;
+      sourceIndex += lyricText.length + 1;
     }
     notation.lyrics = lyrics;
     return lyrics;
@@ -1688,6 +1702,7 @@ export class Gabc {
         note.alText = new AboveLinesText(
           ctxt,
           data,
+          note,
           note.sourceIndex + sourceIndexOffset,
           instruction.length
         );

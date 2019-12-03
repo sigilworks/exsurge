@@ -431,13 +431,29 @@ export class ChantScore {
     this.hasAboveLinesText = false;
     this.hasTranslations = false;
     const elementSelection = (this.selection && this.selection.element) || [];
+
+    // find the starting clef...
+    // start with a default clef in case the notations don't provide one.
+    this.startingClef = null;
+
+
     for (i = 0; i < this.mappings.length; i++) {
       mapping = this.mappings[i];
       for (j = 0; j < mapping.notations.length; j++) {
         notation = mapping.notations[j];
         notation.score = this;
         notation.mapping = mapping;
-        this.notations.push(notation);
+
+        if(!this.startingClef) {
+          if(notation.isNeume) {
+            this.startingClef = Clef.default();
+          } else if(notation.isClef) {
+            this.startingClef = notation;
+            continue;
+          }
+        }
+
+        notation.notationIndex = this.notations.push(notation) - 1;
         if (!this.hasLyrics && notation.hasLyrics()) this.hasLyrics = true;
         if (!this.hasAboveLinesText && notation.alText)
           this.hasAboveLinesText = true;
@@ -451,28 +467,6 @@ export class ChantScore {
             this.notes.push(element) - 1);
           element.selected = elementSelection.includes(elementIndex);
         }
-      }
-    }
-
-    // find the starting clef...
-    // start with a default clef in case the notations don't provide one.
-    this.startingClef = null;
-
-    for (i = 0; i < this.notations.length; i++) {
-      // if there are neumes before the clef, then we just keep the default clef above
-      if (this.notations[i].isNeume) {
-        this.startingClef = Clef.default();
-        break;
-      }
-
-      // otherwise, if we find a clef, before neumes then we use that as our default
-      if (this.notations[i].isClef) {
-        this.startingClef = this.notations[i];
-
-        // the clef is taken out of the notations...
-        this.notations.splice(i, 1); // remove a single notation
-
-        break;
       }
     }
 

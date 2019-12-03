@@ -58,57 +58,73 @@ export const TextTypes = {
   supertitle: {
     display: "Supertitle",
     defaultSize: size => (size * 7) / 6, // 14pt
-    containedInScore: score => score.titles.hasSupertitle()
+    containedInScore: score => score.titles.hasSupertitle(),
+    getFromScore: score => score.titles.supertitle
   },
   title: {
     display: "Title",
     defaultSize: size => (size * 3) / 2, // 18pt
-    containedInScore: score => score.titles.hasTitle()
+    containedInScore: score => score.titles.hasTitle(),
+    getFromScore: score => score.titles.title
   },
   subtitle: {
     display: "Subtitle",
     defaultSize: size => size, // 12pt
-    containedInScore: score => score.titles.hasSubtitle()
+    containedInScore: score => score.titles.hasSubtitle(),
+    getFromScore: score => score.titles.subtitle
   },
   leftRight: {
     display: "Left / Right Text",
     cssClass: "textLeftRight",
     defaultSize: size => size,
     containedInScore: score =>
-      score.titles.hasTextLeft() || score.titles.hasTextRight()
+      score.titles.hasTextLeft() || score.titles.hasTextRight(),
+    getFromScore: (score, elem) => score.titles[elem.extraClass]
   },
   annotation: {
     display: "Annotation",
     defaultSize: size => (size * 2) / 3,
     containedInScore: score =>
       !!score.annotation &&
-      (!score.mergeAnnotationWithTextLeft || score.dropCap)
+      (!score.mergeAnnotationWithTextLeft || score.dropCap),
+    getFromScore: score => score.annotation
   },
   dropCap: {
     display: "Drop Cap",
     defaultSize: size => size * 4,
-    containedInScore: score => !!score.dropCap
+    containedInScore: score => !!score.dropCap,
+    getFromScore: score => score.dropCap
   },
   al: {
     display: "Above Staff",
     cssClass: "aboveLinesText",
     defaultSize: size => size,
-    containedInScore: score => score.hasAboveLinesText
+    containedInScore: score => score.hasAboveLinesText,
+    getFromScore: (score, elem) =>
+      score.notations[elem.notation.notationIndex].alText[elem.alIndex]
   },
   lyric: {
     display: "Lyric",
     defaultSize: size => size,
-    containedInScore: score => score.hasLyrics
+    containedInScore: score => score.hasLyrics,
+    getFromScore: (score, elem) =>
+      score.notations[elem.notation.notationIndex].lyrics[elem.lyricIndex]
   },
   translation: {
     display: "Translation",
     defaultSize: size => size,
-    containedInScore: score => score.hasTranslations
+    containedInScore: score => score.hasTranslations,
+    getFromScore: (score, elem) =>
+      score.notations[elem.notation.notationIndex].translationText[
+        elem.translationIndex
+      ]
   }
 };
+export const TextTypesByClass = {};
 Object.entries(TextTypes).forEach(([key, entry]) => {
-  entry.cssClass = entry.cssClass || key;
+  let cssClass = (entry.cssClass = entry.cssClass || key);
   entry.key = key;
+  TextTypesByClass[cssClass] = entry;
 });
 
 export const DefaultTrailingSpace = ctxt =>
@@ -319,13 +335,17 @@ export var QuickSvg = {
     }
     for (let key of Object.keys(props)) {
       if (/[-:][a-z]/.test(key)) {
-        if(/^(source|element)-index$/.test(key)) continue;
+        if (/^\w+-index$/.test(key)) continue;
         let camelCase = key.replace(/[-:]([a-z])/g, (whole, letter) =>
           letter.toUpperCase()
         );
         props[camelCase] = props[key];
         delete props[key];
       }
+    }
+    if ("source" in props) {
+      let source = props.source;
+      if (source.sourceGabc) props["source-gabc"] = source.sourceGabc;
     }
     return this.react.createElement(name, props, ...children);
   },
@@ -1354,7 +1374,15 @@ var __subsForTspans = {
 };
 
 export class TextElement extends ChantLayoutElement {
-  constructor(ctxt, text, fontFamily, fontSize, textAnchor, sourceIndex) {
+  constructor(
+    ctxt,
+    text,
+    fontFamily,
+    fontSize,
+    textAnchor,
+    sourceIndex,
+    sourceGabc
+  ) {
     super();
 
     // set these to some sane values for now...
@@ -1369,11 +1397,16 @@ export class TextElement extends ChantLayoutElement {
     this.fontSize = fontSize;
     this.textAnchor = textAnchor;
     this.sourceIndex = sourceIndex;
+    this.sourceGabc = sourceGabc;
     this.dominantBaseline = "baseline"; // default placement
 
     this.generateSpansFromText(ctxt, text);
 
     this.recalculateMetrics(ctxt);
+  }
+
+  getFromScore(score) {
+    return this.textType.getFromScore(score, this);
   }
 
   generateSpansFromText(ctxt, text) {
@@ -1802,7 +1835,7 @@ export class TextElement extends ChantLayoutElement {
     options.style = getCssForProperties(this.getExtraStyleProperties(ctxt));
     options.source = this;
 
-    return QuickSvg.createNode("text", options, ...spans);
+    return (this.svgNode = QuickSvg.createNode("text", options, ...spans));
   }
   createReact(ctxt) {
     var spans = [];
@@ -1974,7 +2007,8 @@ export class Lyric extends TextElement {
       ctxt => ctxt.lyricTextFont,
       ctxt => ctxt.lyricTextSize,
       "start",
-      sourceIndex
+      sourceIndex,
+      text
     );
     this.textType = TextTypes.lyric;
 
@@ -2202,6 +2236,7 @@ export class Lyric extends TextElement {
       this.sourceIndex
     ));
     this.sourceIndex++;
+    this.sourceGabc = this.sourceGabc.slice(1);
 
     this.generateSpansFromText(ctxt, this.originalText.substring(1));
     this.centerStartIndex--; // lost a letter, so adjust centering accordingly
@@ -2229,15 +2264,17 @@ export class AboveLinesText extends TextElement {
   /**
    * @param {String} text
    */
-  constructor(ctxt, text, sourceIndex) {
+  constructor(ctxt, text, notation, sourceIndex) {
     super(
       ctxt,
       (ctxt.alTextStyle || "") + text,
       ctxt => ctxt.alTextFont,
       ctxt => ctxt.alTextSize,
       "start",
-      sourceIndex
+      sourceIndex,
+      text
     );
+    this.notation = notation;
     this.textType = TextTypes.al;
 
     this.padding = ctxt.staffInterval / 2;
@@ -2248,7 +2285,8 @@ export class TranslationText extends TextElement {
   /**
    * @param {String} text
    */
-  constructor(ctxt, text, sourceIndex) {
+  constructor(ctxt, text, notation, sourceIndex) {
+    var gabcSource = text;
     var anchor = "start";
     if (text === "/") {
       text = "";
@@ -2262,8 +2300,10 @@ export class TranslationText extends TextElement {
       ctxt => ctxt.translationTextFont,
       ctxt => ctxt.translationTextSize,
       anchor,
-      sourceIndex
+      sourceIndex,
+      gabcSource
     );
+    this.notation = notation;
     this.textType = TextTypes.translation;
 
     this.padding = ctxt.staffInterval / 2;
@@ -2281,7 +2321,8 @@ export class DropCap extends TextElement {
       ctxt => ctxt.dropCapTextFont,
       ctxt => ctxt.dropCapTextSize,
       "middle",
-      sourceIndex
+      sourceIndex,
+      text
     );
     this.textType = TextTypes.dropCap;
 
@@ -2293,11 +2334,12 @@ export class Supertitle extends TextElement {
   constructor(ctxt, text, sourceIndex) {
     super(
       ctxt,
-      (ctxt.dropCapTextStyle || "") + text,
+      (ctxt.supertitleTextStyle || "") + text,
       ctxt => ctxt.supertitleTextFont,
       ctxt => ctxt.supertitleTextSize,
       "middle",
-      sourceIndex
+      sourceIndex,
+      text
     );
     this.textType = TextTypes.supertitle;
 
@@ -2309,11 +2351,12 @@ export class Title extends TextElement {
   constructor(ctxt, text, sourceIndex) {
     super(
       ctxt,
-      (ctxt.dropCapTextStyle || "") + text,
+      (ctxt.titleTextStyle || "") + text,
       ctxt => ctxt.titleTextFont,
       ctxt => ctxt.titleTextSize,
       "middle",
-      sourceIndex
+      sourceIndex,
+      text
     );
     this.textType = TextTypes.title;
 
@@ -2325,11 +2368,12 @@ export class Subtitle extends TextElement {
   constructor(ctxt, text, sourceIndex) {
     super(
       ctxt,
-      (ctxt.dropCapTextStyle || "") + text,
+      (ctxt.subtitleTextStyle || "") + text,
       ctxt => ctxt.subtitleTextFont,
       ctxt => ctxt.subtitleTextSize,
       "middle",
-      sourceIndex
+      sourceIndex,
+      text
     );
     this.textType = TextTypes.subtitle;
 
@@ -2341,11 +2385,12 @@ export class TextLeftRight extends TextElement {
   constructor(ctxt, text, type, sourceIndex) {
     super(
       ctxt,
-      (ctxt.dropCapTextStyle || "") + text,
+      (ctxt.leftRightTextStyle || "") + text,
       ctxt => ctxt.leftRightTextFont,
       ctxt => ctxt.leftRightTextSize,
       type === "textLeft" ? "start" : "end",
-      sourceIndex
+      sourceIndex,
+      text
     );
     this.textType = TextTypes.leftRight;
     this.extraClass = type === "textLeft" ? "textLeft" : "textRight";

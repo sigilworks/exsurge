@@ -23,14 +23,14 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from './Exsurge.Core.js'
+import * as Exsurge from "./Exsurge.Core.js";
 
 /**
  * @class
  */
 export class Language {
   constructor(name) {
-    this.name = (typeof name !== 'undefined') ? name : "<unknown>";
+    this.name = typeof name !== "undefined" ? name : "<unknown>";
   }
 
   /**
@@ -38,11 +38,9 @@ export class Language {
    * @return {Word[]} the resulting parsed words from syllabification
    */
   syllabify(text) {
-
     var parsedWords = [];
 
-    if (typeof text === 'undefined' || text === "")
-      return parsedWords;
+    if (typeof text === "undefined" || text === "") return parsedWords;
 
     // Divide the text into words separated by whitespace
     var words = text.split(/[\s]+/);
@@ -65,11 +63,14 @@ export class English extends Language {
    * @retuns a custom class with three properties: {found: (true/false) startIndex: (start index in s of vowel segment) length ()}
    */
   findVowelSegment(s, startIndex) {
-
     var regexLetter = /[a-zäëïöüÿáéíóúýàèìòùỳāēīōūȳăĕĭŏŭæœ]+/i;
     var match = regexLetter.exec(s.slice(startIndex));
-    if(match)
-      return { found: true, startIndex: startIndex + match.index, length: match[0].length };
+    if (match)
+      return {
+        found: true,
+        startIndex: startIndex + match.index,
+        length: match[0].length
+      };
 
     // no vowels sets found after startIndex!
     return { found: false, startIndex: -1, length: -1 };
@@ -80,7 +81,6 @@ export class English extends Language {
  * @class
  */
 export class Latin extends Language {
-
   /**
    * @constructs
    */
@@ -90,9 +90,15 @@ export class Latin extends Language {
     // fixme: ui is only diphthong in the exceptional cases below (according to Wheelock's Latin)
     this.diphthongs = ["ae", "au", "oe", "aé", "áu", "oé"];
     // for centering over the vowel, we will need to know any combinations that might be diphthongs:
-    this.possibleDiphthongs = this.diphthongs.concat(["ei", "eu", "ui", "éi", "éu", "úi"]);
+    this.possibleDiphthongs = this.diphthongs.concat([
+      "ei",
+      "eu",
+      "ui",
+      "éi",
+      "éu",
+      "úi"
+    ]);
     this.regexVowel = /(i|(?:[qg]|^)u)?([eé][iu]|[uú]i|[ao][eé]|[aá]u|[aeiouáéíóúäëïöüāēīōūăĕĭŏŭåe̊o̊ůæœǽyýÿ])/i;
-
 
     // some words that are simply exceptions to standard syllabification rules!
     var wordExceptions = new Object();
@@ -108,43 +114,72 @@ export class Latin extends Language {
     wordExceptions["euge"] = ["eu", "ge"];
     wordExceptions["seu"] = ["seu"];
 
-    this.vowels = ['a', 'e', 'i', 'o', 'u',
-                   'á', 'é', 'í', 'ó', 'ú',
-                   'ä', 'ë', 'ï', 'ö', 'ü',
-                   'ā', 'ē', 'ī', 'ō', 'ū',
-                   'ă', 'ĕ', 'ĭ', 'ŏ', 'ŭ',
-                   'å', 'e̊', 'o̊', 'ů',
-                   'æ', 'œ',
-                   'ǽ',  // no accented œ in unicode?
-                   'y', 'ý', 'ÿ']; // y is treated as a vowel; not native to Latin but useful for words borrowed from Greek
+    this.vowels = [
+      "a",
+      "e",
+      "i",
+      "o",
+      "u",
+      "á",
+      "é",
+      "í",
+      "ó",
+      "ú",
+      "ä",
+      "ë",
+      "ï",
+      "ö",
+      "ü",
+      "ā",
+      "ē",
+      "ī",
+      "ō",
+      "ū",
+      "ă",
+      "ĕ",
+      "ĭ",
+      "ŏ",
+      "ŭ",
+      "å",
+      "e̊",
+      "o̊",
+      "ů",
+      "æ",
+      "œ",
+      "ǽ", // no accented œ in unicode?
+      "y",
+      "ý",
+      "ÿ"
+    ]; // y is treated as a vowel; not native to Latin but useful for words borrowed from Greek
 
-    this.vowelsThatMightBeConsonants = ['i','u'];
+    this.vowelsThatMightBeConsonants = ["i", "u"];
 
-    this.muteConsonantsAndF = ['b', 'c', 'd', 'g', 'p', 't', 'f'];
+    this.muteConsonantsAndF = ["b", "c", "d", "g", "p", "t", "f"];
 
-    this.liquidConsonants = ['l', 'r'];
+    this.liquidConsonants = ["l", "r"];
   }
 
   // c must be lowercase!
   isVowel(c) {
     for (var i = 0, end = this.vowels.length; i < end; i++)
-      if (this.vowels[i] === c)
-        return true;
+      if (this.vowels[i] === c) return true;
 
     return false;
   }
 
   isVowelThatMightBeConsonant(c) {
     for (var i = 0, end = this.vowelsThatMightBeConsonants.length; i < end; i++)
-      if (this.vowelsThatMightBeConsonants[i] === c)
-        return true;
+      if (this.vowelsThatMightBeConsonants[i] === c) return true;
 
     return false;
   }
 
   // substring should be a vowel and the character following
   isVowelActingAsConsonant(substring) {
-    return this.isVowelThatMightBeConsonant(substring[0]) && this.isVowel(substring[1]);
+    return (
+      this.isVowelThatMightBeConsonant(substring[0]) &&
+      this.isVowel(substring[1])
+    );
   }
 
   /**
@@ -156,8 +191,7 @@ export class Latin extends Language {
    */
   isMuteConsonantOrF(c) {
     for (var i = 0, end = this.muteConsonantsAndF.length; i < end; i++)
-      if (this.muteConsonantsAndF[i] === c)
-        return true;
+      if (this.muteConsonantsAndF[i] === c) return true;
 
     return false;
   }
@@ -169,8 +203,7 @@ export class Latin extends Language {
    */
   isLiquidConsonant(c) {
     for (var i = 0, end = this.liquidConsonants.length; i < end; i++)
-      if (this.liquidConsonants[i] === c)
-        return true;
+      if (this.liquidConsonants[i] === c) return true;
 
     return false;
   }
@@ -182,8 +215,7 @@ export class Latin extends Language {
    */
   isDiphthong(s) {
     for (var i = 0, end = this.diphthongs.length; i < end; i++)
-      if (this.diphthongs[i] === s)
-        return true;
+      if (this.diphthongs[i] === s) return true;
 
     return false;
   }
@@ -195,8 +227,7 @@ export class Latin extends Language {
    */
   isPossibleDiphthong(s) {
     for (var i = 0, end = this.possibleDiphthongs.length; i < end; i++)
-      if (this.possibleDiphthongs[i] === s)
-        return true;
+      if (this.possibleDiphthongs[i] === s) return true;
 
     return false;
   }
@@ -231,32 +262,30 @@ export class Latin extends Language {
     var c, lookahead, haveLookahead;
 
     // a helper function to create syllables
-    var makeSyllable = function (length) {
+    var makeSyllable = function(length) {
       if (haveCompleteSyllable) {
         syllables.push(word.substr(startSyllable, length));
         startSyllable += length;
       }
 
       haveCompleteSyllable = false;
-    }
+    };
 
     for (var i = 0, wordLength = workingString.length; i < wordLength; i++) {
-
       c = workingString[i];
 
       // get our lookahead in case we need them...
-      lookahead = '*';
-      haveLookahead = (i + 1) < wordLength;
+      lookahead = "*";
+      haveLookahead = i + 1 < wordLength;
 
-      if (haveLookahead)
-        lookahead = workingString[i + 1];
+      if (haveLookahead) lookahead = workingString[i + 1];
 
       var cIsVowel = this.isVowel(c);
 
       // i is a special case for a vowel. when i is at the beginning
       // of the word (Iesu) or i is between vowels (alleluia),
       // then the i is treated as a consonant (y)
-      if (c === 'i') {
+      if (c === "i") {
         if (i === 0 && haveLookahead && this.isVowel(lookahead))
           cIsVowel = false;
         else if (previousWasVowel && haveLookahead && this.isVowel(lookahead)) {
@@ -264,8 +293,7 @@ export class Latin extends Language {
         }
       }
 
-      if (c === '-') {
-
+      if (c === "-") {
         // a hyphen forces a syllable break, which effectively resets
         // the logic...
 
@@ -273,30 +301,34 @@ export class Latin extends Language {
         previousWasVowel = false;
         makeSyllable(i - startSyllable);
         startSyllable++;
-
       } else if (cIsVowel) {
-
         // once we get a vowel, we have a complete syllable
         haveCompleteSyllable = true;
 
-        if (previousWasVowel && !this.isDiphthong(workingString[i - 1] + "" + c)) {
+        if (
+          previousWasVowel &&
+          !this.isDiphthong(workingString[i - 1] + "" + c)
+        ) {
           makeSyllable(i - startSyllable);
           haveCompleteSyllable = true;
         }
 
         previousWasVowel = true;
-
       } else if (haveLookahead) {
-
-        if ((c === 'q' && lookahead === 'u') ||
-            (lookahead === 'h' && (c === 'c' || c === 'p' || c === 't'))) {
+        if (
+          (c === "q" && lookahead === "u") ||
+          (lookahead === "h" && (c === "c" || c === "p" || c === "t"))
+        ) {
           // handle wheelock's exceptions for qu, ch, ph and th
           makeSyllable(i - startSyllable);
           i++; // skip over the 'h' or 'u'
         } else if (previousWasVowel && this.isVowel(lookahead)) {
           // handle division rule 2
           makeSyllable(i - startSyllable);
-        } else if (this.isMuteConsonantOrF(c) && this.isLiquidConsonant(lookahead)) {
+        } else if (
+          this.isMuteConsonantOrF(c) &&
+          this.isLiquidConsonant(lookahead)
+        ) {
           // handle exception 2
           makeSyllable(i - startSyllable);
         } else if (haveCompleteSyllable) {
@@ -310,8 +342,7 @@ export class Latin extends Language {
 
     // if we have a complete syllable, we can add it as a new one. Otherwise
     // we tack the remaining characters onto the last syllable.
-    if (haveCompleteSyllable)
-      syllables.push(word.substr(startSyllable));
+    if (haveCompleteSyllable) syllables.push(word.substr(startSyllable));
     else if (startSyllable > 0)
       syllables[syllables.length - 1] += word.substr(startSyllable);
 
@@ -324,14 +355,17 @@ export class Latin extends Language {
    * @retuns a custom class with three properties: {found: (true/false) startIndex: (start index in s of vowel segment) length ()}
    */
   findVowelSegment(s, startIndex) {
-
     var match = this.regexVowel.exec(s.slice(startIndex));
-    if(match) {
-      if(match[1]) {
+    if (match) {
+      if (match[1]) {
         // the first group should be ignored, as it is to separate an i or u that is used as a consonant.
         match.index += match[1].length;
       }
-      return { found: true, startIndex: startIndex + match.index, length: match[2].length }
+      return {
+        found: true,
+        startIndex: startIndex + match.index,
+        length: match[2].length
+      };
     }
 
     // no vowels sets found after startIndex!
@@ -339,26 +373,51 @@ export class Latin extends Language {
   }
 }
 
-
 /**
  * @class
  */
 export class Spanish extends Language {
-
   constructor() {
     super("Spanish");
 
-    this.vowels = ['a', 'e', 'i', 'o', 'u', 'y',
-                    'á', 'é', 'í', 'ó', 'ú', 'ü'];
+    this.vowels = ["a", "e", "i", "o", "u", "y", "á", "é", "í", "ó", "ú", "ü"];
 
-    this.weakVowels = ['i', 'u', 'ü', 'y'];
+    this.weakVowels = ["i", "u", "ü", "y"];
 
-    this.strongVowels = ['a', 'e', 'o', 'á', 'é', 'í', 'ó', 'ú'];
+    this.strongVowels = ["a", "e", "o", "á", "é", "í", "ó", "ú"];
 
-
-    this.diphthongs = ["ai", "ei", "oi", "ui", "ia", "ie", "io", "iu", "au", "eu", "ou", "ua", "ue", "uo",
-                       "ái", "éi", "ói", "úi", "iá", "ié", "ió", "iú", "áu", "éu", "óu", "uá", "ué", "uó",
-                       "üe", "üi"];
+    this.diphthongs = [
+      "ai",
+      "ei",
+      "oi",
+      "ui",
+      "ia",
+      "ie",
+      "io",
+      "iu",
+      "au",
+      "eu",
+      "ou",
+      "ua",
+      "ue",
+      "uo",
+      "ái",
+      "éi",
+      "ói",
+      "úi",
+      "iá",
+      "ié",
+      "ió",
+      "iú",
+      "áu",
+      "éu",
+      "óu",
+      "uá",
+      "ué",
+      "uó",
+      "üe",
+      "üi"
+    ];
 
     this.uDiphthongExceptions = ["gue", "gui", "qua", "que", "qui", "quo"];
   }
@@ -366,8 +425,7 @@ export class Spanish extends Language {
   // c must be lowercase!
   isVowel(c) {
     for (var i = 0, end = this.vowels.length; i < end; i++)
-      if (this.vowels[i] === c)
-        return true;
+      if (this.vowels[i] === c) return true;
 
     return false;
   }
@@ -378,8 +436,7 @@ export class Spanish extends Language {
    */
   isWeakVowel(c) {
     for (var i = 0, end = this.weakVowels.length; i < end; i++)
-      if (this.weakVowels[i] === c)
-        return true;
+      if (this.weakVowels[i] === c) return true;
 
     return false;
   }
@@ -390,8 +447,7 @@ export class Spanish extends Language {
    */
   isStrongVowel(c) {
     for (var i = 0, end = this.strongVowels.length; i < end; i++)
-      if (this.strongVowels[i] === c)
-        return true;
+      if (this.strongVowels[i] === c) return true;
 
     return false;
   }
@@ -403,15 +459,13 @@ export class Spanish extends Language {
    */
   isDiphthong(s) {
     for (var i = 0, end = this.diphthongs.length; i < end; i++)
-      if (this.diphthongs[i] === s)
-        return true;
+      if (this.diphthongs[i] === s) return true;
 
     return false;
   }
 
   createSyllable(text) {
-
-/*
+    /*
     var accented = false;
     var ellidesToNext = false;
 
@@ -439,7 +493,6 @@ export class Spanish extends Language {
   /**
    */
   syllabifyWord(word) {
-
     var syllables = [];
 
     var haveCompleteSyllable = false;
@@ -450,11 +503,9 @@ export class Spanish extends Language {
     // fixme: first check for prefixes
 
     for (var i = 0; i < word.length; i++) {
-
       var c = word[i].toLowerCase();
 
       if (this.isVowel(c)) {
-
         // we have a complete syllable as soon as we have a vowel
         haveCompleteSyllable = true;
 
@@ -464,7 +515,11 @@ export class Spanish extends Language {
           // if we're at a strong vowel, then we finish out the last syllable
           if (cIsStrongVowel) {
             if (previousIsStrongVowel) {
-              syllables.push(this.createSyllable(word.substr(startSyllable, i - startSyllable)));
+              syllables.push(
+                this.createSyllable(
+                  word.substr(startSyllable, i - startSyllable)
+                )
+              );
               startSyllable = i;
             }
           }
@@ -472,60 +527,84 @@ export class Spanish extends Language {
 
         previousIsVowel = true;
         previousIsStrongVowel = cIsStrongVowel;
-
       } else {
         if (!haveCompleteSyllable) {
           // do nothing since we don't have a complete syllable yet...
         } else {
-
           // handle explicit syllable breaks
-          if (word[i] === '-') {
+          if (word[i] === "-") {
             // start new syllable
-            syllables.push(this.createSyllable(word.substr(startSyllable, i - startSyllable)));
+            syllables.push(
+              this.createSyllable(word.substr(startSyllable, i - startSyllable))
+            );
             startSyllable = ++i;
           } else {
-
-            var numberOfConsonants = 1, consonant2;
+            var numberOfConsonants = 1,
+              consonant2;
 
             // count how many more consonants there are
             for (var j = i + 1; j < word.length; j++) {
-              if (this.isVowel(word[j]))
-                break;
+              if (this.isVowel(word[j])) break;
               numberOfConsonants++;
             }
 
             if (numberOfConsonants === 1) {
               // start new syllable
-              syllables.push(this.createSyllable(word.substr(startSyllable, i - startSyllable)));
+              syllables.push(
+                this.createSyllable(
+                  word.substr(startSyllable, i - startSyllable)
+                )
+              );
               startSyllable = i;
-
             } else if (numberOfConsonants === 2) {
               consonant2 = word[i + 1].toLowerCase();
-              if (consonant2 === 'l' || consonant2 === 'r' || (c === 'c' && consonant2 === 'h')) {
+              if (
+                consonant2 === "l" ||
+                consonant2 === "r" ||
+                (c === "c" && consonant2 === "h")
+              ) {
                 // split before the consonant pair
-                syllables.push(this.createSyllable(word.substr(startSyllable, i - startSyllable)));
+                syllables.push(
+                  this.createSyllable(
+                    word.substr(startSyllable, i - startSyllable)
+                  )
+                );
                 startSyllable = i++;
               } else {
                 //split the consonants
-                syllables.push(this.createSyllable(word.substr(startSyllable, ++i - startSyllable)));
+                syllables.push(
+                  this.createSyllable(
+                    word.substr(startSyllable, ++i - startSyllable)
+                  )
+                );
                 startSyllable = i;
               }
-
             } else if (numberOfConsonants === 3) {
               consonant2 = word[i + 1].toLowerCase();
 
               // if second consonant is s, divide cc-c, otherwise divide c-cc
-              if (consonant2 === 's') {
+              if (consonant2 === "s") {
                 i += 2;
-                syllables.push(this.createSyllable(word.substr(startSyllable, i - startSyllable)));
+                syllables.push(
+                  this.createSyllable(
+                    word.substr(startSyllable, i - startSyllable)
+                  )
+                );
               } else
-                syllables.push(this.createSyllable(word.substr(startSyllable, ++i - startSyllable)));
+                syllables.push(
+                  this.createSyllable(
+                    word.substr(startSyllable, ++i - startSyllable)
+                  )
+                );
 
               startSyllable = i;
-
             } else if (numberOfConsonants === 4) {
               // four always get split cc-cc
-              syllables.push(this.createSyllable(word.substr(startSyllable, i - startSyllable + 2)));
+              syllables.push(
+                this.createSyllable(
+                  word.substr(startSyllable, i - startSyllable + 2)
+                )
+              );
               startSyllable = i + 2;
               i += 3;
             }
@@ -538,15 +617,12 @@ export class Spanish extends Language {
       }
     }
 
-
     // if we have a complete syllable, we can add it as a new one. Otherwise
     // we tack the remaining characters onto the last syllable.
-    if (haveCompleteSyllable)
-      syllables.push(word.substr(startSyllable));
+    if (haveCompleteSyllable) syllables.push(word.substr(startSyllable));
     else if (startSyllable > 0)
       syllables[syllables.length - 1] += word.substr(startSyllable);
-    else if (syllables.length === 0)
-      syllables.push(this.createSyllable(word))
+    else if (syllables.length === 0) syllables.push(this.createSyllable(word));
 
     return syllables;
   }
@@ -557,7 +633,6 @@ export class Spanish extends Language {
    * @retuns a custom class with three properties: {found: (true/false) startIndex: (start index in s of vowel segment) length ()}
    */
   findVowelSegment(s, startIndex) {
-
     var i, end, index;
     var workingString = s.toLowerCase();
 
@@ -567,12 +642,15 @@ export class Spanish extends Language {
       index = workingString.indexOf(d, startIndex);
 
       if (index >= 0) {
-
         // check the exceptions...
-        if (d[0] === 'u' && index > 0) {
+        if (d[0] === "u" && index > 0) {
           var tripthong = s.substr(index - 1, 3).toLowerCase();
 
-          for (let j = 0, endj = this.uDiphthongExceptions.length; i < endj; j++) {
+          for (
+            let j = 0, endj = this.uDiphthongExceptions.length;
+            i < endj;
+            j++
+          ) {
             if (tripthong === this.uDiphthongExceptions[j]) {
               // search from after the u...
               return this.findVowelSegment(s, index + 1);
@@ -588,8 +666,7 @@ export class Spanish extends Language {
     for (i = 0, end = this.vowels.length; i < end; i++) {
       index = workingString.indexOf(this.vowels[i], startIndex);
 
-      if (index >= 0)
-        return { found: true, startIndex: index, length: 1 };
+      if (index >= 0) return { found: true, startIndex: index, length: 1 };
     }
 
     // no vowels sets found after startIndex!
