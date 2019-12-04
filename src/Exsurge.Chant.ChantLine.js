@@ -116,15 +116,15 @@ export class ChantLine extends ChantLayoutElement {
     this.notationBounds.union(this.startingClef.bounds);
 
     // reset the lyric line offsets before we [re]calculate them now
-    this.lyricLineHeight = 0;
+    this.lyricLineHeight = ctxt.lyricTextSize * 1.1;
     this.lyricLineBaseline = 0;
     this.numLyricLines = 0;
 
-    this.altLineHeight = 0;
+    this.altLineHeight = ctxt.alTextSize * 1.1;
     this.altLineBaseline = 0;
     this.numAltLines = 0;
 
-    this.translationLineHeight = 0;
+    this.translationLineHeight = ctxt.translationTextSize * 1.1;
     this.translationLineBaseline = 0;
     this.numTranslationLines = 0;
 
@@ -140,8 +140,8 @@ export class ChantLine extends ChantLayoutElement {
           (this.numLyricLines > 0 &&
             this.lyricLineHeight * this.lyricLineBaseline === 0))
       ) {
-        if (notation.lyrics[0].bounds.height > this.lyricLineHeight)
-          this.lyricLineHeight = notation.lyrics[0].bounds.height;
+        // if (notation.lyrics[0].bounds.height > this.lyricLineHeight)
+        //   this.lyricLineHeight = notation.lyrics[0].bounds.height;
         if (notation.lyrics[0].origin.y > this.lyricLineBaseline)
           this.lyricLineBaseline = notation.lyrics[0].origin.y;
         if (notation.lyrics.length > this.numLyricLines)
@@ -149,8 +149,8 @@ export class ChantLine extends ChantLayoutElement {
       }
 
       if (notation.alText && this.numAltLines < notation.alText.length) {
-        if (notation.alText[0].bounds.height > this.altLineHeight)
-          this.altLineHeight = notation.alText[0].bounds.height;
+        // if (notation.alText[0].bounds.height > this.altLineHeight)
+        //   this.altLineHeight = notation.alText[0].bounds.height;
         if (notation.alText[0].origin.y > this.altLineBaseline)
           this.altLineBaseline = notation.alText[0].origin.y;
         if (notation.alText.length > this.numAltLines)
@@ -161,11 +161,11 @@ export class ChantLine extends ChantLayoutElement {
         notation.translationText &&
         this.numTranslationLines < notation.translationText.length
       ) {
-        if (
-          notation.translationText[0].bounds.height > this.translationLineHeight
-        )
-          this.translationLineHeight =
-            notation.translationText[0].bounds.height;
+        // if (
+        //   notation.translationText[0].bounds.height > this.translationLineHeight
+        // )
+        //   this.translationLineHeight =
+        //     notation.translationText[0].bounds.height;
         if (notation.translationText[0].origin.y > this.translationLineBaseline)
           this.translationLineBaseline = notation.translationText[0].origin.y;
         if (notation.translationText.length > this.numTranslationLines)
@@ -180,8 +180,12 @@ export class ChantLine extends ChantLayoutElement {
       this.notationBounds.union(this.braces[i].bounds);
 
     // finalize the lyrics placement
-    this.lyricLineBaseline +=
+    var notationBoundsOffset =
       this.notationBounds.y + this.notationBounds.height;
+    this.lyricLineBaseline += notationBoundsOffset;
+    this.translationLineBaseline += notationBoundsOffset;
+    this.altLineBaseline += this.notationBounds.y - this.altLineHeight;
+
     for (i = this.notationsStartIndex; i < lastNeumeIndex; i++) {
       notation = notations[i];
       var offset = 0;
@@ -193,17 +197,17 @@ export class ChantLine extends ChantLayoutElement {
       if (notation.translationText) {
         for (j = 0; j < notation.translationText.length; j++) {
           notation.translationText[j].bounds.y =
-            offset + this.lyricLineBaseline;
+            offset + this.translationLineBaseline;
           offset += this.translationLineHeight;
         }
       }
 
       if (notation.alText) {
-        this.altLineBaseline += this.notationBounds.y - 2;
+        console.info(this.altLineBaseline, ctxt.alTextSize);
         offset = 0;
         for (j = 0; j < notation.alText.length; j++) {
-          offset -= this.altLineHeight;
           notation.alText[j].bounds.y = offset + this.altLineBaseline;
+          offset -= this.altLineHeight;
         }
       }
     }
@@ -312,7 +316,7 @@ export class ChantLine extends ChantLayoutElement {
     if (this.numAltLines > 0) {
       var altLineTextRect = new Rect(
         0,
-        this.altLineBaseline - this.altLineHeight * (1 + this.numAltLines),
+        this.notationBounds.y - 2 - this.altLineHeight * this.numAltLines,
         0,
         this.altLineHeight * this.numAltLines
       );
