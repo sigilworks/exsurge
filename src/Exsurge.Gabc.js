@@ -308,10 +308,10 @@ export class Gabc {
     ctxt.activeClef = Clef.default();
 
     // apply the results to the mappings, marking notations that need to be processed
+    var lastTranslationNeumes = [];
     for (var i = 0; i < results.length; i++) {
       var resultCode = results[i][0];
       var resultValues = results[i][1];
-      var lastTranslationNeumes = [];
 
       if (index > 0)
         sourceIndex =
@@ -375,14 +375,14 @@ export class Gabc {
             }
             if (curNotation.translationText) {
               for (l = 0; l < curNotation.translationText.length; ++l) {
-                var transText = curNotation.translationText[l];
+                let transText = curNotation.translationText[l];
                 delete transText.endNeume;
                 curNotation.translationText[l].sourceIndex += sourceIndexDiff;
                 if (
                   transText.textAnchor === "end" &&
                   lastTranslationNeumes[0]
                 ) {
-                  var lastTranslationText =
+                  let lastTranslationText =
                     lastTranslationNeumes[0].translationText[l];
                   if (lastTranslationText)
                     lastTranslationText.endNeume = curNotation;
@@ -420,9 +420,10 @@ export class Gabc {
             lastTranslationNeumes
           );
 
-          for (k = 0; k < mapping.notations.length; k++)
-            if (mapping.notations[k].isClef)
-              ctxt.activeClef = mapping.notations[k];
+          for (k = 0; k < mapping.notations.length; k++) {
+            let curNotation = mapping.notations[k];
+            if (curNotation.isClef) ctxt.activeClef = mapping.notations[k];
+          }
 
           mappings.splice(index++, 0, mapping);
           sourceIndex += wordLength;
@@ -559,9 +560,9 @@ export class Gabc {
       if (translationText.length) {
         notationWithLyrics.translationText = translationText;
         for (i = 0; i < translationText.length; ++i) {
-          var transText = translationText[i];
+          let transText = translationText[i];
           if (transText.textAnchor === "end" && lastTranslationNeumes[0]) {
-            var lastTranslationText =
+            let lastTranslationText =
               lastTranslationNeumes[0].translationText[i];
             if (lastTranslationText)
               lastTranslationText.endNeume = notationWithLyrics;

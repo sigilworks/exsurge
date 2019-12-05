@@ -932,8 +932,8 @@ export class ChantLine extends ChantLayoutElement {
         }
 
         if (lastTranslationTextWithEndNeume) {
-          console.info(notations[i - 1], lastTranslationTextWithEndNeume);
-          // need to go back to before the last translation text start:
+          // console.info(notations[i - 1], lastTranslationTextWithEndNeume);
+          // TODO?: need to go back to before the last translation text start:
         }
 
         // check if the prev elements want to be kept with this one
