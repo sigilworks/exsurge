@@ -1344,12 +1344,19 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
   }
 }
 
-export function TextSpan(text, properties, activeTags) {
-  if (typeof properties === "undefined" || properties === null) properties = {};
+export class TextSpan {
+  constructor(text, properties, activeTags) {
+    if (typeof properties === "undefined" || properties === null)
+      properties = {};
 
-  this.text = text;
-  this.properties = properties;
-  this.activeTags = activeTags || [];
+    this.text = text;
+    this.properties = properties;
+    this.activeTags = activeTags || [];
+  }
+
+  clone() {
+    return new TextSpan(this.text, this.properties, this.activeTags);
+  }
 }
 
 function MarkupStackFrame(tagName, startIndex, properties = {}) {
@@ -2243,16 +2250,25 @@ export class Lyric extends TextElement {
 
   generateDropCap(ctxt) {
     if (this.dropCap) return this.dropCap;
-    // TODO: should really consider any opening tags and handle that properly for the drop cap
-    var dropCap = (this.dropCap = new DropCap(
-      ctxt,
-      this.originalText.substring(0, 1),
-      this.sourceIndex
-    ));
-    this.sourceIndex++;
-    this.sourceGabc = this.sourceGabc.slice(1);
+    let dropCapSpan = this.spans[0].clone();
+    dropCapSpan.text = dropCapSpan.text.slice(0, 1).toUpperCase();
+    let dropCapLowerCase = dropCapSpan.text.toLowerCase();
+    // disallow any characters that do not change from .toUpperCase():
+    if (dropCapSpan.text === dropCapLowerCase) return null;
 
-    this.generateSpansFromText(ctxt, this.originalText.substring(1));
+    if (dropCapSpan.activeTags.indexOf("sc") >= 0)
+      dropCapSpan.text = dropCapLowerCase;
+
+    var dropCap = (this.dropCap = new DropCap(ctxt, "", this.sourceIndex));
+    dropCap.spans = [dropCapSpan];
+    let dropCapSourceGabcLength = this.sourceGabc.match(
+      /^(?:<\/?[^>]>)*.?(?:<\/[^>]>)*/
+    )[0].length;
+    dropCap.sourceGabc = this.sourceGabc.slice(0, dropCapSourceGabcLength);
+    this.sourceIndex += dropCap.sourceGabc.length;
+    this.sourceGabc = this.sourceGabc.slice(this.sourceIndex);
+
+    this.spans[0].text = this.spans[0].text.slice(1);
     this.centerStartIndex--; // lost a letter, so adjust centering accordingly
 
     return dropCap;
