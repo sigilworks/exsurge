@@ -77,6 +77,7 @@ export class Titles extends ChantLayoutElement {
     let y = 0;
     if (this.supertitle) {
       this.supertitle.recalculateMetrics(ctxt);
+      this.supertitle.setMaxWidth(ctxt, width);
 
       this.setBoundsX(ctxt, "supertitle", width);
       this.supertitle.bounds.y = y;
@@ -87,6 +88,7 @@ export class Titles extends ChantLayoutElement {
     if (this.title) {
       if (y) y += this.title.padding(ctxt);
       this.title.recalculateMetrics(ctxt);
+      this.title.setMaxWidth(ctxt, width);
       this.setBoundsX(ctxt, "title", width);
       this.title.bounds.y = y;
       this.bounds.union(this.title.bounds);
@@ -96,6 +98,7 @@ export class Titles extends ChantLayoutElement {
     if (this.subtitle) {
       if (y) y += this.subtitle.padding(ctxt);
       this.subtitle.recalculateMetrics(ctxt);
+      this.subtitle.setMaxWidth(ctxt, width);
       this.setBoundsX(ctxt, "subtitle", width);
       this.subtitle.bounds.y = y;
       this.bounds.union(this.subtitle.bounds);
@@ -186,7 +189,7 @@ export class Titles extends ChantLayoutElement {
     ]) {
       if (el) nodes.push(el[functionName](ctxt));
     }
-    return nodes
+    return nodes;
   }
 
   createSvgNode(ctxt) {
@@ -203,7 +206,11 @@ export class Titles extends ChantLayoutElement {
   createReact(ctxt) {
     var nodes = this.getInnerNodes(ctxt, "createReact");
 
-    return QuickSvg.createReact("g", { class: "Titles", source: this }, ...nodes);
+    return QuickSvg.createReact(
+      "g",
+      { class: "Titles", source: this },
+      ...nodes
+    );
   }
 
   createSvgFragment(ctxt) {

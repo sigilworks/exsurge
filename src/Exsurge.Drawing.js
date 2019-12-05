@@ -1649,7 +1649,23 @@ export class TextElement extends ChantLayoutElement {
     }
   }
 
-  recalculateMetrics(ctxt) {
+  recalculateMetrics(ctxt, resetNewLines = true) {
+    if (resetNewLines) {
+      delete this.maxWidth;
+      delete this.firstLineMaxWidth;
+      delete this.rightAligned;
+      delete this.resize;
+      // replace newlines with spaces
+      this.spans.forEach(span => {
+        delete span.properties.xOffset;
+        if (span.properties.newLine) {
+          delete span.properties.newLine;
+          span.text = " " + span.text;
+        }
+      });
+    }
+
+
     this.bounds.x = 0;
     this.bounds.y = 0;
 
@@ -1683,7 +1699,7 @@ export class TextElement extends ChantLayoutElement {
     if (this.bounds.width > maxWidth) {
       this.maxWidth = maxWidth;
       var percentage = maxWidth / this.bounds.width;
-      if (percentage >= 0.85) {
+      if (this instanceof Lyric && percentage >= 0.85) {
         this.resize = percentage;
         console.info(percentage, this.text);
       } else {
@@ -2125,23 +2141,9 @@ export class Lyric extends TextElement {
   }
 
   recalculateMetrics(ctxt, resetNewLines = true) {
-    if (resetNewLines) {
-      delete this.maxWidth;
-      delete this.firstLineMaxWidth;
-      delete this.rightAligned;
-      delete this.resize;
-      // replace newlines with spaces
-      this.spans.forEach(span => {
-        delete span.properties.xOffset;
-        if (span.properties.newLine) {
-          delete span.properties.newLine;
-          span.text = " " + span.text;
-        }
-      });
-    }
     this.setNeedsConnector();
 
-    super.recalculateMetrics(ctxt);
+    super.recalculateMetrics(ctxt, resetNewLines);
 
     this.widthWithoutConnector = this.bounds.width;
 
