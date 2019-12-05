@@ -186,7 +186,7 @@ export class ChantLine extends ChantLayoutElement {
 
     // finalize the lyrics placement
     var notationBoundsOffset =
-      this.notationBounds.y + this.notationBounds.height + ctxt.minSpaceBelowStaff * ctxt.staffInterval;
+      this.notationBounds.bottom() + ctxt.minSpaceBelowStaff * ctxt.staffInterval;
     this.lyricLineBaseline += notationBoundsOffset;
     this.translationLineBaseline += notationBoundsOffset;
     this.altLineBaseline += this.notationBounds.y - this.altLineHeight;

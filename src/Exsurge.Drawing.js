@@ -465,6 +465,7 @@ export class ChantContext {
     this.minLedgerSeparation = 2; // multiple of staffInterval
     this.minSpaceAboveStaff = 2; // multiple of staffInterval
     this.minSpaceBelowStaff = 1; // multiple of staffInterval
+    this.spaceBetweenSystems = 1.5; // multiple of staffInterval
 
     // everything depends on the scale of the punctum
     this.glyphPunctumWidth = Glyphs.PunctumQuadratum.bounds.width;

@@ -622,6 +622,8 @@ export class ChantScore {
 
     ctxt.activeClef = this.startingClef;
 
+    var spaceBetweenSystems = ctxt.staffInterval * ctxt.spaceBetweenSystems;
+
     do {
       var line = new ChantLine(this);
 
@@ -631,7 +633,7 @@ export class ChantScore {
       this.lines.push(line);
 
       line.bounds.y = -line.bounds.y + y;
-      y += line.bounds.height + ctxt.staffInterval * 1.5;
+      y += line.bounds.height + spaceBetweenSystems;
     } while (currIndex < this.notations.length);
 
     var lastLine = this.lines[this.lines.length - 1];
@@ -639,7 +641,7 @@ export class ChantScore {
     this.bounds.x = 0;
     this.bounds.y = 0;
     this.bounds.width = lastLine.bounds.width;
-    this.bounds.height = y;
+    this.bounds.height = y - spaceBetweenSystems;
 
     if (finishedCallback) finishedCallback(this);
   }
