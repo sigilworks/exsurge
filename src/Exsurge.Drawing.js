@@ -1430,6 +1430,7 @@ export class TextElement extends ChantLayoutElement {
 
     var markupStack = [];
     var spanStartIndex = 0;
+    var newLineInNextSpan = 0;
 
     var filterFrames = (frame, symbol) => frame.Symbol === symbol;
 
@@ -1443,6 +1444,10 @@ export class TextElement extends ChantLayoutElement {
         Object.assign(properties, markupStack[i].properties);
 
       if (extraProperties) Object.assign(properties, extraProperties);
+      if (newLineInNextSpan) {
+        properties.newLine = newLineInNextSpan;
+        newLineInNextSpan = 0;
+      }
 
       this.spans.push(
         new TextSpan(
@@ -1453,15 +1458,21 @@ export class TextElement extends ChantLayoutElement {
       );
     };
 
-    var markupRegex = /\\?([arv])(?:bar|\/\.)|<(\/)?([bciu]|ul|sc)>(?=(?:(.+?)<\/\3>)?)/gi;
+    var markupRegex = /(<br\/?>)|\\?([arv])(?:bar|\/\.)|<(\/)?([bciu]|ul|sc)>(?=(?:(.+?)<\/\3>)?)/gi;
 
     var match = null;
     while ((match = markupRegex.exec(text))) {
-      var tagName = match[3],
-        closingTag = match[2];
+      var [, newLine, specialChar, closingTag, tagName] = match;
 
       // non-matching symbols first
-      if (match[1]) {
+      if (newLine) {
+        // close the current span, if any:
+        if (match.index > spanStartIndex) {
+          closeSpan(text.substring(spanStartIndex, match.index));
+        }
+        // add the newline span:
+        newLineInNextSpan++;
+      } else if (specialChar) {
         closeSpan(
           ctxt.textBeforeSpecialChar +
             ctxt.specialCharText(match[1]) +
@@ -1546,7 +1557,7 @@ export class TextElement extends ChantLayoutElement {
       var span = this.spans[i],
         myText = span.text.slice(0, length - subStringLength);
       if (span.properties.newLine) {
-        ++numLines;
+        numLines += parseInt(span.properties.newLine) || 1;
         if (!lines && this.rightAligned === true && length === Infinity) {
           newLineSpans[newLineSpans.length - 1].properties.xOffset =
             this.firstLineMaxWidth - width;
@@ -1658,13 +1669,12 @@ export class TextElement extends ChantLayoutElement {
       // replace newlines with spaces
       this.spans.forEach(span => {
         delete span.properties.xOffset;
-        if (span.properties.newLine) {
+        if (span.properties.newLine === true) {
           delete span.properties.newLine;
           span.text = " " + span.text;
         }
       });
     }
-
 
     this.bounds.x = 0;
     this.bounds.y = 0;
@@ -1692,7 +1702,7 @@ export class TextElement extends ChantLayoutElement {
   }
 
   setMaxWidth(ctxt, maxWidth, firstLineMaxWidth = maxWidth) {
-    if (this.spans.filter(s => s.properties.newLine).length) {
+    if (this.spans.filter(s => s.properties.newLine === true).length) {
       // first get rid of any new lines set from a previous maxWidth
       this.recalculateMetrics(ctxt);
     }
@@ -1798,7 +1808,11 @@ export class TextElement extends ChantLayoutElement {
       var span = this.spans[i];
       var xOffset = span.properties.xOffset || 0;
       if (span.properties.newLine) {
-        canvasCtxt.translate(translateWidth + xOffset, this.fontSize(ctxt));
+        count = parseInt(span.properties.newLine) || 1;
+        canvasCtxt.translate(
+          translateWidth + xOffset,
+          this.fontSize(ctxt) * count
+        );
         translateWidth = -xOffset;
         translateHeight -= this.fontSize(ctxt);
       } else if (xOffset) {
@@ -1850,7 +1864,7 @@ export class TextElement extends ChantLayoutElement {
       options.style = getCssForProperties(span.properties);
       if (span.properties.newLine) {
         var xOffset = span.properties.xOffset || 0;
-        options.dy = "1em";
+        options.dy = (parseInt(span.properties.newLine) || 1) + "em";
         options.x = this.bounds.x + xOffset;
       } else if (span.properties.xOffset) {
         options.x = this.bounds.x + span.properties.xOffset;
@@ -1884,7 +1898,7 @@ export class TextElement extends ChantLayoutElement {
       options.style = span.properties;
       if (span.properties.newLine) {
         var xOffset = span.properties.xOffset || 0;
-        options.dy = "1em";
+        options.dy = (parseInt(span.properties.newLine) || 1) + "em";
         options.x = this.bounds.x + xOffset;
       } else if (span.properties.xOffset) {
         options.x = this.bounds.x + span.properties.xOffset;
@@ -1918,7 +1932,7 @@ export class TextElement extends ChantLayoutElement {
 
       if (span.properties.newLine) {
         var xOffset = span.properties.xOffset || 0;
-        options.dy = "1em";
+        options.dy = (parseInt(span.properties.newLine) || 1) + "em";
         options.x = this.bounds.x + xOffset;
       } else if (span.properties.xOffset) {
         options.x = this.bounds.x + span.properties.xOffset;
