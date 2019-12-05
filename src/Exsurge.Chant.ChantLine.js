@@ -97,8 +97,7 @@ export class ChantLine extends ChantLayoutElement {
       this.staffRight - this.staffLeft,
       (ctxt.staffLineWeight +
         6 +
-        ctxt.minSpaceAboveStaff +
-        ctxt.minSpaceBelowStaff) *
+        ctxt.minSpaceAboveStaff) *
         ctxt.staffInterval
     );
 
@@ -137,8 +136,7 @@ export class ChantLine extends ChantLayoutElement {
       if (
         notation.lyrics.length &&
         (this.numLyricLines < notation.lyrics.length ||
-          (this.numLyricLines > 0 &&
-            this.lyricLineHeight * this.lyricLineBaseline === 0))
+          this.lyricLineHeight * this.lyricLineBaseline === 0)
       ) {
         // if (notation.lyrics[0].bounds.height > this.lyricLineHeight)
         //   this.lyricLineHeight = notation.lyrics[0].bounds.height;
@@ -148,7 +146,12 @@ export class ChantLine extends ChantLayoutElement {
           this.numLyricLines = notation.lyrics.length;
       }
 
-      if (notation.alText && this.numAltLines < notation.alText.length) {
+      if (
+        notation.alText &&
+        (this.numAltLines < notation.alText.length ||
+          (notation.alText.length &&
+            this.altLineHeight * this.altLineBaseline === 0))
+      ) {
         // if (notation.alText[0].bounds.height > this.altLineHeight)
         //   this.altLineHeight = notation.alText[0].bounds.height;
         if (notation.alText[0].origin.y > this.altLineBaseline)
@@ -159,7 +162,9 @@ export class ChantLine extends ChantLayoutElement {
 
       if (
         notation.translationText &&
-        this.numTranslationLines < notation.translationText.length
+        (this.numTranslationLines < notation.translationText.length ||
+          (notation.translationText.length &&
+            this.translationLineHeight * this.translationLineBaseline === 0))
       ) {
         // if (
         //   notation.translationText[0].bounds.height > this.translationLineHeight
@@ -181,7 +186,7 @@ export class ChantLine extends ChantLayoutElement {
 
     // finalize the lyrics placement
     var notationBoundsOffset =
-      this.notationBounds.y + this.notationBounds.height;
+      this.notationBounds.y + this.notationBounds.height + ctxt.minSpaceBelowStaff * ctxt.staffInterval;
     this.lyricLineBaseline += notationBoundsOffset;
     this.translationLineBaseline += notationBoundsOffset;
     this.altLineBaseline += this.notationBounds.y - this.altLineHeight;
@@ -203,7 +208,6 @@ export class ChantLine extends ChantLayoutElement {
       }
 
       if (notation.alText) {
-        console.info(this.altLineBaseline, ctxt.alTextSize);
         offset = 0;
         for (j = 0; j < notation.alText.length; j++) {
           notation.alText[j].bounds.y = offset + this.altLineBaseline;
@@ -305,11 +309,11 @@ export class ChantLine extends ChantLayoutElement {
       // add up the lyric line heights to get the total height of the chant line
       var lyricAndTextRect = new Rect(
         0,
-        this.lyricLineBaseline - this.lyricLineHeight,
+        notationBoundsOffset,
         0,
         this.lyricLineHeight * this.numLyricLines +
-          this.translationLineHeight * this.numTranslationLines +
-          this.extraTextOnlyHeight
+          this.extraTextOnlyHeight +
+          this.translationLineHeight * this.numTranslationLines
       );
       this.notationBounds.union(lyricAndTextRect);
     }
@@ -1069,7 +1073,10 @@ export class ChantLine extends ChantLayoutElement {
 
       // line breaks are a special case indicating to stop processing here
       if (curr.constructor === ChantLineBreak && width > 0) {
-        this.justify = curr.justify || this.extraTextOnlyIndex !== null || this.getWhitespaceOnRight(ctxt) < 0;
+        this.justify =
+          curr.justify ||
+          this.extraTextOnlyIndex !== null ||
+          this.getWhitespaceOnRight(ctxt) < 0;
         if (this.justify) this.findNeumesToJustify(prevLyrics);
         break;
       }
