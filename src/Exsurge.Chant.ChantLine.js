@@ -95,10 +95,7 @@ export class ChantLine extends ChantLayoutElement {
       -(ctxt.staffLineWeight / 2 + 3 + ctxt.minSpaceAboveStaff) *
         ctxt.staffInterval,
       this.staffRight - this.staffLeft,
-      (ctxt.staffLineWeight +
-        6 +
-        ctxt.minSpaceAboveStaff) *
-        ctxt.staffInterval
+      (ctxt.staffLineWeight + 6 + ctxt.minSpaceAboveStaff) * ctxt.staffInterval
     );
 
     // run through all the elements of the line and calculate the bounds of the notations,
@@ -119,7 +116,7 @@ export class ChantLine extends ChantLayoutElement {
     this.lyricLineBaseline = 0;
     this.numLyricLines = 0;
 
-    this.altLineHeight = ctxt.alTextSize * 1.1;
+    this.altLineHeight = 0;
     this.altLineBaseline = 0;
     this.numAltLines = 0;
 
@@ -133,11 +130,7 @@ export class ChantLine extends ChantLayoutElement {
       this.notationBounds.union(notation.bounds);
 
       // keep track of lyric line offsets
-      if (
-        notation.lyrics.length &&
-        (this.numLyricLines < notation.lyrics.length ||
-          this.lyricLineHeight * this.lyricLineBaseline === 0)
-      ) {
+      if (notation.lyrics.length && notation.lyrics[0].text) {
         // if (notation.lyrics[0].bounds.height > this.lyricLineHeight)
         //   this.lyricLineHeight = notation.lyrics[0].bounds.height;
         if (notation.lyrics[0].origin.y > this.lyricLineBaseline)
@@ -146,14 +139,9 @@ export class ChantLine extends ChantLayoutElement {
           this.numLyricLines = notation.lyrics.length;
       }
 
-      if (
-        notation.alText &&
-        (this.numAltLines < notation.alText.length ||
-          (notation.alText.length &&
-            this.altLineHeight * this.altLineBaseline === 0))
-      ) {
-        // if (notation.alText[0].bounds.height > this.altLineHeight)
-        //   this.altLineHeight = notation.alText[0].bounds.height;
+      if (notation.alText && this.numAltLines < notation.alText.length) {
+        if (notation.alText[0].bounds.height > this.altLineHeight)
+          this.altLineHeight = notation.alText[0].bounds.height;
         if (notation.alText[0].origin.y > this.altLineBaseline)
           this.altLineBaseline = notation.alText[0].origin.y;
         if (notation.alText.length > this.numAltLines)
@@ -162,9 +150,8 @@ export class ChantLine extends ChantLayoutElement {
 
       if (
         notation.translationText &&
-        (this.numTranslationLines < notation.translationText.length ||
-          (notation.translationText.length &&
-            this.translationLineHeight * this.translationLineBaseline === 0))
+        notation.translationText[0] &&
+        notation.translationText[0].text
       ) {
         // if (
         //   notation.translationText[0].bounds.height > this.translationLineHeight
@@ -186,10 +173,12 @@ export class ChantLine extends ChantLayoutElement {
 
     // finalize the lyrics placement
     var notationBoundsOffset =
-      this.notationBounds.bottom() + ctxt.minSpaceBelowStaff * ctxt.staffInterval;
+      this.notationBounds.bottom() +
+      ctxt.minSpaceBelowStaff * ctxt.staffInterval;
     this.lyricLineBaseline += notationBoundsOffset;
     this.translationLineBaseline += notationBoundsOffset;
-    this.altLineBaseline += this.notationBounds.y - this.altLineHeight;
+    this.altLineBaseline +=
+      this.notationBounds.y - this.altLineHeight - ctxt.staffInterval * 0.5;
 
     for (i = this.notationsStartIndex; i < lastNeumeIndex; i++) {
       notation = notations[i];
@@ -211,7 +200,7 @@ export class ChantLine extends ChantLayoutElement {
         offset = 0;
         for (j = 0; j < notation.alText.length; j++) {
           notation.alText[j].bounds.y = offset + this.altLineBaseline;
-          offset -= this.altLineHeight;
+          offset -= ctxt.alTextSize * 1.1;
         }
       }
     }
@@ -320,9 +309,12 @@ export class ChantLine extends ChantLayoutElement {
     if (this.numAltLines > 0) {
       var altLineTextRect = new Rect(
         0,
-        this.notationBounds.y - 2 - this.altLineHeight * this.numAltLines,
+        this.notationBounds.y -
+          this.altLineHeight -
+          0.5 * ctxt.staffInterval -
+          ctxt.alTextSize * 1.1 * (this.numAltLines - 1),
         0,
-        this.altLineHeight * this.numAltLines
+        ctxt.alTextSize * 1.1 * this.numAltLines
       );
       this.notationBounds.union(altLineTextRect);
     }
