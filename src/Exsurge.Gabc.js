@@ -527,7 +527,7 @@ export class Gabc {
         lyricText =
           lyricText.slice(0, index) + lyricText.slice(index + m[0].length);
         index += sourceIndex + indexOffset + 1;
-        if (m[1]) {
+        if (typeof m[1] === "string") {
           let elem = new AboveLinesText(
             ctxt,
             m[1],
@@ -535,7 +535,7 @@ export class Gabc {
             index + 4
           );
           elem.alIndex = alText.push(elem) - 1;
-        } else if (m[2]) {
+        } else if (typeof m[2] === "string") {
           let elem = new AboveLinesText(
             ctxt,
             m[3],
@@ -701,7 +701,6 @@ export class Gabc {
       } else if (/<\/i>$/.test(text)) {
         // must be an elision
         elides = true;
-        text = text.slice(0, -1);
       }
     }
 

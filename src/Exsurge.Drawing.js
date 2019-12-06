@@ -1459,7 +1459,7 @@ export class TextElement extends ChantLayoutElement {
       );
     };
 
-    var markupRegex = /(<br\/?>)|\\?([arv])(?:bar|\/\.)|<(\/)?([bciu]|ul|sc)>(?=(?:(.+?)<\/\3>)?)/gi;
+    var markupRegex = /(<br\/?>)|\\?([arv])(?:bar|\/\.)|<(\/)?([bciu]|ul|sc)>(?=(?:(.+?)<\/\4>)?)/gi;
 
     var match = null;
     while ((match = markupRegex.exec(text))) {
@@ -1476,7 +1476,7 @@ export class TextElement extends ChantLayoutElement {
       } else if (specialChar) {
         closeSpan(
           ctxt.textBeforeSpecialChar +
-            ctxt.specialCharText(match[1]) +
+            ctxt.specialCharText(specialChar) +
             ctxt.textAfterSpecialChar,
           ctxt.specialCharProperties
         );
@@ -1511,13 +1511,10 @@ export class TextElement extends ChantLayoutElement {
       spanStartIndex = match.index + match[0].length;
     }
 
-    // if we finished matches, and there is still some text left, create one final run
-    if (spanStartIndex < text.length)
-      closeSpan(text.substring(spanStartIndex, text.length));
-
-    // if after all of that we still didn't create any runs, then just add the entire text
-    // string itself as a run
-    if (this.spans.length === 0) closeSpan(text);
+    // if we finished matches, and there is still some text left,
+    // or if we haven't generated any spans yet, create one final run
+    if (spanStartIndex < text.length || this.spans.length === 0)
+      closeSpan(text.slice(spanStartIndex));
   }
 
   getCanvasFontForProperties(ctxt, properties = {}) {
@@ -2141,10 +2138,6 @@ export class Lyric extends TextElement {
 
   getConnectorWidth() {
     return this.connectorWidth || this.defaultConnectorWidth;
-  }
-
-  generateSpansFromText(ctxt, text) {
-    super.generateSpansFromText(ctxt, text);
   }
 
   getLeft() {
