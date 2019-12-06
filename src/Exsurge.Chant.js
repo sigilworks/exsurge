@@ -390,7 +390,7 @@ export class ChantScore {
 
     this.lines = [];
     this.notes = [];
-    this.titles = new Titles(ctxt, this);
+    if (ctxt) this.titles = new Titles(ctxt, this);
 
     this.startingClef = null;
 
@@ -409,7 +409,27 @@ export class ChantScore {
 
     this.mergeAnnotationWithTextLeft = __mergeAnnotationWithTextLeft;
 
-    this.updateNotations(ctxt);
+    if (ctxt) this.updateNotations(ctxt);
+  }
+
+  /**
+   * Make a copy of the score, only including the specified lines
+   * @param  {number} startLine starting index
+   * @param  {number} endLine   ending index
+   * @return {ChantScore}           the partial score
+   */
+  copyLines(startLine, endLine) {
+    let result = new ChantScore();
+    result.lines = this.lines.slice(startLine, endLine);
+    result.bounds = this.bounds.clone();
+    let lastLine = result.lines.slice(-1)[0];
+    result.bounds.height = lastLine.bounds.bottom() - lastLine.origin.y;
+    if (startLine === 0) {
+      result.titles = this.titles;
+      result.dropCap = this.dropCap;
+      result.annotation = this.annotation;
+    }
+    return result;
   }
 
   updateSelection(selection) {
@@ -436,7 +456,6 @@ export class ChantScore {
     // start with a default clef in case the notations don't provide one.
     this.startingClef = null;
 
-
     for (i = 0; i < this.mappings.length; i++) {
       mapping = this.mappings[i];
       for (j = 0; j < mapping.notations.length; j++) {
@@ -444,10 +463,10 @@ export class ChantScore {
         notation.score = this;
         notation.mapping = mapping;
 
-        if(!this.startingClef) {
-          if(notation.isNeume) {
+        if (!this.startingClef) {
+          if (notation.isNeume) {
             this.startingClef = Clef.default();
-          } else if(notation.isClef) {
+          } else if (notation.isClef) {
             this.startingClef = notation;
             continue;
           }
@@ -643,7 +662,32 @@ export class ChantScore {
     this.bounds.width = lastLine.bounds.width;
     this.bounds.height = y - spaceBetweenSystems;
 
+    this.pages = [this];
+
     if (finishedCallback) finishedCallback(this);
+  }
+
+  paginate(height) {
+    if (!height) return;
+    this.pages = [];
+    let pageHeightOffset = 0,
+    startLineIndex = 0;
+    for (let i = 1; i < this.lines.length; ++i) {
+      let line = this.lines[i];
+      let pageHeight = line.bounds.bottom() - line.origin.y;
+
+      if(pageHeight > height) {
+        // this line will be the first on the new page
+        this.pages.push(this.copyLines(startLineIndex, i));
+        startLineIndex = i;
+        pageHeightOffset = line.bounds.y;
+        line.bounds.y = line.origin.y;
+      } else {
+        // not a new page yet...update the bounds:
+        line.bounds.y -= pageHeightOffset;
+      }
+    }
+    this.pages.push(this.copyLines(startLineIndex, this.lines.length));
   }
 
   draw(ctxt, scale = 1) {
@@ -655,7 +699,7 @@ export class ChantScore {
 
     canvasCtxt.translate(this.bounds.x, this.bounds.y);
 
-    this.titles.draw(ctxt);
+    if (this.titles) this.titles.draw(ctxt);
 
     for (var i = 0; i < this.lines.length; i++) this.lines[i].draw(ctxt);
 
@@ -678,7 +722,7 @@ export class ChantScore {
     var node = [ctxt.defsNode.cloneNode(true)];
     node[0].appendChild(ctxt.createStyleNode());
 
-    node.push(this.titles.createSvgNode(ctxt));
+    if (this.titles) node.push(this.titles.createSvgNode(ctxt));
 
     for (var i = 0; i < this.lines.length; i++)
       node.push(this.lines[i].createSvgNode(ctxt));
@@ -704,7 +748,7 @@ export class ChantScore {
       )
     ];
 
-    node.push(this.titles.createReact(ctxt));
+    if (this.titles) node.push(this.titles.createReact(ctxt));
 
     for (var i = 0; i < this.lines.length; i++)
       node.push(this.lines[i].createReact(ctxt));
@@ -727,7 +771,7 @@ export class ChantScore {
 
     fragment = QuickSvg.createFragment("defs", {}, fragment);
 
-    fragment += this.titles.createSvgFragment(ctxt);
+    if (this.titles) fragment += this.titles.createSvgFragment(ctxt);
 
     for (var i = 0; i < this.lines.length; i++)
       fragment += this.lines[i].createSvgFragment(ctxt);

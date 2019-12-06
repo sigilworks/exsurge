@@ -112,7 +112,7 @@ export class Titles extends ChantLayoutElement {
       textLeft.bounds.y = y;
       this.bounds.union(textLeft.bounds);
       textLeft.bounds.y += textLeft.origin.y;
-      finalY = y + textLeft.bounds.height;
+      finalY = y + textLeft.bounds.height + textLeft.padding(ctxt);
     }
     if (this.textRight) {
       this.textRight.recalculateMetrics(ctxt);
@@ -120,7 +120,10 @@ export class Titles extends ChantLayoutElement {
       this.textRight.bounds.y = y;
       this.bounds.union(this.textRight.bounds);
       this.textRight.bounds.y += this.textRight.origin.y;
-      finalY = Math.max(finalY, y + this.textRight.bounds.height);
+      finalY = Math.max(
+        finalY,
+        y + this.textRight.bounds.height + this.textRight.padding(ctxt)
+      );
     }
     return finalY;
   }

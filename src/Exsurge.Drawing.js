@@ -2441,6 +2441,7 @@ export class TextLeftRight extends TextElement {
     );
     this.textType = TextTypes.leftRight;
     this.extraClass = type === "textLeft" ? "textLeft" : "textRight";
+    this.padding = ctxt => ctxt.leftRightTextSize / 2;
   }
 
   getCssClasses() {
