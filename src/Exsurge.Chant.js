@@ -674,13 +674,13 @@ export class ChantScore {
     startLineIndex = 0;
     for (let i = 1; i < this.lines.length; ++i) {
       let line = this.lines[i];
-      let pageHeight = line.bounds.bottom() - line.origin.y;
+      let pageHeight = line.bounds.bottom() - pageHeightOffset - line.origin.y;
 
       if(pageHeight > height) {
         // this line will be the first on the new page
         this.pages.push(this.copyLines(startLineIndex, i));
         startLineIndex = i;
-        pageHeightOffset = line.bounds.y;
+        pageHeightOffset = line.bounds.y - line.origin.y;
         line.bounds.y = line.origin.y;
       } else {
         // not a new page yet...update the bounds:
