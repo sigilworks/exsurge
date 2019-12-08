@@ -916,7 +916,7 @@ export class ChantLine extends ChantLayoutElement {
       } else if (fitsOnLine === false) {
         // first check for elements that cannot begin a system: dividers and custodes
         while (
-          this.numNotationsOnLine > 0 &&
+          this.numNotationsOnLine > 1 &&
           (curr.isDivider || curr.constructor === Custos)
         ) {
           curr = notations[--i];
@@ -934,7 +934,7 @@ export class ChantLine extends ChantLayoutElement {
           curr = notations[j + 1];
 
           // curr is the first notation on the next line
-          // cne is the last notation on the previous line
+          // cne is the last notation on this line
 
           if (cne.firstWithNoWidth) {
             this.numNotationsOnLine--;
@@ -1012,7 +1012,11 @@ export class ChantLine extends ChantLayoutElement {
           this.toJustify.push(this.custos);
         }
 
-        if (notations[j].isDivider && notations[j - 1].constructor === Custos) {
+        if (
+          j >= 1 &&
+          notations[j].isDivider &&
+          notations[j - 1].constructor === Custos
+        ) {
           // reverse the order: put the divider first, and end the line with the custos.
           prevLyrics = [];
           for (i = j - 2; i >= this.notationsStartIndex; i--) {
