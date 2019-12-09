@@ -23,16 +23,32 @@
 // THE SOFTWARE.
 //
 
-import * as Exsurge from './Exsurge.Core.js'
-import { Step, Pitch, Rect, Point, Margins } from './Exsurge.Core.js'
-import { QuickSvg, ChantLayoutElement, ChantNotationElement, GlyphCode, GlyphVisualizer, NeumeLineVisualizer, VirgaLineVisualizer, CurlyBraceVisualizer } from './Exsurge.Drawing.js'
-import { Note, LiquescentType, NoteShape, NoteShapeModifiers } from './Exsurge.Chant.js'
-import { MarkingPositionHint, HorizontalEpisema, Mora } from './Exsurge.Chant.Markings.js'
-import { Glyphs } from './Exsurge.Glyphs.js'
-
+import * as Exsurge from "./Exsurge.Core.js";
+import { Step, Pitch, Rect, Point, Margins } from "./Exsurge.Core.js";
+import {
+  QuickSvg,
+  ChantLayoutElement,
+  ChantNotationElement,
+  GlyphCode,
+  GlyphVisualizer,
+  NeumeLineVisualizer,
+  VirgaLineVisualizer,
+  CurlyBraceVisualizer
+} from "./Exsurge.Drawing.js";
+import {
+  Note,
+  LiquescentType,
+  NoteShape,
+  NoteShapeModifiers
+} from "./Exsurge.Chant.js";
+import {
+  MarkingPositionHint,
+  HorizontalEpisema,
+  Mora
+} from "./Exsurge.Chant.Markings.js";
+import { Glyphs } from "./Exsurge.Glyphs.js";
 
 class NeumeBuilder {
-
   constructor(ctxt, neume, startingX = 0) {
     this.ctxt = ctxt;
     this.neume = neume;
@@ -45,7 +61,12 @@ class NeumeBuilder {
   // used to start a hanging line on the left of the next note
   lineFrom(note) {
     var previousNotation = this.ctxt.notations[this.ctxt.currNotationIndex - 1];
-    if(this.x === 0 && previousNotation && previousNotation.notes && previousNotation.trailingSpace === 0) {
+    if (
+      this.x === 0 &&
+      previousNotation &&
+      previousNotation.notes &&
+      previousNotation.trailingSpace === 0
+    ) {
       this.lastNote = previousNotation.notes.slice(-1)[0];
       this.minX = -this.ctxt.neumeLineWeight;
     } else {
@@ -57,28 +78,32 @@ class NeumeBuilder {
 
   // add a note, with a connecting line on the left if we have one
   noteAt(note, glyph, withLineTo = true) {
+    if (!note) throw "NeumeBuilder.noteAt: note must be a valid note";
 
-    if (!note)
-      throw "NeumeBuilder.noteAt: note must be a valid note";
-
-    if (!glyph)
-      throw "NeumeBuilder.noteAt: glyph must be a valid glyph code";
+    if (!glyph) throw "NeumeBuilder.noteAt: glyph must be a valid glyph code";
 
     note.setGlyph(this.ctxt, glyph);
     var noteAlignsRight = note.glyphVisualizer.align === "right";
 
-    var needsLine = withLineTo && this.lastNote !== null &&
+    var needsLine =
+      withLineTo &&
+      this.lastNote !== null &&
       (this.lineIsHanging ||
-       (this.lastNote.glyphVisualizer && this.lastNote.glyphVisualizer.align === 'right') ||
-       Math.abs(this.lastNote.staffPosition - note.staffPosition) > 1);
+        (this.lastNote.glyphVisualizer &&
+          this.lastNote.glyphVisualizer.align === "right") ||
+        Math.abs(this.lastNote.staffPosition - note.staffPosition) > 1);
 
     if (needsLine) {
-      var line = new NeumeLineVisualizer(this.ctxt, this.lastNote, note, this.lineIsHanging);
+      var line = new NeumeLineVisualizer(
+        this.ctxt,
+        this.lastNote,
+        note,
+        this.lineIsHanging
+      );
       this.neume.addVisualizer(line);
       line.bounds.x = Math.max(this.minX, this.x - line.bounds.width);
 
-      if (!noteAlignsRight)
-        this.x = line.bounds.x;
+      if (!noteAlignsRight) this.x = line.bounds.x;
     }
 
     // if this is the first note of a right aligned glyph (probably an initio debilis),
@@ -102,7 +127,6 @@ class NeumeBuilder {
   // a special form of noteAdd that creates a virga
   // uses a punctum cuadratum and a line rather than the virga glyphs
   virgaAt(note, withLineTo = true) {
-
     // add the punctum for the virga
     this.noteAt(note, GlyphCode.PunctumQuadratum);
 
@@ -129,9 +153,7 @@ class NeumeBuilder {
 
   // for terminating hanging lines with no lower notes
   withLineEndingAt(note) {
-
-    if (this.lastNote === null)
-      return;
+    if (this.lastNote === null) return;
 
     var line = new NeumeLineVisualizer(this.ctxt, this.lastNote, note, true);
     this.neume.addVisualizer(line);
@@ -146,17 +168,14 @@ class NeumeBuilder {
   }
 
   withPodatus(lowerNote, upperNote) {
-
     var upperGlyph;
     var lowerGlyph;
 
     if (lowerNote.liquescent === LiquescentType.InitioDebilis) {
-
       // liquescent upper note or not?
       if (upperNote.liquescent === LiquescentType.None)
         upperGlyph = GlyphCode.PunctumQuadratum;
-      else
-        upperGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
+      else upperGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
 
       lowerGlyph = GlyphCode.TerminatingDesLiquescent;
     } else if (upperNote.liquescent & LiquescentType.Small) {
@@ -175,8 +194,7 @@ class NeumeBuilder {
     }
 
     // allow a quilisma pes
-    if (lowerNote.shape === NoteShape.Quilisma)
-      lowerGlyph = GlyphCode.Quilisma;
+    if (lowerNote.shape === NoteShape.Quilisma) lowerGlyph = GlyphCode.Quilisma;
 
     this.noteAt(lowerNote, lowerGlyph).noteAt(upperNote, upperGlyph);
 
@@ -187,13 +205,11 @@ class NeumeBuilder {
   }
 
   withClivis(upper, lower) {
-
     var lowerGlyph;
 
     if (upper.shape === NoteShape.Oriscus)
       this.noteAt(upper, GlyphCode.OriscusDes, false);
-    else
-      this.lineFrom(lower).noteAt(upper, GlyphCode.PunctumQuadratum);
+    else this.lineFrom(lower).noteAt(upper, GlyphCode.PunctumQuadratum);
 
     if (lower.liquescent & LiquescentType.Small) {
       lowerGlyph = GlyphCode.TerminatingDesLiquescent;
@@ -201,8 +217,7 @@ class NeumeBuilder {
       lowerGlyph = GlyphCode.PunctumQuadratumAscLiquescent;
     else if (lower.liquescent === LiquescentType.Descending)
       lowerGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
-    else
-      lowerGlyph = GlyphCode.PunctumQuadratum;
+    else lowerGlyph = GlyphCode.PunctumQuadratum;
 
     this.noteAt(lower, lowerGlyph);
 
@@ -214,13 +229,14 @@ class NeumeBuilder {
 
   // lays out a sequence of notes that are inclinata (e.g., climacus, pes subpunctis)
   withInclinata(notes) {
-
-    var staffPosition = notes[0].staffPosition, prevStaffPosition = notes[0].staffPosition;
+    var staffPosition = notes[0].staffPosition,
+      prevStaffPosition = notes[0].staffPosition;
 
     // it is important to advance by the width of the inclinatum glyph itself
     // rather than by individual note widths, so that any liquescents are spaced
     // the same as non-liquscents
-    var advanceWidth = Glyphs.PunctumInclinatum.bounds.width * this.ctxt.glyphScaling;
+    var advanceWidth =
+      Glyphs.PunctumInclinatum.bounds.width * this.ctxt.glyphScaling;
 
     // now add all the punctum inclinatum
     for (var i = 0; i < notes.length; i++, prevStaffPosition = staffPosition) {
@@ -231,10 +247,9 @@ class NeumeBuilder {
       else if (note.liquescent & LiquescentType.Large)
         // fixme: is the large inclinatum liquescent the same as the apostropha?
         note.setGlyph(this.ctxt, GlyphCode.Stropha);
-      else
-        // fixme: some climaci in the new chant books end with a punctum quadratum
-        // (see, for example, the antiphon "Sancta Maria" for October 7).
-        note.setGlyph(this.ctxt, GlyphCode.PunctumInclinatum);
+      // fixme: some climaci in the new chant books end with a punctum quadratum
+      // (see, for example, the antiphon "Sancta Maria" for October 7).
+      else note.setGlyph(this.ctxt, GlyphCode.PunctumInclinatum);
 
       staffPosition = note.staffPosition;
 
@@ -244,12 +259,11 @@ class NeumeBuilder {
           multiple = 1.1;
           break;
         default:
-          multiple *= 2/3;
+          multiple *= 2 / 3;
           break;
       }
 
-      if (i > 0)
-        this.x += advanceWidth * multiple;
+      if (i > 0) this.x += advanceWidth * multiple;
 
       note.bounds.x = this.x;
 
@@ -260,14 +274,20 @@ class NeumeBuilder {
   }
 
   withPorrectusSwash(start, end) {
-
-    var needsLine = this.lastNote !== null &&
+    var needsLine =
+      this.lastNote !== null &&
       (this.lineIsHanging ||
-       (this.lastNote.glyphVisualizer && this.lastNote.glyphVisualizer.align === 'right') ||
-       Math.abs(this.lastNote.staffPosition - start.staffPosition) > 1);
+        (this.lastNote.glyphVisualizer &&
+          this.lastNote.glyphVisualizer.align === "right") ||
+        Math.abs(this.lastNote.staffPosition - start.staffPosition) > 1);
 
     if (needsLine) {
-      var line = new NeumeLineVisualizer(this.ctxt, this.lastNote, start, this.lineIsHanging);
+      var line = new NeumeLineVisualizer(
+        this.ctxt,
+        this.lastNote,
+        start,
+        this.lineIsHanging
+      );
       this.x = Math.max(this.minX, this.x - line.bounds.width);
       line.bounds.x = this.x;
       this.neume.addVisualizer(line);
@@ -318,16 +338,13 @@ class NeumeBuilder {
  * Neumes base class
  */
 export class Neume extends ChantNotationElement {
-
   constructor(notes = []) {
-
     super();
 
-    this.isNeume = true;  // poor man's reflection
+    this.isNeume = true; // poor man's reflection
     this.notes = notes;
 
-    for (var i = 0; i < notes.length; i++)
-      notes[i].neume = this;
+    for (var i = 0; i < notes.length; i++) notes[i].neume = this;
   }
 
   addNote(note) {
@@ -340,7 +357,6 @@ export class Neume extends ChantNotationElement {
   }
 
   finishLayout(ctxt) {
-
     this.ledgerLines = this.requiresLedgerLine();
 
     // allow subclasses an opportunity to position their own markings...
@@ -372,6 +388,11 @@ export class Neume extends ChantNotationElement {
         this.addVisualizer(note.accent);
       }
 
+      if (note.choralSign) {
+        note.choralSign.performLayout(ctxt);
+        this.addVisualizer(note.choralSign);
+      }
+
       // braces are handled by the chant line, so we don't mess with them here
       // this is because brace size depends on chant line logic (neume spacing,
       // justification, etc.) so they are considered chant line level
@@ -386,11 +407,11 @@ export class Neume extends ChantNotationElement {
 
   requiresLedgerLine() {
     var firstAbove = false,
-        needsAbove = false,
-        firstBelow = false,
-        needsBelow = false,
-        // isPorrectus = false,
-        result = [];
+      needsAbove = false,
+      firstBelow = false,
+      needsBelow = false,
+      // isPorrectus = false,
+      result = [];
 
     if (!this.notes) return result;
 
@@ -399,19 +420,19 @@ export class Neume extends ChantNotationElement {
       var staffPosition = note.staffPosition;
       if (staffPosition >= 4) {
         needsAbove = needsAbove || staffPosition >= 5;
-        if(firstAbove === false) firstAbove = Math.max(0, i - 1);
-        if(staffPosition >= 5) continue;
+        if (firstAbove === false) firstAbove = Math.max(0, i - 1);
+        if (staffPosition >= 5) continue;
       } else if (staffPosition <= -4) {
         needsBelow = needsBelow || staffPosition <= -5;
-        if(firstBelow === false) firstBelow = Math.max(0, i - 1);
-        if(staffPosition <= -5) continue;
+        if (firstBelow === false) firstBelow = Math.max(0, i - 1);
+        if (staffPosition <= -5) continue;
       }
       if (needsAbove || needsBelow) {
         var endI = i; // Math.abs(staffPosition) >= 4? i : i - 1;
         result.push({
           element: this.notes[firstAbove || firstBelow || 0],
           endElem: this.notes[endI],
-          staffPosition: needsAbove? 5 : -5
+          staffPosition: needsAbove ? 5 : -5
         });
         firstAbove = firstBelow = needsAbove = needsBelow = false;
       }
@@ -421,15 +442,13 @@ export class Neume extends ChantNotationElement {
       result.push({
         element: this.notes[firstAbove || firstBelow || 0],
         endElem: this.notes[this.notes.length - 1],
-        staffPosition: needsAbove? 5 : -5
+        staffPosition: needsAbove ? 5 : -5
       });
     }
     return result;
   }
 
-  resetDependencies() {
-
-  }
+  resetDependencies() {}
 
   build(ctxt) {
     return new NeumeBuilder(ctxt, this);
@@ -455,16 +474,22 @@ export class Neume extends ChantNotationElement {
   }
   positionInclinataMorae(notes) {
     notes = notes.slice(-2);
-    if (notes.length < 2 || notes[1].staffPosition > notes[0].staffPosition) return;
+    if (notes.length < 2 || notes[1].staffPosition > notes[0].staffPosition)
+      return;
     var bottomNote = notes[1],
-        topNote = notes[0],
-        mark;
+      topNote = notes[0],
+      mark;
 
     // The mora on the second (lower) note should be below the punctum,
     // if the punctum is on a line and the previous punctum is in the space above.
-    if (Math.abs(bottomNote.staffPosition % 2) === 1 && (topNote.staffPosition - bottomNote.staffPosition === 1) && bottomNote.morae.length > 0) {
+    if (
+      Math.abs(bottomNote.staffPosition % 2) === 1 &&
+      topNote.staffPosition - bottomNote.staffPosition === 1 &&
+      bottomNote.morae.length > 0
+    ) {
       mark = bottomNote.morae.slice(-1)[0];
-      if (mark.positionHint === MarkingPositionHint.Default) mark.positionHint = MarkingPositionHint.Below;
+      if (mark.positionHint === MarkingPositionHint.Default)
+        mark.positionHint = MarkingPositionHint.Below;
     }
   }
   positionPodatusMorae(bottomNote, topNote) {
@@ -478,7 +503,8 @@ export class Neume extends ChantNotationElement {
       } else if (topNote.morae.length > 1) {
         mark = topNote.morae[0];
       }
-      if(mark && mark.positionHint === MarkingPositionHint.Default) mark.positionHint = MarkingPositionHint.Below;
+      if (mark && mark.positionHint === MarkingPositionHint.Default)
+        mark.positionHint = MarkingPositionHint.Below;
     }
 
     // if there is a mora on the first note but not on the second, and the neume
@@ -498,23 +524,34 @@ export class Neume extends ChantNotationElement {
   // episema below, unless the middle note also has an episema
   positionTorculusMarkings(firstNote, secondNote, thirdNote) {
     var hasTopEpisema = this.positionClivisMarkings(secondNote, thirdNote);
-    hasTopEpisema = this.positionEpisemata(firstNote, hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below) && hasTopEpisema;
+    hasTopEpisema =
+      this.positionEpisemata(
+        firstNote,
+        hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below
+      ) && hasTopEpisema;
     return hasTopEpisema;
   }
   positionClivisMorae(firstNote, secondNote) {
     // 1. morae need to be lined up if both notes have morae
     var morae = firstNote.morae.concat(secondNote.morae);
     if (secondNote.morae.length) {
-      if(morae.length > 1) morae[0].horizontalOffset += secondNote.bounds.right() - firstNote.bounds.right();
-      if(firstNote.staffPosition - secondNote.staffPosition === 1 &&
-          Math.abs(secondNote.staffPosition % 2) === 1) {
+      if (morae.length > 1)
+        morae[0].horizontalOffset +=
+          secondNote.bounds.right() - firstNote.bounds.right();
+      if (
+        firstNote.staffPosition - secondNote.staffPosition === 1 &&
+        Math.abs(secondNote.staffPosition % 2) === 1
+      ) {
         morae.slice(-1)[0].positionHint = MarkingPositionHint.Below;
       }
     }
   }
   positionClivisEpisemata(firstNote, secondNote) {
     var hasTopEpisema = this.positionEpisemataAbove(firstNote);
-    this.positionEpisemata(secondNote, hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below);
+    this.positionEpisemata(
+      secondNote,
+      hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below
+    );
     return hasTopEpisema;
   }
   positionClivisMarkings(firstNote, secondNote) {
@@ -532,48 +569,53 @@ export class Neume extends ChantNotationElement {
   positionPorrectusFlexusMarkings(first, second, third, fourth) {
     var hasTopEpisema = this.positionEpisemataAbove(first);
     hasTopEpisema = this.positionClivisMarkings(third, fourth) || hasTopEpisema;
-    this.positionEpisemata(second, hasTopEpisema? MarkingPositionHint.Above : MarkingPositionHint.Below);
+    this.positionEpisemata(
+      second,
+      hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below
+    );
   }
 
   // subclasses can override this in order to correctly place markings in a neume specific way
-  positionMarkings() {
-
-  }
+  positionMarkings() {}
 }
 
 /*
  * Apostropha
  */
 export class Apostropha extends Neume {
-
   positionMarkings() {
     var positionHint = MarkingPositionHint.Above;
 
     // logic here is this: if first episema is default position, place it above.
     // then place the second one (if there is one) opposite of the first.
     for (var i = 0; i < this.notes[0].episemata.length; i++) {
-      if (this.notes[0].episemata[i].positionHint === MarkingPositionHint.Default)
+      if (
+        this.notes[0].episemata[i].positionHint === MarkingPositionHint.Default
+      )
         this.notes[0].episemata[i].positionHint = positionHint;
-      else
-        positionHint = this.notes[0].episemata[i].positionHint;
+      else positionHint = this.notes[0].episemata[i].positionHint;
 
       // now place the next one in the opposite position
-      positionHint = (positionHint === MarkingPositionHint.Above) ? MarkingPositionHint.Below : MarkingPositionHint.Above;
+      positionHint =
+        positionHint === MarkingPositionHint.Above
+          ? MarkingPositionHint.Below
+          : MarkingPositionHint.Above;
     }
   }
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
 
-    this.build(ctxt).noteAt(this.notes[0], Apostropha.getNoteGlyphCode(this.notes[0]));
+    this.build(ctxt).noteAt(
+      this.notes[0],
+      Apostropha.getNoteGlyphCode(this.notes[0])
+    );
 
     this.finishLayout(ctxt);
   }
 
   static getNoteGlyphCode(note) {
-
-    if (note.shape === NoteShape.Stropha)
-      return GlyphCode.Stropha;
+    if (note.shape === NoteShape.Stropha) return GlyphCode.Stropha;
 
     if (note.liquescent & LiquescentType.Ascending)
       return GlyphCode.PunctumQuadratumAscLiquescent;
@@ -594,7 +636,6 @@ export class Apostropha extends Neume {
  * structure. These technically must be the same pitch though.
  */
 export class Bivirga extends Neume {
-
   positionMarkings() {
     this.positionEpisemataAbove(this.notes[0]);
     this.positionEpisemataAbove(this.notes[1]);
@@ -619,7 +660,6 @@ export class Bivirga extends Neume {
  * structure. These technically must be the same pitch though.
  */
 export class Trivirga extends Neume {
-
   positionMarkings() {
     this.positionEpisemataAbove(this.notes[0]);
     this.positionEpisemataAbove(this.notes[1]);
@@ -644,9 +684,7 @@ export class Trivirga extends Neume {
  * Climacus
  */
 export class Climacus extends Neume {
-
   positionMarkings() {
-
     for (var i = 0; i < this.notes.length; i++) {
       this.positionEpisemataAbove(this.notes[i]);
     }
@@ -669,7 +707,6 @@ export class Climacus extends Neume {
  * Clivis
  */
 export class Clivis extends Neume {
-
   positionMarkings() {
     this.positionClivisMarkings(this.notes[0], this.notes[1]);
   }
@@ -686,8 +723,6 @@ export class Clivis extends Neume {
   }
 }
 
-
-
 /*
  * Distropha
  *
@@ -695,7 +730,6 @@ export class Clivis extends Neume {
  * structure. These technically must be the same pitch though (like Bivirga).
  */
 export class Distropha extends Neume {
-
   positionMarkings() {
     this.positionEpisemataAbove(this.notes[0]);
     this.positionEpisemataAbove(this.notes[1]);
@@ -717,7 +751,6 @@ export class Distropha extends Neume {
  * Oriscus
  */
 export class Oriscus extends Neume {
-
   positionMarkings() {
     this.positionEpisemataAbove(this.notes[0]);
   }
@@ -744,7 +777,9 @@ export class Oriscus extends Neume {
         var neume = ctxt.findNextNeume();
 
         if (neume) {
-          var nextNoteStaffPosition = ctxt.activeClef.pitchToStaffPosition(neume.notes[0].pitch);
+          var nextNoteStaffPosition = ctxt.activeClef.pitchToStaffPosition(
+            neume.notes[0].pitch
+          );
 
           if (nextNoteStaffPosition > note.staffPosition)
             glyph = GlyphCode.OriscusAsc;
@@ -758,13 +793,14 @@ export class Oriscus extends Neume {
   }
 
   resetDependencies() {
-
     // a single oriscus tries to automatically use the right direction
     // based on the following neumes. if we don't have a manually designated
     // direction, then we reset our layout so that we can try to guess it
     // at next layout phase.
-    if (this.notes[0].shapeModifiers & NoteShapeModifiers.Ascending ||
-      this.notes[0].shapeModifiers & NoteShapeModifiers.Descending)
+    if (
+      this.notes[0].shapeModifiers & NoteShapeModifiers.Ascending ||
+      this.notes[0].shapeModifiers & NoteShapeModifiers.Descending
+    )
       return;
 
     this.needsLayout = true;
@@ -775,7 +811,6 @@ export class Oriscus extends Neume {
  * PesQuassus
  */
 export class PesQuassus extends Neume {
-
   performLayout(ctxt) {
     super.performLayout(ctxt);
 
@@ -787,18 +822,18 @@ export class PesQuassus extends Neume {
     var lowerStaffPos = lower.staffPosition;
     var upperStaffPos = upper.staffPosition;
 
-    if (lower.shape === NoteShape.Oriscus)
-      lowerGlyph = GlyphCode.OriscusAsc;
-    else
-      lowerGlyph = GlyphCode.PunctumQuadratum;
+    if (lower.shape === NoteShape.Oriscus) lowerGlyph = GlyphCode.OriscusAsc;
+    else lowerGlyph = GlyphCode.PunctumQuadratum;
 
-    var builder = this.build(ctxt)
-      .noteAt(lower, lowerGlyph);
+    var builder = this.build(ctxt).noteAt(lower, lowerGlyph);
 
-    if (upperStaffPos - lowerStaffPos === 1)// use a virga glyph in this case
+    if (upperStaffPos - lowerStaffPos === 1)
+      // use a virga glyph in this case
       builder.virgaAt(upper);
     else if (upper.liquescent === LiquescentType.LargeDescending)
-      builder.noteAt(upper, GlyphCode.PunctumQuadratumDesLiquescent).withLineEndingAt(lower);
+      builder
+        .noteAt(upper, GlyphCode.PunctumQuadratumDesLiquescent)
+        .withLineEndingAt(lower);
     else
       builder.noteAt(upper, GlyphCode.PunctumQuadratum).withLineEndingAt(lower);
 
@@ -810,10 +845,9 @@ export class PesQuassus extends Neume {
  * PesSubpunctis
  */
 export class PesSubpunctis extends Neume {
-
   positionMarkings() {
     this.positionPodatusEpisemata(this.notes[0], this.notes[1]);
-    for(var i=2; i < this.notes.length; ++i) {
+    for (var i = 2; i < this.notes.length; ++i) {
       this.positionEpisemataAbove(this.notes[i]);
     }
     this.positionInclinataMorae(this.notes.slice(1));
@@ -840,7 +874,6 @@ export class PesSubpunctis extends Neume {
  * Podatus initio debilis, and Quilisma-Pes
  */
 export class Podatus extends Neume {
-
   positionMarkings() {
     this.positionPodatusMarkings(this.notes[0], this.notes[1]);
   }
@@ -858,7 +891,6 @@ export class Podatus extends Neume {
  * Porrectus
  */
 export class Porrectus extends Neume {
-
   positionMarkings() {
     this.positionPorrectusMarkings(this.notes[0], this.notes[1], this.notes[2]);
   }
@@ -876,8 +908,7 @@ export class Porrectus extends Neume {
       thirdGlyph = GlyphCode.TerminatingAscLiquescent;
     else if (third.liquescent & LiquescentType.Descending)
       thirdGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
-    else
-      thirdGlyph = GlyphCode.PodatusUpper;
+    else thirdGlyph = GlyphCode.PodatusUpper;
 
     this.build(ctxt)
       .lineFrom(second)
@@ -892,9 +923,13 @@ export class Porrectus extends Neume {
  * PorrectusFlexus
  */
 export class PorrectusFlexus extends Neume {
-
   positionMarkings() {
-    this.positionPorrectusFlexusMarkings(this.notes[0], this.notes[1], this.notes[2], this.notes[3]);
+    this.positionPorrectusFlexusMarkings(
+      this.notes[0],
+      this.notes[1],
+      this.notes[2],
+      this.notes[3]
+    );
   }
 
   performLayout(ctxt) {
@@ -905,7 +940,8 @@ export class PorrectusFlexus extends Neume {
     var third = this.notes[2];
     var fourth = this.notes[3];
 
-    var thirdGlyph = GlyphCode.PunctumQuadratum, fourthGlyph;
+    var thirdGlyph = GlyphCode.PunctumQuadratum,
+      fourthGlyph;
 
     if (fourth.liquescent & LiquescentType.Small) {
       thirdGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
@@ -914,8 +950,7 @@ export class PorrectusFlexus extends Neume {
       fourthGlyph = GlyphCode.PunctumQuadratumAscLiquescent;
     else if (fourth.liquescent & LiquescentType.Descending)
       fourthGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
-    else
-      fourthGlyph = GlyphCode.PunctumQuadratum;
+    else fourthGlyph = GlyphCode.PunctumQuadratum;
 
     this.build(ctxt)
       .lineFrom(second)
@@ -930,7 +965,6 @@ export class PorrectusFlexus extends Neume {
 // this is some type of pseudo nume right? there is no such thing as a neume
 // of puncta inclinata, but this will be part of other composite neumes.
 export class PunctaInclinata extends Neume {
-
   positionMarkings() {
     this.positionInclinataMorae(this.notes);
   }
@@ -948,7 +982,6 @@ export class PunctaInclinata extends Neume {
  * Punctum
  */
 export class Punctum extends Neume {
-
   positionMarkings() {
     this.positionEpisemataAbove(this.notes[0]);
   }
@@ -969,17 +1002,13 @@ export class Punctum extends Neume {
         glyph = GlyphCode.PunctumQuadratumAscLiquescent;
       else if (note.liquescent & LiquescentType.Descending)
         glyph = GlyphCode.PunctumQuadratumDesLiquescent;
-
     } else {
-
       if (note.shapeModifiers & NoteShapeModifiers.Cavum)
         glyph = GlyphCode.PunctumCavum;
       else if (note.shape === NoteShape.Inclinatum)
         glyph = GlyphCode.PunctumInclinatum;
-      else if (note.shape === NoteShape.Quilisma)
-        glyph = GlyphCode.Quilisma;
-      else
-        glyph = GlyphCode.PunctumQuadratum;
+      else if (note.shape === NoteShape.Quilisma) glyph = GlyphCode.Quilisma;
+      else glyph = GlyphCode.PunctumQuadratum;
     }
 
     this.build(ctxt).noteAt(note, glyph);
@@ -992,7 +1021,6 @@ export class Punctum extends Neume {
  * Salicus
  */
 export class Salicus extends Neume {
-
   positionMarkings() {
     // by default place episema below
     // fixme: is this correct?
@@ -1025,8 +1053,7 @@ export class Salicus extends Neume {
       builder.noteAt(third, GlyphCode.PunctumQuadratumAscLiquescent);
     else if (third.liquescent === LiquescentType.Descending)
       builder.noteAt(third, GlyphCode.PunctumQuadratumDesLiquescent);
-    else
-      builder.virgaAt(third);
+    else builder.virgaAt(third);
 
     this.finishLayout(ctxt);
   }
@@ -1036,10 +1063,16 @@ export class Salicus extends Neume {
  * Salicus Flexus
  */
 export class SalicusFlexus extends Neume {
-
   positionMarkings() {
-    var hasTopEpisema = this.positionTorculusMarkings(this.notes[1], this.notes[2], this.notes[3]);
-    this.positionEpisemata(this.notes[0], hasTopEpisema? MarkingPositionHint.Above : MarkingPositionHint.Below);
+    var hasTopEpisema = this.positionTorculusMarkings(
+      this.notes[1],
+      this.notes[2],
+      this.notes[3]
+    );
+    this.positionEpisemata(
+      this.notes[0],
+      hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below
+    );
   }
 
   performLayout(ctxt) {
@@ -1065,8 +1098,7 @@ export class SalicusFlexus extends Neume {
     // ...based on note four though!
     if (fourth.liquescent & LiquescentType.Small)
       builder.noteAt(third, GlyphCode.PunctumQuadratumDesLiquescent);
-    else
-      builder.noteAt(third, GlyphCode.PunctumQuadratum);
+    else builder.noteAt(third, GlyphCode.PunctumQuadratum);
 
     // finally, do the fourth note
     if (fourth.liquescent & LiquescentType.Small)
@@ -1075,8 +1107,7 @@ export class SalicusFlexus extends Neume {
       builder.noteAt(fourth, GlyphCode.PunctumQuadratumAscLiquescent);
     else if (fourth.liquescent & LiquescentType.Descending)
       builder.noteAt(fourth, GlyphCode.PunctumQuadratumDesLiquescent);
-    else
-      builder.noteAt(fourth, GlyphCode.PunctumQuadratum);
+    else builder.noteAt(fourth, GlyphCode.PunctumQuadratum);
 
     this.finishLayout(ctxt);
   }
@@ -1086,7 +1117,6 @@ export class SalicusFlexus extends Neume {
  * Scandicus
  */
 export class Scandicus extends Neume {
-
   positionMarkings() {
     if (this.notes[2].shape === NoteShape.Virga) {
       this.positionPodatusMarkings(this.notes[0], this.notes[1]);
@@ -1113,7 +1143,12 @@ export class Scandicus extends Neume {
         .virgaAt(third);
     } else {
       this.build(ctxt)
-        .noteAt(first, first.shape === NoteShape.Quilisma? GlyphCode.Quilisma : GlyphCode.PunctumQuadratum)
+        .noteAt(
+          first,
+          first.shape === NoteShape.Quilisma
+            ? GlyphCode.Quilisma
+            : GlyphCode.PunctumQuadratum
+        )
         .withPodatus(second, third);
     }
 
@@ -1121,12 +1156,10 @@ export class Scandicus extends Neume {
   }
 }
 
-
 /*
  * Scandicus Flexus
  */
 export class ScandicusFlexus extends Neume {
-
   positionMarkings() {
     if (this.notes[2].shape === NoteShape.Virga) {
       this.positionPodatusMarkings(this.notes[0], this.notes[1]);
@@ -1174,7 +1207,6 @@ export class ScandicusFlexus extends Neume {
  * Torculus
  */
 export class Torculus extends Neume {
-
   positionMarkings() {
     this.positionTorculusMarkings(this.notes[0], this.notes[1], this.notes[2]);
   }
@@ -1190,10 +1222,8 @@ export class Torculus extends Neume {
 
     if (note1.liquescent === LiquescentType.InitioDebilis)
       glyph1 = GlyphCode.TerminatingDesLiquescent;
-    else if (note1.shape === NoteShape.Quilisma)
-      glyph1 = GlyphCode.Quilisma;
-    else
-      glyph1 = GlyphCode.PunctumQuadratum;
+    else if (note1.shape === NoteShape.Quilisma) glyph1 = GlyphCode.Quilisma;
+    else glyph1 = GlyphCode.PunctumQuadratum;
 
     if (note3.liquescent & LiquescentType.Small)
       glyph3 = GlyphCode.TerminatingDesLiquescent;
@@ -1201,8 +1231,7 @@ export class Torculus extends Neume {
       glyph3 = GlyphCode.PunctumQuadratumAscLiquescent;
     else if (note3.liquescent & LiquescentType.Descending)
       glyph3 = GlyphCode.PunctumQuadratumDesLiquescent;
-    else
-      glyph3 = GlyphCode.PunctumQuadratum;
+    else glyph3 = GlyphCode.PunctumQuadratum;
 
     this.build(ctxt)
       .noteAt(note1, glyph1)
@@ -1217,7 +1246,6 @@ export class Torculus extends Neume {
  * TorculusResupinus
  */
 export class TorculusResupinus extends Neume {
-
   positionMarkings() {
     this.positionPorrectusMarkings(this.notes[1], this.notes[2], this.notes[3]);
     this.positionClivisEpisemata(this.notes[1], this.notes[0]);
@@ -1237,15 +1265,13 @@ export class TorculusResupinus extends Neume {
       firstGlyph = GlyphCode.TerminatingDesLiquescent;
     } else if (first.shape === NoteShape.Quilisma)
       firstGlyph = GlyphCode.Quilisma;
-    else
-      firstGlyph = GlyphCode.PunctumQuadratum;
+    else firstGlyph = GlyphCode.PunctumQuadratum;
 
     if (fourth.liquescent & LiquescentType.Small)
       fourthGlyph = GlyphCode.TerminatingAscLiquescent;
     else if (third.liquescent & LiquescentType.Descending)
       fourthGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
-    else
-      fourthGlyph = GlyphCode.PodatusUpper;
+    else fourthGlyph = GlyphCode.PodatusUpper;
 
     this.build(ctxt)
       .noteAt(first, firstGlyph)
@@ -1260,9 +1286,13 @@ export class TorculusResupinus extends Neume {
  * TorculusResupinusFlexus
  */
 export class TorculusResupinusFlexus extends Neume {
-
   positionMarkings() {
-    this.positionPorrectusFlexusMarkings(this.notes[1], this.notes[2], this.notes[3], this.notes[4]);
+    this.positionPorrectusFlexusMarkings(
+      this.notes[1],
+      this.notes[2],
+      this.notes[3],
+      this.notes[4]
+    );
     this.positionClivisEpisemata(this.notes[1], this.notes[0]);
   }
 
@@ -1275,14 +1305,15 @@ export class TorculusResupinusFlexus extends Neume {
     var fourth = this.notes[3];
     var fifth = this.notes[4];
 
-    var firstGlyph, fourthGlyph = GlyphCode.PunctumQuadratum, fifthGlyph;
+    var firstGlyph,
+      fourthGlyph = GlyphCode.PunctumQuadratum,
+      fifthGlyph;
 
     if (first.liquescent === LiquescentType.InitioDebilis) {
       firstGlyph = GlyphCode.TerminatingDesLiquescent;
     } else if (first.shape === NoteShape.Quilisma)
       firstGlyph = GlyphCode.Quilisma;
-    else
-      firstGlyph = GlyphCode.PunctumQuadratum;
+    else firstGlyph = GlyphCode.PunctumQuadratum;
 
     if (fifth.liquescent & LiquescentType.Small) {
       fourthGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
@@ -1291,8 +1322,7 @@ export class TorculusResupinusFlexus extends Neume {
       fifthGlyph = GlyphCode.PunctumQuadratumAscLiquescent;
     else if (fifth.liquescent & LiquescentType.Descending)
       fifthGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
-    else
-      fifthGlyph = GlyphCode.PunctumQuadratum;
+    else fifthGlyph = GlyphCode.PunctumQuadratum;
 
     this.build(ctxt)
       .noteAt(first, firstGlyph)
@@ -1312,7 +1342,6 @@ export class TorculusResupinusFlexus extends Neume {
  * Distropha and Bivirga).
  */
 export class Tristropha extends Neume {
-
   positionMarkings() {
     this.positionEpisemataAbove(this.notes[0]);
     this.positionEpisemataAbove(this.notes[1]);
@@ -1337,7 +1366,6 @@ export class Tristropha extends Neume {
  * Virga
  */
 export class Virga extends Neume {
-
   positionMarkings() {
     this.positionEpisemataAbove(this.notes[0]);
   }

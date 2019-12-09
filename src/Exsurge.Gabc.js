@@ -37,6 +37,7 @@ import {
   Lyric,
   LyricArray,
   AboveLinesText,
+  ChoralSign,
   TranslationText,
   DefaultTrailingSpace,
   GlyphCode
@@ -1030,6 +1031,7 @@ export class Gabc {
         if (note.alText) {
           if (!neume.alText) neume.alText = [];
           neume.alText.push(note.alText);
+          note.alText.noteIndex = firstNoteIndex - 1;
         }
       }
 
@@ -1730,7 +1732,13 @@ export class Gabc {
     var data = results[2];
     switch (cmd) {
       case "cs":
-        // TODO: support choral signs
+        note.choralSign = new ChoralSign(
+          ctxt,
+          data,
+          note,
+          note.sourceIndex + sourceIndexOffset,
+          instruction.length
+        );
         return;
       case "alt":
         note.alText = new AboveLinesText(
@@ -1740,7 +1748,6 @@ export class Gabc {
           note.sourceIndex + sourceIndexOffset,
           instruction.length
         );
-        note.alText.alignToNote = true;
         return;
     }
 

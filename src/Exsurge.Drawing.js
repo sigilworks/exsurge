@@ -103,6 +103,14 @@ export const TextTypes = {
     getFromScore: (score, elem) =>
       score.notations[elem.notation.notationIndex].alText[elem.alIndex]
   },
+  choralSign: {
+    display: "Choral Sign",
+    defaultSize: (size, ctxt) => ctxt.staffInterval * 1.5,
+    containedInScore: score => false,
+    getFromScore: (score, elem) =>
+      score.notations[elem.notation.notationIndex].notes[elem.noteIndex]
+        .choralSign
+  },
   lyric: {
     display: "Lyric",
     defaultSize: size => size,
@@ -568,7 +576,7 @@ export class ChantContext {
 
   setFont(font, size = 16, baseStyle = {}, opentypeFontDictionary) {
     for (let [key, textType] of Object.entries(TextTypes)) {
-      this[`${key}TextSize`] = textType.defaultSize(size);
+      this[`${key}TextSize`] = textType.defaultSize(size, this);
       this[`${key}TextFont`] = font;
       this[`${key}TextColor`] = this.textColor || "#000";
     }
@@ -1713,7 +1721,7 @@ export class TextElement extends ChantLayoutElement {
       var percentage = maxWidth / this.bounds.width;
       if (this instanceof Lyric && percentage >= 0.85) {
         this.resize = percentage;
-        console.info(percentage, this.text);
+        // console.info(percentage, this.text);
       } else {
         if (firstLineMaxWidth < 0) firstLineMaxWidth = maxWidth;
         this.firstLineMaxWidth = firstLineMaxWidth;
@@ -2304,6 +2312,40 @@ export class Lyric extends TextElement {
   }
 }
 
+export class ChoralSign extends TextElement {
+  constructor(ctxt, text, note, sourceIndex) {
+    super(
+      ctxt,
+      (ctxt.lyricTextStyle || "") + text,
+      ctxt => ctxt.choralSignTextFont,
+      ctxt => ctxt.choralSignTextSize,
+      "start",
+      sourceIndex,
+      text
+    );
+    this.note = note;
+    this.textType = TextTypes.choralSign;
+    this.isAbove = true;
+  }
+
+  recalculateMetrics(ctxt) {
+    super.recalculateMetrics(ctxt);
+  }
+
+  performLayout(ctxt) {
+    this.recalculateMetrics(ctxt);
+    this.bounds.x = this.note.bounds.x + Math.max(0, (ctxt.staffInterval - this.bounds.width) / 2); // center on the note itself
+
+    // this puts the acute accent either over the staff lines, or over the note if the
+    // note is above the staff lines
+    let offset = this.isAbove ? 1 : -1;
+    let staffPosition = this.note.staffPosition + offset;
+    this.bounds.y =
+      ctxt.calculateHeightFromStaffPosition(staffPosition) - this.origin.y;
+      if(staffPosition % 2 === 0) this.bounds.y += offset * ctxt.staffInterval * 0.5;
+  }
+}
+
 export class AboveLinesText extends TextElement {
   /**
    * @param {String} text
@@ -2571,8 +2613,7 @@ export class ChantNotationElement extends ChantLayoutElement {
   }
 
   hasLyrics() {
-    if (this.lyrics.length !== 0) return true;
-    else return false;
+    return this.lyrics.length !== 0;
   }
 
   getAllLyricsLeft() {
