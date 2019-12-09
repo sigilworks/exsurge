@@ -80,7 +80,7 @@ export let Glyphs = {
   "Circle": {
     "paths": [{
       "type": "positive",
-      "data": "M0 0A50 50 0 0 0 100 0 50 50 0 0 0 0 0M10 0A40 40 0 0 1 90 0 40 40 0 0 1 10 0"
+      "data": "M0 -50A50 50 0 0 0 100 -50 50 50 0 0 0 0 -50M10 -50A40 40 0 0 1 90 -50 40 40 0 0 1 10 -50"
     }],
     "bounds": {
       "x": 0,
@@ -90,13 +90,13 @@ export let Glyphs = {
     },
     origin: {
       "x": -50,
-      "y": 0
+      "y": 100
     }
   },
   "Semicircle": {
     "paths": [{
       "type": "positive",
-      "data": "M0 0A50 50 0 0 0 100 0 5 5 0 0 0 90 0 40 40 0 0 1 10 0 5 5 0 0 0 0 0"
+      "data": "M0 -50A50 50 0 0 0 100 -50 5 5 0 0 0 90 -50 40 40 0 0 1 10 -50 5 5 0 0 0 0 -50"
     }],
     "bounds": {
       "x": 0,
@@ -106,7 +106,7 @@ export let Glyphs = {
     },
     origin: {
       "x": -50,
-      "y": 100
+      "y": 50
     }
   },
   "ReversedSemicircle": {
@@ -122,7 +122,7 @@ export let Glyphs = {
     },
     origin: {
       "x": -50,
-      "y": -50
+      "y": 50
     }
   },
   "Stropha": {
