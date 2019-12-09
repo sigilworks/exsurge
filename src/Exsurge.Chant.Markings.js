@@ -39,9 +39,9 @@ export var MarkingPositionHint = {
   Below: 2
 };
 
-export class AcuteAccent extends GlyphVisualizer {
-  constructor(ctxt, note) {
-    super(ctxt, GlyphCode.AcuteAccent);
+export class Accent extends GlyphVisualizer {
+  constructor(ctxt, note, glyphCode = GlyphCode.AcuteAccent) {
+    super(ctxt, glyphCode);
     this.note = note;
     this.positionHint = MarkingPositionHint.Above;
   }

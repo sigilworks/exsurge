@@ -231,7 +231,7 @@ class NeumeBuilder {
       else if (note.liquescent & LiquescentType.Large)
         // fixme: is the large inclinatum liquescent the same as the apostropha?
         note.setGlyph(this.ctxt, GlyphCode.Stropha);
-      else 
+      else
         // fixme: some climaci in the new chant books end with a punctum quadratum
         // (see, for example, the antiphon "Sancta Maria" for October 7).
         note.setGlyph(this.ctxt, GlyphCode.PunctumInclinatum);
@@ -250,7 +250,7 @@ class NeumeBuilder {
 
       if (i > 0)
         this.x += advanceWidth * multiple;
-      
+
       note.bounds.x = this.x;
 
       this.neume.addVisualizer(note);
@@ -367,9 +367,9 @@ export class Neume extends ChantNotationElement {
         this.addVisualizer(note.ictus);
       }
 
-      if (note.acuteAccent) {
-        note.acuteAccent.performLayout(ctxt);
-        this.addVisualizer(note.acuteAccent);
+      if (note.accent) {
+        note.accent.performLayout(ctxt);
+        this.addVisualizer(note.accent);
       }
 
       // braces are handled by the chant line, so we don't mess with them here
@@ -799,7 +799,7 @@ export class PesQuassus extends Neume {
       builder.virgaAt(upper);
     else if (upper.liquescent === LiquescentType.LargeDescending)
       builder.noteAt(upper, GlyphCode.PunctumQuadratumDesLiquescent).withLineEndingAt(lower);
-    else 
+    else
       builder.noteAt(upper, GlyphCode.PunctumQuadratum).withLineEndingAt(lower);
 
     this.finishLayout(ctxt);
@@ -914,7 +914,7 @@ export class PorrectusFlexus extends Neume {
       fourthGlyph = GlyphCode.PunctumQuadratumAscLiquescent;
     else if (fourth.liquescent & LiquescentType.Descending)
       fourthGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
-    else 
+    else
       fourthGlyph = GlyphCode.PunctumQuadratum;
 
     this.build(ctxt)
@@ -1075,7 +1075,7 @@ export class SalicusFlexus extends Neume {
       builder.noteAt(fourth, GlyphCode.PunctumQuadratumAscLiquescent);
     else if (fourth.liquescent & LiquescentType.Descending)
       builder.noteAt(fourth, GlyphCode.PunctumQuadratumDesLiquescent);
-    else 
+    else
       builder.noteAt(fourth, GlyphCode.PunctumQuadratum);
 
     this.finishLayout(ctxt);
@@ -1153,7 +1153,7 @@ export class ScandicusFlexus extends Neume {
         .withClivis(third, fourth);
     } else {
       var fourthGlyph = GlyphCode.PunctumQuadratum;
-      
+
       if (fourth.liquescent & LiquescentType.Ascending)
         fourthGlyph = GlyphCode.PunctumQuadratumAscLiquescent;
       else if (fourth.liquescent & LiquescentType.Descending)
@@ -1201,7 +1201,7 @@ export class Torculus extends Neume {
       glyph3 = GlyphCode.PunctumQuadratumAscLiquescent;
     else if (note3.liquescent & LiquescentType.Descending)
       glyph3 = GlyphCode.PunctumQuadratumDesLiquescent;
-    else 
+    else
       glyph3 = GlyphCode.PunctumQuadratum;
 
     this.build(ctxt)
@@ -1291,7 +1291,7 @@ export class TorculusResupinusFlexus extends Neume {
       fifthGlyph = GlyphCode.PunctumQuadratumAscLiquescent;
     else if (fifth.liquescent & LiquescentType.Descending)
       fifthGlyph = GlyphCode.PunctumQuadratumDesLiquescent;
-    else 
+    else
       fifthGlyph = GlyphCode.PunctumQuadratum;
 
     this.build(ctxt)

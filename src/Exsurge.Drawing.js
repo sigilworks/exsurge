@@ -112,7 +112,7 @@ export const TextTypes = {
   },
   translation: {
     display: "Translation",
-    defaultSize: size => size,
+    defaultSize: size => size, // * 0.8,
     containedInScore: score => score.hasTranslations,
     getFromScore: (score, elem) =>
       score.notations[elem.notation.notationIndex].translationText[
@@ -135,6 +135,10 @@ export let GlyphCode = {
   None: "None",
 
   AcuteAccent: "AcuteAccent",
+  GraveAccent: "GraveAccent",
+  Circle: "Circle",
+  Semicircle: "Semicircle",
+  ReversedSemicircle: "ReversedSemicircle",
   Stropha: "Stropha",
   StrophaLiquescent: "StrophaLiquescent",
 
@@ -1103,26 +1107,26 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
 
   createSvgNode(ctxt) {
     var node = QuickSvg.createNode("path", this.getSvgPathProps(ctxt));
-    if (this.acuteAccent) {
+    if (this.accent) {
       return QuickSvg.createNode(
         "g",
         {
           class: "accentedBrace"
         },
-        [node, this.acuteAccent.createSvgNode(ctxt)]
+        [node, this.accent.createSvgNode(ctxt)]
       );
     } else return node;
   }
   createReact(ctxt) {
     var node = QuickSvg.createReact("path", this.getSvgPathProps(ctxt));
-    if (this.acuteAccent) {
+    if (this.accent) {
       return QuickSvg.createReact(
         "g",
         {
           class: "accentedBrace"
         },
         node,
-        this.acuteAccent.createReact(ctxt)
+        this.accent.createReact(ctxt)
       );
     } else return node;
   }
@@ -1130,8 +1134,8 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
   createSvgFragment(ctxt) {
     var fragment = QuickSvg.createFragment("path", this.getSvgPathProps(ctxt));
 
-    if (this.acuteAccent) {
-      fragment += this.acuteAccent.createSvgFragment(ctxt);
+    if (this.accent) {
+      fragment += this.accent.createSvgFragment(ctxt);
 
       return QuickSvg.createFragment(
         "g",
@@ -1210,11 +1214,11 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
     var bounds = new Rect(x1, y, x2 - x1, this.braceHeight);
 
     if (addAcuteAccent && isAbove) {
-      this.acuteAccent = new GlyphVisualizer(ctxt, GlyphCode.AcuteAccent);
-      this.acuteAccent.bounds.x += bounds.x + (x2 - x1) / 2;
-      this.acuteAccent.bounds.y += bounds.y - ctxt.staffInterval / 4;
+      this.accent = new GlyphVisualizer(ctxt, GlyphCode.AcuteAccent);
+      this.accent.bounds.x += bounds.x + (x2 - x1) / 2;
+      this.accent.bounds.y += bounds.y - ctxt.staffInterval / 4;
 
-      bounds.union(this.acuteAccent.bounds);
+      bounds.union(this.accent.bounds);
     }
 
     this.bounds = bounds;
@@ -1236,26 +1240,26 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
   createSvgNode(ctxt) {
     var node = QuickSvg.createNode("path", this.getSvgPathProps(ctxt));
 
-    if (this.acuteAccent) {
+    if (this.accent) {
       return QuickSvg.createNode(
         "g",
         {
           class: "accentedBrace"
         },
-        [node, this.acuteAccent.createNode(ctxt)]
+        [node, this.accent.createNode(ctxt)]
       );
     } else return node;
   }
   createReact(ctxt) {
     var node = QuickSvg.createReact("path", this.getSvgPathProps(ctxt));
-    if (this.acuteAccent) {
+    if (this.accent) {
       return QuickSvg.createReact(
         "g",
         {
           class: "accentedBrace"
         },
         node,
-        this.acuteAccent.createReact(ctxt)
+        this.accent.createReact(ctxt)
       );
     } else return node;
   }
@@ -1263,8 +1267,8 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
   createSvgFragment(ctxt) {
     var fragment = QuickSvg.createFragment("path", this.getSvgPathProps(ctxt));
 
-    if (this.acuteAccent) {
-      fragment += this.acuteAccent.createSvgFragment(ctxt);
+    if (this.accent) {
+      fragment += this.accent.createSvgFragment(ctxt);
 
       return QuickSvg.createFragment(
         "g",
@@ -2434,7 +2438,7 @@ export class TextLeftRight extends TextElement {
     );
     this.textType = TextTypes.leftRight;
     this.extraClass = type === "textLeft" ? "textLeft" : "textRight";
-    this.padding = ctxt => ctxt.leftRightTextSize / 2;
+    this.padding = ctxt => ctxt.leftRightTextSize / 5;
   }
 
   getCssClasses() {

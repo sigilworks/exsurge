@@ -60,6 +60,71 @@ export let Glyphs = {
     },
     "align": "left"
   },
+  "GraveAccent": {
+    "paths": [{
+      "type": "positive",
+      "data": "M105.386.26C110 .78 110 .78 110.189-2.922l-60.768-108.422c-4.52-7.182-10.543-13.67-18.075-13.67-5.27 0-14.31 1.264-23.346 7.793-7.53 5.223-8.803 11.752-8.803 16.975 0 3.917.52 11.1 8.05 17.628L105.386.26z"
+    }],
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 110.992,
+      "height": 125.794
+    },
+    "origin": {
+      "x": -110.992,
+      "y": 125.274
+    },
+    "align": "left"
+  },
+  "Circle": {
+    "paths": [{
+      "type": "positive",
+      "data": "M0 0A50 50 0 0 0 100 0 50 50 0 0 0 0 0M10 0A40 40 0 0 1 90 0 40 40 0 0 1 10 0"
+    }],
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 100
+    },
+    origin: {
+      "x": -50,
+      "y": 0
+    }
+  },
+  "Semicircle": {
+    "paths": [{
+      "type": "positive",
+      "data": "M0 0A50 50 0 0 0 100 0 5 5 0 0 0 90 0 40 40 0 0 1 10 0 5 5 0 0 0 0 0"
+    }],
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 55
+    },
+    origin: {
+      "x": -50,
+      "y": 100
+    }
+  },
+  "ReversedSemicircle": {
+    "paths": [{
+      "type": "positive",
+      "data": "M0 0A50 50 0 0 1 100 0 5 5 0 0 1 90 0 40 40 0 0 0 10 0 5 5 0 0 1 0 0"
+    }],
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 55
+    },
+    origin: {
+      "x": -50,
+      "y": -50
+    }
+  },
   "Stropha": {
     "paths": [{
       "type": "positive",
@@ -331,7 +396,7 @@ export let Glyphs = {
       "y": 75.406
     },
     "align": "left"
-  },  
+  },
   "PodatusLower": {
     "paths": [{
       "type": "positive",
@@ -677,4 +742,3 @@ export let Glyphs = {
     "align": "left"
   }
 };
-

@@ -165,6 +165,7 @@ export class Titles extends ChantLayoutElement {
   }
 
   draw(ctxt, scale = 1) {
+    var canvasCtxt = ctxt.canvasCtxt;
     canvasCtxt.translate(this.bounds.x, this.bounds.y);
 
     for (let el of [
@@ -174,7 +175,7 @@ export class Titles extends ChantLayoutElement {
       this.score.overrideTextLeft || this.textLeft,
       this.textRight
     ]) {
-      if (el) el.draw(ctxt);
+      if (el) el.draw(ctxt, scale);
     }
 
     canvasCtxt.translate(-this.bounds.x, -this.bounds.y);

@@ -38,7 +38,8 @@ import {
   LyricArray,
   AboveLinesText,
   TranslationText,
-  DefaultTrailingSpace
+  DefaultTrailingSpace,
+  GlyphCode
 } from "./Exsurge.Drawing.js";
 import {
   Note,
@@ -1547,8 +1548,41 @@ export class Gabc {
 
         //note shapes
         case "r":
-          if (haveLookahead && lookahead === "1") {
-            note.acuteAccent = new Markings.AcuteAccent(ctxt, note);
+          if (haveLookahead) {
+            switch (lookahead) {
+              case "1":
+                note.accent = new Markings.Accent(
+                  ctxt,
+                  note,
+                  GlyphCode.AcuteAccent
+                );
+                break;
+              case "2":
+                note.accent = new Markings.Accent(
+                  ctxt,
+                  note,
+                  GlyphCode.GraveAccent
+                );
+                break;
+              case "3":
+                note.accent = new Markings.Accent(ctxt, note, GlyphCode.Circle);
+                break;
+              case "4":
+                note.accent = new Markings.Accent(
+                  ctxt,
+                  note,
+                  GlyphCode.Semicircle
+                );
+                break;
+              case "5":
+                note.accent = new Markings.Accent(
+                  ctxt,
+                  note,
+                  GlyphCode.ReversedSemicircle
+                );
+                break;
+              default:
+            }
             i++;
           } else note.shapeModifiers |= NoteShapeModifiers.Cavum;
           break;
