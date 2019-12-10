@@ -1684,7 +1684,6 @@ export class Gabc {
 
         // gabc special item groups
         case "[":
-          note.sourceGabc = note.sourceGabc.slice(0, i);
           // read in the whole group and parse it
           var startIndex = ++i;
           while (i < data.length && data[i] !== "]") i++;
