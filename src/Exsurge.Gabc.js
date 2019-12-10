@@ -1550,7 +1550,7 @@ export class Gabc {
 
         //note shapes
         case "r":
-          if (haveLookahead) {
+          if (haveLookahead && /^[1-5]$/.test(lookahead)) {
             switch (lookahead) {
               case "1":
                 note.accent = new Markings.Accent(
