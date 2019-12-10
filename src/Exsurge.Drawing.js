@@ -105,11 +105,10 @@ export const TextTypes = {
   },
   choralSign: {
     display: "Choral Sign",
-    defaultSize: (size, ctxt) => ctxt.staffInterval * 1.5,
+    size: ctxt => ctxt.staffInterval * 1.5,
     containedInScore: score => false,
     getFromScore: (score, elem) =>
-      score.notations[elem.notation.notationIndex].notes[elem.noteIndex]
-        .choralSign
+      score.notes[elem.note.elementIndex].choralSign
   },
   lyric: {
     display: "Lyric",
@@ -576,7 +575,9 @@ export class ChantContext {
 
   setFont(font, size = 16, baseStyle = {}, opentypeFontDictionary) {
     for (let [key, textType] of Object.entries(TextTypes)) {
-      this[`${key}TextSize`] = textType.defaultSize(size, this);
+      this[`${key}TextSize`] = textType.defaultSize
+        ? textType.defaultSize(size, this)
+        : textType.size(this);
       this[`${key}TextFont`] = font;
       this[`${key}TextColor`] = this.textColor || "#000";
     }
@@ -2316,9 +2317,9 @@ export class ChoralSign extends TextElement {
   constructor(ctxt, text, note, sourceIndex) {
     super(
       ctxt,
-      (ctxt.lyricTextStyle || "") + text,
+      (ctxt.choralSignTextStyle || "") + text,
       ctxt => ctxt.choralSignTextFont,
-      ctxt => ctxt.choralSignTextSize,
+      TextTypes.choralSign.size,
       "start",
       sourceIndex,
       text
@@ -2334,15 +2335,18 @@ export class ChoralSign extends TextElement {
 
   performLayout(ctxt) {
     this.recalculateMetrics(ctxt);
-    this.bounds.x = this.note.bounds.x + Math.max(0, (ctxt.staffInterval - this.bounds.width) / 2); // center on the note itself
+    this.bounds.x =
+      this.note.bounds.x +
+      Math.max(0, (ctxt.staffInterval - this.bounds.width) / 2); // center on the note itself
 
     // this puts the acute accent either over the staff lines, or over the note if the
     // note is above the staff lines
     let offset = this.isAbove ? 1 : -1;
-    let staffPosition = this.note.staffPosition + offset;
+    let staffPosition = this.note.staffPosition + 2 * offset;
+    staffPosition += staffPosition % 2 === 0? 0.3 : -0.4;
+    // if (staffPosition % 2 === 0) staffPosition += offset;
     this.bounds.y =
-      ctxt.calculateHeightFromStaffPosition(staffPosition) - this.origin.y;
-      if(staffPosition % 2 === 0) this.bounds.y += offset * ctxt.staffInterval * 0.5;
+      ctxt.calculateHeightFromStaffPosition(staffPosition) + this.origin.y;
   }
 }
 
