@@ -412,6 +412,18 @@ export class ChantLine extends ChantLayoutElement {
       x1 = this.staffLeft,
       x2 = this.staffRight;
 
+    if (ctxt.editable) {
+      inner.push(
+        QuickSvg[functionNames.quickSvg]("rect", {
+          x: x1,
+          y: ctxt.staffInterval * -3,
+          width: x2 - x1,
+          height: ctxt.staffInterval * 6,
+          fill: "none"
+        })
+      );
+    }
+
     // create the staff lines
     for (i = -3; i <= 3; i += 2) {
       inner.push(
@@ -426,6 +438,10 @@ export class ChantLine extends ChantLayoutElement {
         })
       );
     }
+
+    inner = [
+      QuickSvg[functionNames.quickSvg]("g", { class: "staffLines" }, inner)
+    ];
 
     // create the ledger lines
     for (i = 0; i < this.ledgerLines.length; i++) {
@@ -488,7 +504,9 @@ export class ChantLine extends ChantLayoutElement {
       {
         class: "chantLine",
         transform:
-          "translate(" + this.bounds.x + "," + (this.bounds.y - top) + ")"
+          "translate(" + this.bounds.x + "," + (this.bounds.y - top) + ")",
+        "element-index": this.elementIndex,
+        source: this
       },
       inner
     );
@@ -505,7 +523,8 @@ export class ChantLine extends ChantLayoutElement {
       {
         class: "chantLine",
         transform:
-          "translate(" + this.bounds.x + "," + (this.bounds.y - top) + ")"
+          "translate(" + this.bounds.x + "," + (this.bounds.y - top) + ")",
+        "element-index": this.elementIndex
       },
       ...inner
     );
@@ -531,6 +550,8 @@ export class ChantLine extends ChantLayoutElement {
         class: "staffLine"
       });
     }
+
+    inner = QuickSvg.createFragment("g", { class: "staffLines" }, inner);
 
     // create the ledger lines
     for (i = 0; i < this.ledgerLines.length; i++) {
@@ -581,7 +602,8 @@ export class ChantLine extends ChantLayoutElement {
       {
         class: "chantLine",
         transform:
-          "translate(" + this.bounds.x + "," + (this.bounds.y - top) + ")"
+          "translate(" + this.bounds.x + "," + (this.bounds.y - top) + ")",
+        "element-index": this.elementIndex
       },
       inner
     );

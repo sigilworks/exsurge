@@ -649,6 +649,7 @@ export class ChantScore {
       line.buildFromChantNotationIndex(ctxt, currIndex, width);
       currIndex = line.notationsStartIndex + line.numNotationsOnLine;
       line.performLayout(ctxt);
+      line.elementIndex = this.lines.length;
       this.lines.push(line);
 
       line.bounds.y = -line.bounds.y + y;
