@@ -755,8 +755,10 @@ export class ChantLayoutElement {
 }
 
 export class DividerLineVisualizer extends ChantLayoutElement {
-  constructor(ctxt, staffPosition0, staffPosition1) {
+  constructor(ctxt, staffPosition0, staffPosition1, divider) {
     super();
+
+    this.divider = divider;
 
     var y0 = ctxt.calculateHeightFromStaffPosition(staffPosition0);
     var y1 = ctxt.calculateHeightFromStaffPosition(staffPosition1);
@@ -790,7 +792,7 @@ export class DividerLineVisualizer extends ChantLayoutElement {
   }
 
   getSvgProps(ctxt) {
-    return {
+    let props = {
       x: this.bounds.x,
       y: this.bounds.y,
       width: ctxt.dividerLineWeight,
@@ -798,6 +800,12 @@ export class DividerLineVisualizer extends ChantLayoutElement {
       fill: ctxt.dividerLineColor,
       class: "dividerLine"
     };
+    if (this.divider) {
+      props["source-index"] = this.divider.sourceIndex;
+      props["element-index"] = this.divider.elementIndex;
+      props.source = this.divider;
+    }
+    return props;
   }
 
   createSvgNode(ctxt) {
@@ -2343,7 +2351,7 @@ export class ChoralSign extends TextElement {
     // note is above the staff lines
     let offset = this.isAbove ? 1 : -1;
     let staffPosition = this.note.staffPosition + 2 * offset;
-    staffPosition += staffPosition % 2 === 0? 0.3 : -0.4;
+    staffPosition += staffPosition % 2 === 0 ? 0.3 : -0.4;
     // if (staffPosition % 2 === 0) staffPosition += offset;
     this.bounds.y =
       ctxt.calculateHeightFromStaffPosition(staffPosition) + this.origin.y;

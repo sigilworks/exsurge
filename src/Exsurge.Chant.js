@@ -38,7 +38,7 @@ import {
   TextSpan
 } from "./Exsurge.Drawing.js";
 import { ChantLine } from "./Exsurge.Chant.ChantLine.js";
-import { AccidentalType } from "./Exsurge.Chant.Signs.js";
+import { AccidentalType, InsertionCursor } from "./Exsurge.Chant.Signs.js";
 import {
   MarkingPositionHint,
   HorizontalEpisemaAlignment,
@@ -435,9 +435,36 @@ export class ChantScore {
   updateSelection(selection) {
     this.selection = selection;
     const elementSelection = (this.selection && this.selection.element) || [];
+    const insertion = elementSelection.insertion;
+    // update the selected elements so that they can be given a .selected class when rendered
     for (let i = 0; i < this.notes.length; ++i) {
       let element = this.notes[i];
       element.selected = elementSelection.includes(i);
+    }
+    for (let i = 0; i < this.lines.length; ++i) {
+      this.lines[i].insertionCursor = null;
+    }
+    // update the insertion cursor, so it can be drawn on the correct system
+    this.insertionElement = null;
+    let insertionLine = null;
+    if (insertion) {
+      if (typeof insertion.chantLine === "number") {
+        insertionLine = this.lines[insertion.chantLine];
+        this.insertionElement = insertionLine.startingClef;
+        insertionLine.insertionCursor = new InsertionCursor();
+      } else if (typeof insertion.afterElementIndex === "number") {
+        this.insertionElement = this.notes[insertion.afterElementIndex];
+        if (!this.insertionElement) {
+          insertionLine = this.lines[0];
+          this.insertionElement = insertionLine.startingClef;
+        } else if (this.insertionElement.neume) {
+          this.insertionElement = this.insertionElement.neume;
+        }
+        if (!insertionLine) {
+          insertionLine = this.insertionElement.line;
+        }
+        insertionLine.insertionCursor = new InsertionCursor();
+      }
     }
   }
 
@@ -665,6 +692,10 @@ export class ChantScore {
 
     this.pages = [this];
 
+    if (this.selection) {
+      this.updateSelection(this.selection);
+    }
+
     if (finishedCallback) finishedCallback(this);
   }
 
@@ -707,11 +738,11 @@ export class ChantScore {
     canvasCtxt.translate(-this.bounds.x, -this.bounds.y);
   }
 
-  getSvgProps() {
+  getSvgProps(ctxt) {
     return {
       xmlns: "http://www.w3.org/2000/svg",
       version: "1.1",
-      class: "ChantScore",
+      class: "ChantScore" + (ctxt.editable ? " EditableChantScore" : ""),
       width: this.bounds.width,
       height: this.bounds.height,
       viewBox: [0, 0, this.bounds.width, this.bounds.height].join(" ")
@@ -730,7 +761,7 @@ export class ChantScore {
 
     node = QuickSvg.createNode("g", {}, node);
 
-    node = QuickSvg.createNode("svg", this.getSvgProps(), node);
+    node = QuickSvg.createNode("svg", this.getSvgProps(ctxt), node);
 
     node.source = this;
     this.svg = node;
@@ -755,7 +786,7 @@ export class ChantScore {
       node.push(this.lines[i].createReact(ctxt));
 
     node = QuickSvg.createReact("g", {}, ...node);
-    let svgProps = this.getSvgProps();
+    let svgProps = this.getSvgProps(ctxt);
     svgProps.source = this;
     node = QuickSvg.createReact("svg", svgProps, node);
 
@@ -779,7 +810,7 @@ export class ChantScore {
 
     fragment = QuickSvg.createFragment("g", {}, fragment);
 
-    fragment = QuickSvg.createFragment("svg", this.getSvgProps(), fragment);
+    fragment = QuickSvg.createFragment("svg", this.getSvgProps(ctxt), fragment);
 
     return fragment;
   }

@@ -737,11 +737,17 @@ export class Distropha extends Neume {
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
+    let glyphCodes = this.notes.map(note => Apostropha.getNoteGlyphCode(note));
+    let glyphAdvance = ctxt.intraNeumeSpacing;
+    glyphCodes.slice(0, 2).forEach(glyphCode => {
+      if (glyphCode === GlyphCode.Stropha)
+        glyphAdvance -= ctxt.intraNeumeSpacing / 4;
+    });
 
     this.build(ctxt)
-      .noteAt(this.notes[0], Apostropha.getNoteGlyphCode(this.notes[0]))
-      .advanceBy(ctxt.intraNeumeSpacing)
-      .noteAt(this.notes[1], Apostropha.getNoteGlyphCode(this.notes[1]));
+      .noteAt(this.notes[0], glyphCodes[0])
+      .advanceBy(glyphAdvance)
+      .noteAt(this.notes[1], glyphCodes[1]);
 
     this.finishLayout(ctxt);
   }
@@ -1350,13 +1356,18 @@ export class Tristropha extends Neume {
 
   performLayout(ctxt) {
     super.performLayout(ctxt);
+    let glyphCodes = this.notes.map(note => Apostropha.getNoteGlyphCode(note));
+    let glyphAdvance =
+      glyphCodes[0] === GlyphCode.Stropha
+        ? ctxt.intraNeumeSpacing / 2
+        : ctxt.intraNeumeSpacing;
 
     this.build(ctxt)
-      .noteAt(this.notes[0], Apostropha.getNoteGlyphCode(this.notes[0]))
-      .advanceBy(ctxt.intraNeumeSpacing)
-      .noteAt(this.notes[1], Apostropha.getNoteGlyphCode(this.notes[1]))
-      .advanceBy(ctxt.intraNeumeSpacing)
-      .noteAt(this.notes[2], Apostropha.getNoteGlyphCode(this.notes[2]));
+      .noteAt(this.notes[0], glyphCodes[0])
+      .advanceBy(glyphAdvance)
+      .noteAt(this.notes[1], glyphCodes[1])
+      .advanceBy(glyphAdvance)
+      .noteAt(this.notes[2], glyphCodes[2]);
 
     this.finishLayout(ctxt);
   }

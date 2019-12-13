@@ -40,7 +40,12 @@ import {
 } from "./Exsurge.Drawing.js";
 import { ChantLineBreak, TextOnly, NoteShape } from "./Exsurge.Chant.js";
 import { Glyphs } from "./Exsurge.Glyphs.js";
-import { Custos, DoubleBar, FullBar } from "./Exsurge.Chant.Signs.js";
+import {
+  Custos,
+  DoubleBar,
+  FullBar,
+  InsertionCursor
+} from "./Exsurge.Chant.Signs.js";
 import {
   MarkingPositionHint,
   HorizontalEpisemaAlignment,
@@ -339,6 +344,19 @@ export class ChantLine extends ChantLayoutElement {
     this.origin = new Point(this.staffLeft, -this.notationBounds.y);
   }
 
+  // TODO: remove if not necsessary
+  layoutInsertionCursor(ctxt) {
+    if (this.insertionCursor) {
+      // we have either a Notation to draw the cursor after, or the ChantLine itself when the cursor is the first thing on the line
+      this.insertionCursor.performLayout(ctxt);
+      this.insertionCursor.bounds.x =
+        this.score.insertionElement.bounds.right() +
+        this.score.insertionElement.calculatedTrailingSpace / 2 -
+        this.insertionCursor.origin.x;
+    }
+    return this.insertionCursor;
+  }
+
   draw(ctxt) {
     var canvasCtxt = ctxt.canvasCtxt;
 
@@ -359,6 +377,10 @@ export class ChantLine extends ChantLayoutElement {
       canvasCtxt.moveTo(x1, y);
       canvasCtxt.lineTo(x2, y);
       canvasCtxt.stroke();
+    }
+
+    if (this.layoutInsertionCursor(ctxt)) {
+      this.insertionCursor.draw(ctxt);
     }
 
     // draw the ledger lines
@@ -442,6 +464,10 @@ export class ChantLine extends ChantLayoutElement {
     inner = [
       QuickSvg[functionNames.quickSvg]("g", { class: "staffLines" }, inner)
     ];
+
+    if (this.layoutInsertionCursor(ctxt)) {
+      inner.push(this.insertionCursor[functionNames.elements](ctxt));
+    }
 
     // create the ledger lines
     for (i = 0; i < this.ledgerLines.length; i++) {
@@ -552,6 +578,10 @@ export class ChantLine extends ChantLayoutElement {
     }
 
     inner = QuickSvg.createFragment("g", { class: "staffLines" }, inner);
+
+    if (this.layoutInsertionCursor(ctxt)) {
+      inner += this.insertionCursor.createSvgFragment(ctxt);
+    }
 
     // create the ledger lines
     for (i = 0; i < this.ledgerLines.length; i++) {
@@ -2069,5 +2099,29 @@ export class ChantLine extends ChantLayoutElement {
 
     // if we made it this far, then the element won't fit on this line.
     return false;
+  }
+
+  /**
+   * Find the notation closest to x without going past it
+   * @param {number} x
+   */
+  bisectNotationAtX(x, useMidpoint = true) {
+    let minIndex = this.notationsStartIndex - 1,
+      maxIndex = this.notationsStartIndex + this.numNotationsOnLine,
+      curIndex = minIndex + ((maxIndex - minIndex) >> 1),
+      notations = this.score.notations;
+
+    while (minIndex < curIndex) {
+      let notation = notations[curIndex];
+      let notationX =
+        notation.bounds.x + (useMidpoint ? notation.bounds.width / 2 : 0);
+      if (notationX > x) {
+        maxIndex = curIndex;
+      } else {
+        minIndex = curIndex;
+      }
+      curIndex = minIndex + ((maxIndex - minIndex) >> 1);
+    }
+    return notations[curIndex];
   }
 }
