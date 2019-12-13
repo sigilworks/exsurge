@@ -1054,11 +1054,26 @@ export class GlyphVisualizer extends ChantLayoutElement {
   }
 
   getSvgAttributes(ctxt, source) {
+    let className = "";
+    if (/^Porrectus\d$/.test(this.glyphCode)) {
+      let notes = source.neume.notes,
+        noteIndex = notes.indexOf(source),
+        nextNote = notes[noteIndex + 1];
+      className = source.selected
+        ? nextNote.selected
+          ? "selected"
+          : "selectedA"
+        : nextNote.selected
+        ? "selectedB"
+        : "";
+    } else {
+      className = source.selected ? "selected" : "";
+    }
     var result = {
       "source-index": source.sourceIndex,
       "element-index": source.elementIndex,
       "xlink:href": "#" + this.glyphCode,
-      class: source.selected ? "selected" : ""
+      class: className
     };
     if (ctxt.scaleDefs === true) {
       result.x = this.bounds.x + this.origin.x;
