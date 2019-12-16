@@ -726,7 +726,7 @@ export class Gabc {
   // returns an array of notations.
   static parseNotations(ctxt, data, sourceIndex) {
     // if there is no data, then this must be a text only object
-    if (!data) return [new TextOnly()];
+    if (!data) return [new TextOnly(sourceIndex, 0)];
 
     var baseSourceIndex = sourceIndex;
     var sourceLength = 0;

@@ -801,6 +801,7 @@ export class DividerLineVisualizer extends ChantLayoutElement {
       class: "dividerLine"
     };
     if (this.divider) {
+      if(this.divider.selected) props.class += " selected";
       props["source-index"] = this.divider.sourceIndex;
       props["element-index"] = this.divider.elementIndex;
       props.source = this.divider;

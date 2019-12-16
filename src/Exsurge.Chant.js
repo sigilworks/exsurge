@@ -316,8 +316,10 @@ export class FaClef extends Clef {
  * TextOnly
  */
 export class TextOnly extends ChantNotationElement {
-  constructor() {
+  constructor(sourceIndex, sourceLength) {
     super();
+    this.sourceIndex = sourceIndex;
+    this.sourceLength = sourceLength;
     this.trailingSpace = 0;
   }
 
@@ -435,7 +437,15 @@ export class ChantScore {
   updateSelection(selection) {
     this.selection = selection;
     const elementSelection = (this.selection && this.selection.element) || [];
-    const insertion = elementSelection.insertion;
+    let insertion = elementSelection.insertion;
+    if (
+      !insertion &&
+      elementSelection.length === 1 &&
+      this.notes[elementSelection[0]] instanceof TextOnly
+    ) {
+      // if there is only one selection, and its a text only, it should display as an insertion cursor:
+      insertion = { afterElementIndex: elementSelection[0] };
+    }
     // update the selected elements so that they can be given a .selected class when rendered
     for (let i = 0; i < this.notes.length; ++i) {
       let element = this.notes[i];
