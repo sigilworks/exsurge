@@ -1,99 +1,163 @@
-//
-// Author(s):
-// Fr. Matthew Spencer, OSJ <mspencer@osjusa.org>
-//
-// Copyright (c) 2008-2016 Fr. Matthew Spencer, OSJ
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-//
+import _ from 'lodash';
 
-'use strict';
+// reports version of `exsurge` package to the debugging log
+import 'utils/version-reporter.util';
 
-import { Annotation, ChantContext } from './Exsurge.Drawing.js'
-import { Gabc } from './Exsurge.Gabc.js'
+import { Annotation } from 'elements/drawing';
+import Gabc from 'gabc/gabc';
+import ChantContext from 'elements/chant-context.model';
+import ChantScore from 'chant/chant-score.model';
+
+export * from './core';
+export * from 'language/base-language';
+export * from './glyphs.constants';
+export * from 'elements/drawing';
+export * from 'chant/chant';
+export * from 'chant/markings';
+export * from 'chant/signs';
+export * from 'chant/neumes';
+export * from 'gabc/gabc';
+
+// constants
+export { LiquescentTypes } from 'chant/chant.constants';
+export { NoteShapeModifiers } from 'chant/chant.constants';
+export { NoteShapes } from 'chant/chant.constants';
+export { TextMeasuringStrategies } from 'elements/elements.constants';
+export { GlyphCodes } from 'elements/elements.constants';
+export { QuickSvg } from 'elements/drawing.util';
+export { LyricTypes } from 'elements/elements.constants';
+export { AccidentalTypes } from 'chant/chant.constants';
+export { HorizontalEpisemaAlignments } from 'chant/chant.constants';
+export { MarkingPositionHints } from 'chant/chant.constants';
+export { BraceAttachments } from 'chant/chant.constants';
+export { BraceShapes } from 'chant/chant.constants';
+
+export ChantMapping from 'chant/chant-mapping.model';
+export ChantContext from 'elements/chant-context.model';
+export ChantScore from 'chant/chant-score.model';
+export ChantDocument from 'chant/chant-document.model';
+
+export Latin from 'language/latin';
+export Spanish from 'language/spanish';
+
 
 // client side support
 
-if (typeof document !== 'undefined' && document.registerElement) {
-  var ChantVisualElementPrototype = Object.create(HTMLElement.prototype);
+if (!_.isUndefined(document)) {
+    const ChantVisualElementPrototype = Object.create(HTMLElement.prototype);
 
-  ChantVisualElementPrototype.createdCallback = function() {
-    var ctxt = new ChantContext();
-    
-    ctxt.setFont("'Crimson Text', serif", 19.2);
+    ChantVisualElementPrototype.createdCallback = () => {
+        const ctxt = new ChantContext();
 
-    var useDropCap = true;
-    var useDropCapAttr = this.getAttribute("use-drop-cap");
-    if (useDropCapAttr === 'false')
-      useDropCap = false;
+        ctxt.setFont('"Crimson Text", serif', 19.2);
 
-    var score = Gabc.loadChantScore(ctxt, this.innerText, useDropCap);
+        ctxt.lyricTextFont = '"Crimson Text", serif';
+        ctxt.lyricTextSize *= 1.2;
+        ctxt.dropCapTextFont = ctxt.lyricTextFont;
+        ctxt.annotationTextFont = ctxt.lyricTextFont;
 
-    var annotationAttr = this.getAttribute("annotation");
-    if (annotationAttr) {
-      // add an annotation
-      score.annotation = new Annotation(ctxt, annotationAttr);
+        const useDropCap = this.getAttribute('use-drop-cap') !== 'false';
+
+        const mappings = Gabc.createMappingsFromSource(ctxt, this.innerText);
+        const score = new ChantScore(ctxt, mappings, useDropCap);
+
+        const annotationAttr = this.getAttribute('annotation');
+        if (annotationAttr) {
+            // add an annotation
+            score.annotation = new Annotation(ctxt, annotationAttr);
+        }
+
+
+        let width = 0;
+
+        const doLayout = () => {
+            const newWidth = this.parentElement.clientWidth;
+
+            if (width === newWidth) {
+                return;
+            }
+
+            width = newWidth;
+
+            // perform layout on the chant
+            score.performLayout(ctxt, () => {
+                score.layoutChantLines(ctxt, width, () => {
+                    // render the score to svg code
+                    this.appendElement(score.createSvgNode(ctxt));
+                });
+            });
+        };
+
+        doLayout();
+
+        if (window.addEventListener) {
+            window.addEventListener('resize', doLayout, false);
+        } else if (window.attachEvent) {
+            window.attachEvent('onresize', doLayout);
+        }
+    };
+
+    ChantVisualElementPrototype.attachedCallback = _.noop;
+
+    document.registerElement = document.registerElement || _.noop;
+
+    // register the custom element
+    const ChantVisualElement = document.registerElement('chant-visual', {
+        prototype: ChantVisualElementPrototype
+    });
+}
+
+/*
+
+    // TODO: this seems more up-to-date, from working example at: http://frmatthew.github.io/exsurge/chant.html
+
+ var ctxt = new exsurge.ChantContext();
+    ctxt.lyricTextFont = "'Crimson Text', serif";
+    ctxt.lyricTextSize *= 1.2;
+    ctxt.dropCapTextFont = ctxt.lyricTextFont;
+    ctxt.annotationTextFont = ctxt.lyricTextFont;
+    var score;
+    var gabcSource = document.getElementById('gabcSource');
+    var chantContainer = document.getElementById('chant-container');
+    //
+    // to use canvas drawing, you should use the canvas object belonging to the
+    // canvas, resizing it as below. The reason for custom resizing is that the
+    // canvas drawing takes into consideration screen dpi in order to render
+    // the highest possibly quality on lots of different screens.
+    //
+    //
+    // document.querySelector('body').appendChild(ctxt.canvas);
+    // ctxt.setCanvasSize(1280, 720);
+    //
+    // To render to the canvas, you can use a standard animation loop, which
+    // draws to the canvas at the desired intervals, e.g.:
+    //
+    //
+    // function animloop() {
+    //   requestAnimationFrame(animloop);
+    //
+    //   if (score)
+    //     score.draw(ctxt);
+    // };
+    //
+    var updateChant = function() {
+      if (score) {
+        exsurge.Gabc.updateMappingsFromSource(ctxt, score.mappings, gabcSource.value);
+        score.updateNotations(ctxt);
+      } else {
+        mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabcSource.value);
+        score = new exsurge.ChantScore(ctxt, mappings, true);
+        score.annotation = new exsurge.Annotation(ctxt, "%V%");
+      }
+      layoutChant();
     }
-
-    var _element = this;
-
-    var width = 0;
-    var doLayout = function() {
-      var newWidth = _element.parentElement.clientWidth;
-      if(width === newWidth) return;
-      width = newWidth;
+    var layoutChant = function() {
       // perform layout on the chant
-      score.performLayout(ctxt, function() {
-        score.layoutChantLines(ctxt, width, function() {
+      score.performLayoutAsync(ctxt, function() {
+        score.layoutChantLines(ctxt, chantContainer.clientWidth, function() {
           // render the score to svg code
-          _element.appendElement(score.createSvgNode(ctxt));
+          chantContainer.innerHTML = score.createSvg(ctxt);
         });
       });
     }
-    doLayout();
-    if (window.addEventListener)
-      window.addEventListener('resize',doLayout,false);
-    else if (window.attachEvent)
-      window.attachEvent('onresize',doLayout);
-  }
-
-  ChantVisualElementPrototype.attachedCallback = function() {
-    
-  }
-
-  // register the custom element
-  // if(window.customElements && window.customElements.define) {
-  //   window.customElements.define('chant-visual', ChantVisualElementPrototype);
-  // } else {
-    document.registerElement('chant-visual', {
-      prototype: ChantVisualElementPrototype
-    });
-  // }
-}
-
-export * from './Exsurge.Core.js'
-export * from './Exsurge.Text.js'
-export * from './Exsurge.Glyphs.js'
-export * from './Exsurge.Drawing.js'
-export * from './Exsurge.Chant.js'
-export * from './Exsurge.Chant.Markings.js'
-export * from './Exsurge.Chant.Signs.js'
-export * from './Exsurge.Chant.Neumes.js'
-export * from './Exsurge.Gabc.js'
-
+ */

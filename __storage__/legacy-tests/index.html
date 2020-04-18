@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
   <title>exsurge Test Page</title>
   <meta name="description" content="exsurge Test Page">
   <meta name="author" content="Fr. Matthew Spencer, O.S.J.">
@@ -14,7 +14,7 @@
   <![endif]-->
 </head>
 
-<body onresize="layoutChant()">
+<body onload="updateChant()" onresize="layoutChant()">
 
   <h1>exsurge Test Page</h1>
 
@@ -23,37 +23,24 @@
   <!--chant-visual use-drop-cap="false" annotation="IV">(c3) PU(ei)ER(i) *() na(iji)tus(h) est(hhh) no(ih/ji)bis,(i) (;) et(ei~) fí(iji)li(hg)us(f) da(hhi)tus(h) est(h) no(hihh)bis:(efe) (:) cu(e)jus(f) im(h)pé(gi!jk)ri(ih)um(h) (,) su(h)per(h) hú(ih/ji)me(hg)rum(hhh) e(hf//hghvGF)jus:(gf) (:) et(hg) vo(h)cá(hji)bi(h)tur(hhh) no(h)men(hhh) e(highvGF)jus,(gf) (;) ma(hj)gni(i) con(eh~)sí(h)li(hhhf)i(f) An(fhf!gwh)ge(efe)lus.(e) Ps.(::) Can(ehg)tá(hi)te(i) Dó(i)mi(i)no(i) cán(ik)ti(j)cum(j) no(ji)vum:(ij) *(:) qui(ig)a(hi) mi(i)ra(i)bí(i!jwk)li(i)a(h) fe(hhh)cit.(fe) (::) Gló(ehg)ri(hi)a(i) Pa(i)tri.(i) (::) E(i) u(i!jwk) o(i) u(h) a(hhh) e.(fe) (::)</chant-visual-->
 
   <label>Enter your GABC code here:</label><br/>
-  <textarea rows="10" cols="80" style="max-width: 100%; box-sizing: border-box;" id="gabcSource" oninput="updateChant()" onchange="updateChant()">
-(c4) CHris(ffg)tus(f.) *(,) fac(fg)tus(f) est(f') pro(f) no(ghF'ED.g_e/fg)bis(f.) (;) o(f)bé(hf/gh!jj/kjk)di(jij)ens(h_g) (,) us(h!jjh)que(f.) ad(ixfiH'Gh) mor(fgf___)tem,(f.) (:) mor(ixf!hhi)tem(g) au(ixgjj//)tem(j.h!iw!jvIG'hw!ivHG) cru(fv.ff)cis.(f_c) (,) (fg!hvGF.e!g'h//fhg/hggf.) (z0::c3) V/. Prop(d)ter(d) quod(d) et(fe~) De(eh)us(h.) (,) e(h)xal(h)tá(h)vit(h) il(h)lum,(ihhe.//hih___/ihhe.) (,) (hi!kv//lvKI'jvHF.) (,) (h_g/ijh'___ jvIH'jvIH'//hvGF.) (:) et(f) de(f!h'i)dit(i) il(i)li(ih/jki/hhf.) (,) no(hf/hhh)men,(h.f!gwh!iv.hi/jhh/iih.) (;) quod(d) est(d) su(d)per(d) o(dfE'D)mne(ef) *() no(fhG'Fhhh)men.(hhf.) (,) (gxg_fgvED.fgED.fehv.hhhff//dfe/feed.) (::)
-</textarea>
+  <textarea rows="10" cols="80" id="gabcSource" oninput="updateChant()" onchange="updateChant()">(c4) CHris(ffg)tus(f.) *(,) fac(fg)tus(f) est(f') pro(f) no(ghF'ED.g_e/fg)bis(f.) (;) o(f)bé(hf/gh!jj/kjk)di(jij)ens(h_g) (,) us(h!jjh)que(f.) ad(ixfiH'Gh) mor(fgf___)tem,(f.) (:) mor(ixf!hhi)tem(g) au(ixgjj//)tem(j.h!iw!jvIG'hw!ivHG) cru(fv.ff)cis.(f_c) (,) (fg!hvGF.e!g'h//fhg/hggf.) V/.(z0::c3)  Prop(d)ter(d) quod(d) et(fe~) De(eh)us(h.) (,) e(h)xal(h)tá(h)vit(h) il(h)lum,(ihhe.//hih___/ihhe.) (,) (hi!kv//lvKI'jvHF.) (,) (h_g/ijh'___ jvIH'jvIH'//hvGF.) (:) et(f) de(f!h'i)dit(i) il(i)li(ih/jki/hhf.) (,) no(hf/hhh)men,(h.f!gwh!iv.hi/jhh/iih.) (;) quod(d) est(d) su(d)per(d) o(dfE'D)mne(ef) *() no(fhG'Fhhh)men.(hhf.) (,) (gxg_fgvED.fgED.fehv.hhhff//dfe/feed.) (::)</textarea>
   <div id="chant-container">
   </div>
-  <div id="chant-canvas-container">
-  </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/document-register-element/0.5.3/document-register-element.js">/* W3C Custom Elements */</script>
-  <!-- <script type="text/javascript" src="../dist/exsurge.js"></script> -->
-  <script type="text/javascript">window.require = s => s.replace(/^url\?[^!]*\!/,'');</script>
-  <script type="module">
-    import * as exsurge from '../src/index.js'
-    window.exsurge = exsurge;
+  <script type="text/javascript" src="../dist/exsurge.js"></script>
+  <script type="text/javascript">
+
     /* testing exsurge */
     var ctxt = new exsurge.ChantContext();
 
-    // ctxt.specialCharProperties['font-family'] = "'Versiculum'";
-    // ctxt.specialCharText = char => char.toLowerCase();
-    
-    ctxt.setFont("'Crimson Text', serif", 19.2);
+    ctxt.lyricTextFont = "'Crimson Text', serif";
+    ctxt.lyricTextSize *= 1.2;
     ctxt.dropCapTextFont = ctxt.lyricTextFont;
     ctxt.annotationTextFont = ctxt.lyricTextFont;
-    ctxt.textMeasuringStrategy = exsurge.TextMeasuringStrategy.Canvas;
-    ctxt.minLyricWordSpacing = ctxt.hyphenWidth * 0.7;
 
     var score;
     var gabcSource = document.getElementById('gabcSource');
     var chantContainer = document.getElementById('chant-container');
-    var chantCanvasContainer = document.getElementById('chant-canvas-container');
-
-    chantCanvasContainer.appendChild(ctxt.canvas);
 
     //
     // to use canvas drawing, you should use the canvas object belonging to the
@@ -77,12 +64,12 @@
     // };
     //
 
-    window.updateChant = function() {
+    var updateChant = function() {
       if (score) {
         exsurge.Gabc.updateMappingsFromSource(ctxt, score.mappings, gabcSource.value);
         score.updateNotations(ctxt);
       } else {
-        var mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabcSource.value);
+        mappings = exsurge.Gabc.createMappingsFromSource(ctxt, gabcSource.value);
         score = new exsurge.ChantScore(ctxt, mappings, true);
         score.annotation = new exsurge.Annotation(ctxt, "%V%");
       }
@@ -90,40 +77,15 @@
       layoutChant();
     }
 
-    function afterLayout() {
-      score.layoutChantLines(ctxt, chantContainer.clientWidth, function() {
-        // render the score to svg code
-        while(chantContainer.firstChild) chantContainer.removeChild(chantContainer.firstChild);
-        drawSvg();
-        drawCanvas();
+    var layoutChant = function() {
+      // perform layout on the chant
+      score.performLayoutAsync(ctxt, function() {
+        score.layoutChantLines(ctxt, chantContainer.clientWidth, function() {
+          // render the score to svg code
+          chantContainer.innerHTML = score.createSvg(ctxt);
+        });
       });
     }
-
-    function layoutChantSync() {
-      // perform layout on the chant
-      score.performLayout(ctxt);
-      afterLayout();
-    }
-
-    function layoutChantAsync() {
-      // perform layout on the chant
-      score.performLayoutAsync(ctxt, afterLayout);
-    }
-
-    function layoutChant() {
-      layoutChantAsync();
-    }
-
-    function drawSvg() {
-      chantContainer.appendChild(score.createSvgNode(ctxt));
-    }
-
-    function drawCanvas() {
-      score.draw(ctxt);
-    }
-    window.layoutChant = layoutChant;
-
-    updateChant();
   </script>
 </body>
 </html>

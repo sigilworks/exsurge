@@ -1,49 +1,51 @@
-var webpack = require('webpack');
-var UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
-var path = require('path');
-var env = require('yargs').argv.mode;
+const path = require('path');
 
-var package = require("./package.json");
+const isDevelopment = ['development', 'test', 'local'].includes(process.env.NODE_ENV);
 
-var plugins = [];
-var outputFile;
-
-if (env === 'build') {
-  plugins.push(new UglifyJsPlugin({ minimize: true }));
-  outputFile = package.name + '.min.js';
-} else {
-  outputFile = package.name + '.js';
-}
-
-var config = {
-  entry: __dirname + '/src/index.js',
-  devtool: 'source-map',
-  output: {
-    path: __dirname + '/dist',
-    filename: outputFile,
-    library: package.name,
-    libraryTarget: 'umd',
-    umdNamedDefine: true
-  },
-  module: {
-    loaders: [
-      {
-        test: /(\.jsx|\.js)$/,
-        loader: 'babel',
-        exclude: /(node_modules|bower_components)/
-      },
-      {
-        test: /(\.jsx|\.js)$/,
-        loader: "eslint-loader",
-        exclude: /node_modules/
-      }
-    ]
-  },
-  resolve: {
-    root: path.resolve('./src'),
-    extensions: ['', '.js']
-  },
-  plugins: plugins
+module.exports = {
+    context: path.join(__dirname, './'),
+    entry: path.join(__dirname, './src/index.js'),
+    mode: isDevelopment ? 'development' : 'production',
+    devtool: 'source-map',
+    target: 'web',
+    output: {
+        path: path.join(__dirname, './dist'),
+        filename: 'exsurge.js',
+        library: 'exsurge',
+        libraryTarget: 'umd',
+        pathinfo: true,
+        umdNamedDefine: true
+    },
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: 'babel-loader'
+            },
+            {
+                test: /\.(otf|svg)$/i,
+                use: [
+                    {
+                        loader: 'url-loader',
+                        options: {
+                            limit: 30000,
+                            encoding: 'utf8'
+                        },
+                    },
+                ],
+            },
+        ]
+    },
+    resolve: {
+        modules: ['node_modules'],
+        alias: {
+            chant: path.resolve(__dirname, './src/chant'),
+            elements: path.resolve(__dirname, './src/elements'),
+            gabc: path.resolve(__dirname, './src/gabc'),
+            language: path.resolve(__dirname, './src/language'),
+            utils: path.resolve(__dirname, './src/utils')
+        }
+    },
+    plugins: []
 };
-
-module.exports = config;
