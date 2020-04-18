@@ -17,6 +17,7 @@ import {
 import { GlyphCodes } from 'elements/elements.constants';
 
 
+
 /**
  * @class
  */
@@ -49,12 +50,12 @@ export class Note extends ChantLayoutElement {
 
         // various markings that can exist on a note, organized by type
         // for faster access and simpler code logic
-        this.epismata = [];
+        this.episemata = [];
         this.morae = []; // silly to have an array of these, but gabc allows multiple morae per note!
 
         // these are set on the note when they are needed, otherwise, they're undefined
         // this.ictus
-        // this.acuteAccent
+        // this.accuteAccent
         // this.braceStart
         // this.braceEnd
     }
@@ -67,7 +68,7 @@ export class Note extends ChantLayoutElement {
 
         this.glyphVisualizer.setStaffPosition(ctxt, this.staffPosition);
 
-        // assign glyph visualizer metrics to this note
+        // assign glyphvisualizer metrics to this note
         this.bounds.x = this.glyphVisualizer.bounds.x;
         this.bounds.y = this.glyphVisualizer.bounds.y;
         this.bounds.width = this.glyphVisualizer.bounds.width;
@@ -81,7 +82,8 @@ export class Note extends ChantLayoutElement {
     shapeModifierMatches(shapeModifier) {
         if (shapeModifier === NoteShapeModifiers.NONE)
             return this.shapeModifier === NoteShapeModifiers.NONE;
-        return this.shapeModifier & shapeModifier !== 0;
+        else
+            return this.shapeModifier & shapeModifier !== 0;
     }
 
     draw(ctxt) {
@@ -92,13 +94,22 @@ export class Note extends ChantLayoutElement {
         this.glyphVisualizer.draw(ctxt);
     }
 
+    createSvgNode(ctxt) {
+
+        this.glyphVisualizer.bounds.x = this.bounds.x;
+        this.glyphVisualizer.bounds.y = this.bounds.y;
+        this.svgNode = this.glyphVisualizer.createSvgNode(ctxt, this);
+        return this.svgNode;
+    }
+
     createSvgFragment(ctxt) {
 
         this.glyphVisualizer.bounds.x = this.bounds.x;
         this.glyphVisualizer.bounds.y = this.bounds.y;
-        return this.glyphVisualizer.createSvgFragment(ctxt);
+        return this.glyphVisualizer.createSvgFragment(ctxt, this);
     }
 }
+
 
 // TODO: where best to put this?
 const DEFAULT_DO_CLEF = new DoClef(1, 2);
@@ -113,6 +124,7 @@ export class Clef extends ChantNotationElement {
         this.octave = octave;
         this.defaultAccidental = defaultAccidental;
         this.activeAccidental = defaultAccidental;
+        this.keepWithNext = true;
     }
 
     resetAccidentals() {
@@ -170,8 +182,8 @@ export class DoClef extends Clef {
 
         var step = Pitch.staffOffsetToStep(offset);
 
-        if (this.defaultAccidental !== null && step === this.defaultAccidental.step)
-            step += this.defaultAccidental.accidentalType;
+        if (this.activeAccidental && this.activeAccidental.staffPosition === staffPosition)
+            step += this.activeAccidental.accidentalType;
 
         return new Pitch(step, this.octave + octaveOffset);
     }
@@ -190,8 +202,6 @@ export class DoClef extends Clef {
         return new DoClef(this.staffPosition, this.octave, this.defaultAccidental);
     }
 }
-
-
 
 export class FaClef extends Clef {
 
@@ -215,8 +225,8 @@ export class FaClef extends Clef {
 
         var step = Pitch.staffOffsetToStep(offset);
 
-        if (step === Steps.Ti && this.defaultAccidental === AccidentalTypes.FLAT)
-            step = Steps.Te;
+        if (this.activeAccidental && this.activeAccidental.staffPosition === staffPosition)
+            step += this.activeAccidental.accidentalType;
 
         return new Pitch(step, this.octave + octaveOffset);
     }
@@ -243,6 +253,7 @@ export class TextOnly extends ChantNotationElement {
 
     constructor() {
         super();
+        this.trailingSpace = 0;
     }
 
     performLayout(ctxt) {
@@ -279,5 +290,3 @@ export class ChantLineBreak extends ChantNotationElement {
         return lb;
     }
 }
-
-

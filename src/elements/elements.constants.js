@@ -39,6 +39,7 @@ export const GlyphCodes = {
     PunctumInclinatumLiquescent: 'PunctumInclinatumLiquescent',
     Quilisma: 'Quilisma',
 
+    Sharp: 'Sharp',
     TerminatingAscLiquescent: 'TerminatingAscLiquescent',
     TerminatingDesLiquescent: 'TerminatingDesLiquescent',
     VerticalEpisemaAbove: 'VerticalEpisemaAbove',

@@ -51,10 +51,10 @@ if (!_.isUndefined(document)) {
 
         ctxt.setFont('"Crimson Text", serif', 19.2);
 
-        ctxt.lyricTextFont = '"Crimson Text", serif';
+/*        ctxt.lyricTextFont = '"Crimson Text", serif';
         ctxt.lyricTextSize *= 1.2;
         ctxt.dropCapTextFont = ctxt.lyricTextFont;
-        ctxt.annotationTextFont = ctxt.lyricTextFont;
+        ctxt.annotationTextFont = ctxt.lyricTextFont;*/
 
         const useDropCap = this.getAttribute('use-drop-cap') !== 'false';
 

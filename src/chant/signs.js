@@ -23,14 +23,20 @@ export class Custos extends ChantNotationElement {
     performLayout(ctxt) {
         super.performLayout(ctxt);
 
-        var glyphCode;
-
         if (this.auto) {
 
             var neume = ctxt.findNextNeume();
 
             if (neume)
                 this.staffPosition = ctxt.activeClef.pitchToStaffPosition(neume.notes[0].pitch);
+
+            // in case there was a weird fa/do clef change, let's sanitize the staffPosition by making sure it is
+            // within reasonable bounds
+            while (this.staffPosition < -6)
+                this.staffPosition += 7;
+
+            while (this.staffPosition > 6)
+                this.staffPosition -= 7;
         }
 
         var glyph = new GlyphVisualizer(ctxt, Custos.getGlyphCode(this.staffPosition));
@@ -55,14 +61,16 @@ export class Custos extends ChantNotationElement {
             // ascending custodes
             if (Math.abs(staffPosition) % 2 === 1)
                 return GlyphCodes.CustosLong;
-            return GlyphCodes.CustosShort;
-        } 
+            else
+                return GlyphCodes.CustosShort;
+        } else {
 
-        // descending custodes
-        if (Math.abs(staffPosition) % 2 === 1)
-            return GlyphCodes.CustosDescLong;
-        return GlyphCodes.CustosDescShort;
-        
+            // descending custodes
+            if (Math.abs(staffPosition) % 2 === 1)
+                return GlyphCodes.CustosDescLong;
+            else
+                return GlyphCodes.CustosDescShort;
+        }
     }
 }
 
@@ -127,6 +135,29 @@ export class FullBar extends Divider {
 }
 
 /*
+ * DominicanBar
+ */
+export class DominicanBar extends Divider {
+
+    constructor(staffPosition) {
+        super();
+        staffPosition--;
+        var parity = staffPosition % 2;
+
+        this.staffPosition = staffPosition - (2 * parity);
+    }
+
+    performLayout(ctxt) {
+        super.performLayout(ctxt);
+        this.addVisualizer(new DividerLineVisualizer(ctxt, this.staffPosition - 3, this.staffPosition));
+
+        this.origin.x = this.bounds.width / 2;
+
+        this.finishLayout(ctxt);
+    }
+}
+
+/*
  * DoubleBar
  */
 export class DoubleBar extends Divider {
@@ -139,7 +170,7 @@ export class DoubleBar extends Divider {
         this.addVisualizer(line0);
 
         var line1 = new DividerLineVisualizer(ctxt, -3, 3);
-        line1.bounds.x = ctxt.intraNeumeSpacing * 2;
+        line1.bounds.x = ctxt.intraNeumeSpacing * 2 - line1.bounds.width;
         this.addVisualizer(line1);
 
         this.origin.x = this.bounds.width / 2;
@@ -147,6 +178,12 @@ export class DoubleBar extends Divider {
         this.finishLayout(ctxt);
     }
 }
+
+export const AccidentalType = {
+    Flat: -1,
+    Natural: 0,
+    Sharp: 1
+};
 
 /*
  * Accidental
@@ -218,10 +255,8 @@ export class Accidental extends ChantNotationElement {
 
     applyToPitch(pitch) {
 
-        // fixme: this is broken since we changed to staff positions
-
         // no adjusment needed
-        if (this.octave !== pitch.octave)
+        if (this.pitch.octave !== pitch.octave)
             return;
 
         pitch.step = this.adjustStep(pitch.step);
@@ -259,5 +294,3 @@ export class Virgula extends Divider {
         this.finishLayout(ctxt);
     }
 }
-
-

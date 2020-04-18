@@ -7,7 +7,6 @@ import {
 } from 'elements/drawing';
 import {
     LiquescentTypes,
-    MarkingPositionHints,
     NoteShapeModifiers,
     NoteShapes
 } from 'chant/chant.constants';
@@ -21,13 +20,19 @@ class NeumeBuilder {
         this.x = startingX;
         this.lastNote = null;
         this.lineIsHanging = false;
+        this.minX = 0;
     }
 
     // used to start a hanging line on the left of the next note
     lineFrom(note) {
-        this.lastNote = note;
-        this.lineIsHanging = true;
-
+        var previousNotation = this.ctxt.notations[this.ctxt.currNotationIndex - 1];
+        if(this.x === 0 && previousNotation && previousNotation.notes && previousNotation.trailingSpace === 0) {
+            this.lastNote = previousNotation.notes.slice(-1)[0];
+            this.minX = -this.ctxt.neumeLineWeight;
+        } else {
+            this.lastNote = note;
+            this.lineIsHanging = true;
+        }
         return this;
     }
 
@@ -35,23 +40,23 @@ class NeumeBuilder {
     noteAt(note, glyph, withLineTo = true) {
 
         if (!note)
-            throw 'NeumeBuilder.noteAt: note must be a valid note';
+            throw "NeumeBuilder.noteAt: note must be a valid note";
 
         if (!glyph)
-            throw 'NeumeBuilder.noteAt: glyph must be a valid glyph code';
+            throw "NeumeBuilder.noteAt: glyph must be a valid glyph code";
 
         note.setGlyph(this.ctxt, glyph);
-        var noteAlignsRight = note.glyphVisualizer.align === 'right';
+        var noteAlignsRight = note.glyphVisualizer.align === "right";
 
         var needsLine = withLineTo && this.lastNote !== null &&
             (this.lineIsHanging ||
-                this.lastNote.glyphVisualizer.align === 'right' ||
+                (this.lastNote.glyphVisualizer && this.lastNote.glyphVisualizer.align === 'right') ||
                 Math.abs(this.lastNote.staffPosition - note.staffPosition) > 1);
 
         if (needsLine) {
             var line = new NeumeLineVisualizer(this.ctxt, this.lastNote, note, this.lineIsHanging);
             this.neume.addVisualizer(line);
-            line.bounds.x = Math.max(0, this.x - line.bounds.width);
+            line.bounds.x = Math.max(this.minX, this.x - line.bounds.width);
 
             if (!noteAlignsRight)
                 this.x = line.bounds.x;
@@ -164,9 +169,6 @@ class NeumeBuilder {
 
     withClivis(upper, lower) {
 
-        var line;
-
-        var upperGlyph;
         var lowerGlyph;
 
         if (upper.shape === NoteShapes.ORISCUS)
@@ -191,8 +193,8 @@ class NeumeBuilder {
         return this;
     }
 
-    // lays out a sequence of notes that are inclinati (e.g., climacus, pes subpunctis)
-    withInclinati(notes) {
+    // lays out a sequence of notes that are inclinata (e.g., climacus, pes subpunctis)
+    withInclinata(notes) {
 
         var staffPosition = notes[0].staffPosition, prevStaffPosition = notes[0].staffPosition;
 
@@ -201,7 +203,7 @@ class NeumeBuilder {
         // the same as non-liquscents
         var advanceWidth = Glyphs.PunctumInclinatum.bounds.width * this.ctxt.glyphScaling;
 
-        // now add all the punctum inclinati
+        // now add all the punctum inclinatum
         for (var i = 0; i < notes.length; i++, prevStaffPosition = staffPosition) {
             var note = notes[i];
 
@@ -212,22 +214,18 @@ class NeumeBuilder {
                 note.setGlyph(this.ctxt, GlyphCodes.Stropha);
             else
                 // fixme: some climaci in the new chant books end with a punctum quadratum
-                // (see, for example, the antiphon 'Sancta Maria' for October 7).
+                // (see, for example, the antiphon "Sancta Maria" for October 7).
                 note.setGlyph(this.ctxt, GlyphCodes.PunctumInclinatum);
 
             staffPosition = note.staffPosition;
 
-            // fixme: how do these calculations look for puncti inclinati based on staff position offsets?
-            var multiple;
-            switch (Math.abs(prevStaffPosition - staffPosition)) {
+            var multiple = Math.abs(prevStaffPosition - staffPosition);
+            switch (multiple) {
                 case 0:
                     multiple = 1.1;
                     break;
-                case 1:
-                    multiple = 0.8;
-                    break;
                 default:
-                    multiple = 1.2;
+                    multiple *= 2/3;
                     break;
             }
 
@@ -246,12 +244,12 @@ class NeumeBuilder {
 
         var needsLine = this.lastNote !== null &&
             (this.lineIsHanging ||
-                this.lastNote.glyphVisualizer.align === 'right' ||
+                (this.lastNote.glyphVisualizer && this.lastNote.glyphVisualizer.align === 'right') ||
                 Math.abs(this.lastNote.staffPosition - start.staffPosition) > 1);
 
         if (needsLine) {
             var line = new NeumeLineVisualizer(this.ctxt, this.lastNote, start, this.lineIsHanging);
-            this.x = Math.max(0, this.x - line.bounds.width);
+            this.x = Math.max(this.minX, this.x - line.bounds.width);
             line.bounds.x = this.x;
             this.neume.addVisualizer(line);
         }
@@ -324,6 +322,8 @@ export class Neume extends ChantNotationElement {
 
     finishLayout(ctxt) {
 
+        this.ledgerLines = this.requiresLedgerLine();
+
         // allow subclasses an opportunity to position their own markings...
         this.positionMarkings();
 
@@ -332,9 +332,9 @@ export class Neume extends ChantNotationElement {
             var note = this.notes[i];
             var j;
 
-            for (j = 0; j < note.epismata.length; j++) {
-                note.epismata[j].performLayout(ctxt);
-                this.addVisualizer(note.epismata[j]);
+            for (j = 0; j < note.episemata.length; j++) {
+                note.episemata[j].performLayout(ctxt);
+                this.addVisualizer(note.episemata[j]);
             }
 
             for (j = 0; j < note.morae.length; j++) {
@@ -365,12 +365,155 @@ export class Neume extends ChantNotationElement {
         super.finishLayout(ctxt);
     }
 
+    requiresLedgerLine() {
+        var firstAbove = false,
+            needsAbove = false,
+            firstBelow = false,
+            needsBelow = false,
+            // isPorrectus = false,
+            result = [];
+
+        if (!this.notes) return result;
+
+        for (var i = 0; i < this.notes.length; ++i) {
+            var note = this.notes[i];
+            var staffPosition = note.staffPosition;
+            if (staffPosition >= 4) {
+                needsAbove = needsAbove || staffPosition >= 5;
+                if(firstAbove === false) firstAbove = Math.max(0, i - 1);
+                if(staffPosition >= 5) continue;
+            } else if (staffPosition <= -4) {
+                needsBelow = needsBelow || staffPosition <= -5;
+                if(firstBelow === false) firstBelow = Math.max(0, i - 1);
+                if(staffPosition <= -5) continue;
+            }
+            if (needsAbove || needsBelow) {
+                var endI = i; // Math.abs(staffPosition) >= 4? i : i - 1;
+                result.push({
+                    element: this.notes[firstAbove || firstBelow || 0],
+                    endElem: this.notes[endI],
+                    staffPosition: needsAbove? 5 : -5
+                });
+                firstAbove = firstBelow = needsAbove = needsBelow = false;
+            }
+            // isPorrectus = /^Porrectus\d$/.test(note.glyphVisualizer.glyphCode);
+        }
+        if (needsAbove || needsBelow) {
+            result.push({
+                element: this.notes[firstAbove || firstBelow || 0],
+                endElem: this.notes[this.notes.length - 1],
+                staffPosition: needsAbove? 5 : -5
+            });
+        }
+        return result;
+    }
+
     resetDependencies() {
 
     }
 
     build(ctxt) {
         return new NeumeBuilder(ctxt, this);
+    }
+    positionEpisemata(note, position) {
+        var i;
+        for (i = 0; i < note.episemata.length; i++)
+            if (note.episemata[i].positionHint === MarkingPositionHint.Default)
+                note.episemata[i].positionHint = position;
+        return note.episemata.length;
+    }
+    positionEpisemataAbove(note) {
+        return this.positionEpisemata(note, MarkingPositionHint.Above);
+    }
+    positionEpisemataBelow(note) {
+        return this.positionEpisemata(note, MarkingPositionHint.Below);
+    }
+
+    positionPodatusEpisemata(bottomNote, topNote) {
+        // 1. episema on lower note by default be below, upper note above
+        this.positionEpisemataBelow(bottomNote);
+        this.positionEpisemataAbove(topNote);
+    }
+    positionInclinataMorae(notes) {
+        notes = notes.slice(-2);
+        if (notes.length < 2 || notes[1].staffPosition > notes[0].staffPosition) return;
+        var bottomNote = notes[1],
+            topNote = notes[0],
+            mark;
+
+        // The mora on the second (lower) note should be below the punctum,
+        // if the punctum is on a line and the previous punctum is in the space above.
+        if (Math.abs(bottomNote.staffPosition % 2) === 1 && (topNote.staffPosition - bottomNote.staffPosition === 1) && bottomNote.morae.length > 0) {
+            mark = bottomNote.morae.slice(-1)[0];
+            if (mark.positionHint === MarkingPositionHint.Default) mark.positionHint = MarkingPositionHint.Below;
+        }
+    }
+    positionPodatusMorae(bottomNote, topNote) {
+        var mark;
+
+        // The mora on the first (lower) note should be below it,
+        // if it is on a line.
+        if (Math.abs(bottomNote.staffPosition % 2) === 1) {
+            if (bottomNote.morae.length === 1) {
+                mark = bottomNote.morae[0];
+            } else if (topNote.morae.length > 1) {
+                mark = topNote.morae[0];
+            }
+            if(mark && mark.positionHint === MarkingPositionHint.Default) mark.positionHint = MarkingPositionHint.Below;
+        }
+
+        // if there is a mora on the first note but not on the second, and the neume
+        // continues with a punctum higher than the second note, we need to adjust
+        // the space after the neume so that it follows immediately with no gap
+        if (bottomNote.morae.length > 0 && topNote.morae.length === 0) {
+            bottomNote.morae[0].ignoreBounds = true;
+        }
+    }
+    // for any subclasses that begin with a podatus, they can call this from their own positionMarkings()
+    positionPodatusMarkings(bottomNote, topNote) {
+        this.positionPodatusEpisemata(bottomNote, topNote);
+        this.positionPodatusMorae(bottomNote, topNote);
+    }
+
+    // just like a clivis, but the first note of the three also works like the second note of the clivis:
+    // episema below, unless the middle note also has an episema
+    positionTorculusMarkings(firstNote, secondNote, thirdNote) {
+        var hasTopEpisema = this.positionClivisMarkings(secondNote, thirdNote);
+        hasTopEpisema = this.positionEpisemata(firstNote, hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below) && hasTopEpisema;
+        return hasTopEpisema;
+    }
+    positionClivisMorae(firstNote, secondNote) {
+        // 1. morae need to be lined up if both notes have morae
+        var morae = firstNote.morae.concat(secondNote.morae);
+        if (secondNote.morae.length) {
+            if(morae.length > 1) morae[0].horizontalOffset += secondNote.bounds.right() - firstNote.bounds.right();
+            if(firstNote.staffPosition - secondNote.staffPosition === 1 &&
+                Math.abs(secondNote.staffPosition % 2) === 1) {
+                morae.slice(-1)[0].positionHint = MarkingPositionHint.Below;
+            }
+        }
+    }
+    positionClivisEpisemata(firstNote, secondNote) {
+        var hasTopEpisema = this.positionEpisemataAbove(firstNote);
+        this.positionEpisemata(secondNote, hasTopEpisema ? MarkingPositionHint.Above : MarkingPositionHint.Below);
+        return hasTopEpisema;
+    }
+    positionClivisMarkings(firstNote, secondNote) {
+        this.positionClivisMorae(firstNote, secondNote);
+        return this.positionClivisEpisemata(firstNote, secondNote);
+    }
+
+    positionPorrectusMarkings(firstNote, secondNote, thirdNote) {
+        // episemata on first and second note work like a clivis,
+        // the second note should have its episema below, unless the first note also has an episema.
+        this.positionClivisEpisemata(firstNote, secondNote);
+        this.positionPodatusMarkings(secondNote, thirdNote);
+    }
+
+    positionPorrectusFlexusMarkings(first, second, third, fourth) {
+        var hasTopEpisema = this.positionEpisemataAbove(first);
+        hasTopEpisema = this.positionClivisMarkings(third, fourth) || hasTopEpisema;
+        this.positionEpisemata(second, hasTopEpisema? MarkingPositionHint.Above : MarkingPositionHint.Below);
     }
 
     // subclasses can override this in order to correctly place markings in a neume specific way
@@ -385,25 +528,23 @@ export class Neume extends ChantNotationElement {
 export class Apostropha extends Neume {
 
     positionMarkings() {
-        var positionHint = MarkingPositionHints.ABOVE;
+        var positionHint = MarkingPositionHint.Above;
 
         // logic here is this: if first episema is default position, place it above.
         // then place the second one (if there is one) opposite of the first.
-        for (var i = 0; i < this.notes[0].epismata.length; i++) {
-            if (this.notes[0].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[0].epismata[i].positionHint = positionHint;
+        for (var i = 0; i < this.notes[0].episemata.length; i++) {
+            if (this.notes[0].episemata[i].positionHint === MarkingPositionHint.Default)
+                this.notes[0].episemata[i].positionHint = positionHint;
             else
-                positionHint = this.notes[0].epismata[i].positionHint;
+                positionHint = this.notes[0].episemata[i].positionHint;
 
             // now place the next one in the opposite position
-            positionHint = (positionHint === MarkingPositionHints.ABOVE) ? MarkingPositionHints.BELOW : MarkingPositionHints.ABOVE;
+            positionHint = (positionHint === MarkingPositionHint.Above) ? MarkingPositionHint.Below : MarkingPositionHint.Above;
         }
     }
 
     performLayout(ctxt) {
         super.performLayout(ctxt);
-
-        var y = ctxt.calculateHeightFromStaffPosition(4);
 
         this.build(ctxt).noteAt(this.notes[0], Apostropha.getNoteGlyphCode(this.notes[0]));
 
@@ -415,10 +556,12 @@ export class Apostropha extends Neume {
         if (note.shape === NoteShapes.STROPHA)
             return GlyphCodes.Stropha;
 
-        if (note.liquescent !== LiquescentTypes.NONE)
-            return GlyphCodes.StrophaLiquescent;
+        if (note.liquescent & LiquescentTypes.ASCENDING)
+            return GlyphCodes.PunctumQuadratumAscLiquescent;
+        else if (note.liquescent & LiquescentTypes.DESCENDING)
+            return GlyphCodes.PunctumQuadratumDesLiquescent;
 
-        if (note.shapeModifiers & NoteShapeModifiers.CAVUM)
+        if (note.shapeModifiers & NoteShapeModifiers.Cavum)
             return GlyphCodes.PunctumCavum;
 
         return GlyphCodes.PunctumQuadratum;
@@ -434,23 +577,8 @@ export class Apostropha extends Neume {
 export class Bivirga extends Neume {
 
     positionMarkings() {
-        var marking, i, j;
-
-        for (i = 0; i < this.notes.length; i++) {
-            var positionHint = MarkingPositionHints.ABOVE;
-
-            // logic here is this: if first episema is default position, place it above.
-            // then place the second one (if there is one) opposite of the first.
-            for (j = 0; j < this.notes[i].epismata.length; j++) {
-                if (this.notes[i].epismata[j].positionHint === MarkingPositionHints.DEFAULT)
-                    this.notes[i].epismata[j].positionHint = positionHint;
-                else
-                    positionHint = this.notes[i].epismata[j].positionHint;
-
-                // now place the next one in the opposite position
-                positionHint = (positionHint === MarkingPositionHints.ABOVE) ? MarkingPositionHints.BELOW : MarkingPositionHints.ABOVE;
-            }
-        }
+        this.positionEpisemataAbove(this.notes[0]);
+        this.positionEpisemataAbove(this.notes[1]);
     }
 
     performLayout(ctxt) {
@@ -474,23 +602,9 @@ export class Bivirga extends Neume {
 export class Trivirga extends Neume {
 
     positionMarkings() {
-        var marking, i, j;
-
-        for (i = 0; i < this.notes.length; i++) {
-            var positionHint = MarkingPositionHints.ABOVE;
-
-            // logic here is this: if first episema is default position, place it above.
-            // then place the second one (if there is one) opposite of the first.
-            for (j = 0; j < this.notes[i].epismata.length; j++) {
-                if (this.notes[i].epismata[j].positionHint === MarkingPositionHints.DEFAULT)
-                    this.notes[i].epismata[j].positionHint = positionHint;
-                else
-                    positionHint = this.notes[i].epismata[j].positionHint;
-
-                // now place the next one in the opposite position
-                positionHint = (positionHint === MarkingPositionHints.ABOVE) ? MarkingPositionHints.BELOW : MarkingPositionHints.ABOVE;
-            }
-        }
+        this.positionEpisemataAbove(this.notes[0]);
+        this.positionEpisemataAbove(this.notes[1]);
+        this.positionEpisemataAbove(this.notes[2]);
     }
 
     performLayout(ctxt) {
@@ -515,13 +629,9 @@ export class Climacus extends Neume {
     positionMarkings() {
 
         for (var i = 0; i < this.notes.length; i++) {
-            for (var j = 0; j < this.notes[i].epismata.length; j++) {
-                var mark = this.notes[i].epismata[j];
-
-                if (mark.positionHint === MarkingPositionHints.DEFAULT)
-                    mark.positionHint = MarkingPositionHints.ABOVE;
-            }
+            this.positionEpisemataAbove(this.notes[i]);
         }
+        this.positionInclinataMorae(this.notes);
     }
 
     performLayout(ctxt) {
@@ -529,8 +639,8 @@ export class Climacus extends Neume {
 
         this.build(ctxt)
             .virgaAt(this.notes[0])
-            .advanceBy(ctxt.intraNeumeSpacing / 2)
-            .withInclinati(this.notes.slice(1));
+            .advanceBy(ctxt.intraNeumeSpacing)
+            .withInclinata(this.notes.slice(1));
 
         this.finishLayout(ctxt);
     }
@@ -542,43 +652,7 @@ export class Climacus extends Neume {
 export class Clivis extends Neume {
 
     positionMarkings() {
-
-        var hasLowerMora = false;
-        var mark, i;
-
-        // 1. morae need to be lined up if both notes have morae
-        // 2. like the podatus, mora on lower note needs to below
-        //    under certain circumstances
-        for (i = 0; i < this.notes[1].morae.length; i++) {
-            mark = this.notes[1].morae[i];
-
-            if (this.notes[0].staffPosition - this.notes[1].staffPosition === 1 &&
-                Math.abs(this.notes[1].staffPosition % 2) === 1)
-                mark.positionHint = MarkingPositionHints.BELOW;
-        }
-
-        for (i = 0; i < this.notes[0].morae.length; i++) {
-
-            if (hasLowerMora) {
-                mark = this.notes[0].morae[i];
-                mark.positionHint = MarkingPositionHints.ABOVE;
-                mark.horizontalOffset += this.notes[1].bounds.right() - this.notes[0].bounds.right();
-            }
-        }
-
-        for (i = 0; i < this.notes[0].epismata.length; i++) {
-            mark = this.notes[0].epismata[i];
-
-            if (mark.positionHint === MarkingPositionHints.DEFAULT)
-                mark.positionHint = MarkingPositionHints.ABOVE;
-        }
-
-        for (i = 0; i < this.notes[1].epismata.length; i++) {
-            mark = this.notes[1].epismata[i];
-
-            if (mark.positionHint === MarkingPositionHints.DEFAULT)
-                mark.positionHint = MarkingPositionHints.ABOVE;
-        }
+        this.positionClivisMarkings(this.notes[0], this.notes[1]);
     }
 
     performLayout(ctxt) {
@@ -594,6 +668,7 @@ export class Clivis extends Neume {
 }
 
 
+
 /*
  * Distropha
  *
@@ -603,22 +678,8 @@ export class Clivis extends Neume {
 export class Distropha extends Neume {
 
     positionMarkings() {
-
-        for (var i = 0; i < this.notes.length; i++) {
-            var positionHint = MarkingPositionHints.ABOVE;
-
-            // logic here is this: if first episema is default position, place it above.
-            // then place the second one (if there is one) opposite of the first.
-            for (var j = 0; j < this.notes[i].epismata.length; j++) {
-                if (this.notes[i].epismata[j].positionHint === MarkingPositionHints.DEFAULT)
-                    this.notes[i].epismata[j].positionHint = positionHint;
-                else
-                    positionHint = this.notes[i].epismata[j].positionHint;
-
-                // now place the next one in the opposite position
-                positionHint = (positionHint === MarkingPositionHints.ABOVE) ? MarkingPositionHints.BELOW : MarkingPositionHints.ABOVE;
-            }
-        }
+        this.positionEpisemataAbove(this.notes[0]);
+        this.positionEpisemataAbove(this.notes[1]);
     }
 
     performLayout(ctxt) {
@@ -634,24 +695,12 @@ export class Distropha extends Neume {
 }
 
 /*
- * ORISCUS
+ * Oriscus
  */
 export class Oriscus extends Neume {
 
     positionMarkings() {
-        var positionHint = MarkingPositionHints.ABOVE;
-
-        // logic here is this: if first episema is default position, place it above.
-        // then place the second one (if there is one) opposite of the first.
-        for (var i = 0; i < this.notes[0].epismata.length; i++) {
-            if (this.notes[0].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[0].epismata[i].positionHint = positionHint;
-            else
-                positionHint = this.notes[0].epismata[i].positionHint;
-
-            // now place the next one in the opposite position
-            positionHint = (positionHint === MarkingPositionHints.ABOVE) ? MarkingPositionHints.BELOW : MarkingPositionHints.ABOVE;
-        }
+        this.positionEpisemataAbove(this.notes[0]);
     }
 
     performLayout(ctxt) {
@@ -664,9 +713,9 @@ export class Oriscus extends Neume {
         if (note.liquescent !== LiquescentTypes.NONE) {
             glyph = GlyphCodes.OriscusLiquescent;
         } else {
-            if (note.shapeModifiers & NoteShapeModifiers.ASCENDING)
+            if (note.shapeModifiers & NoteShapeModifiers.Ascending)
                 glyph = GlyphCodes.OriscusAsc;
-            else if (note.shapeModifiers & NoteShapeModifiers.DESCENDING)
+            else if (note.shapeModifiers & NoteShapeModifiers.Descending)
                 glyph = GlyphCodes.OriscusDes;
             else {
                 // by default we take the descending form, unless we can figure out by a lookahead here
@@ -695,8 +744,8 @@ export class Oriscus extends Neume {
         // based on the following neumes. if we don't have a manually designated
         // direction, then we reset our layout so that we can try to guess it
         // at next layout phase.
-        if (this.notes[0].shapeModifiers & NoteShapeModifiers.ASCENDING ||
-            this.notes[0].shapeModifiers & NoteShapeModifiers.DESCENDING)
+        if (this.notes[0].shapeModifiers & NoteShapeModifiers.Ascending ||
+            this.notes[0].shapeModifiers & NoteShapeModifiers.Descending)
             return;
 
         this.needsLayout = true;
@@ -714,7 +763,7 @@ export class PesQuassus extends Neume {
         var lower = this.notes[0];
         var upper = this.notes[1];
 
-        var lowerGlyph, upperGlyph;
+        var lowerGlyph;
 
         var lowerStaffPos = lower.staffPosition;
         var upperStaffPos = upper.staffPosition;
@@ -729,7 +778,7 @@ export class PesQuassus extends Neume {
 
         if (upperStaffPos - lowerStaffPos === 1)// use a virga glyph in this case
             builder.virgaAt(upper);
-        else if (upper.liquescent === LiquescentTypes.LARGE_DESCENDING)
+        else if (upper.liquescent === LiquescentTypes.LARGEDESCENDING)
             builder.noteAt(upper, GlyphCodes.PunctumQuadratumDesLiquescent).withLineEndingAt(lower);
         else
             builder.noteAt(upper, GlyphCodes.PunctumQuadratum).withLineEndingAt(lower);
@@ -743,14 +792,22 @@ export class PesQuassus extends Neume {
  */
 export class PesSubpunctis extends Neume {
 
+    positionMarkings() {
+        this.positionPodatusEpisemata(this.notes[0], this.notes[1]);
+        for(var i=2; i < this.notes.length; ++i) {
+            this.positionEpisemataAbove(this.notes[i]);
+        }
+        this.positionInclinataMorae(this.notes.slice(1));
+    }
+
     performLayout(ctxt) {
         super.performLayout(ctxt);
 
-        // podatus followed by inclinati
+        // podatus followed by inclinata
         this.build(ctxt)
             .withPodatus(this.notes[0], this.notes[1])
-            .advanceBy(ctxt.intraNeumeSpacing / 2)
-            .withInclinati(this.notes.slice(2));
+            .advanceBy(ctxt.intraNeumeSpacing * 0.68)
+            .withInclinata(this.notes.slice(2));
 
         this.finishLayout(ctxt);
     }
@@ -761,36 +818,12 @@ export class PesSubpunctis extends Neume {
  *
  * This podatus class handles a few neume types actually, depending on the note
  * data: Podatus (including various liquescent types on the upper note),
- * Podatus initio debilis, and QUILISMA-Pes
+ * Podatus initio debilis, and Quilisma-Pes
  */
 export class Podatus extends Neume {
 
     positionMarkings() {
-        var marking, i;
-
-        // 1. episema on lower note by default be below, upper note above
-        // 2. morae:
-        //   a. if podatus difference is 1 and lower note is on a line,
-        //      the lower mora should be below
-        for (i = 0; i < this.notes[0].epismata.length; i++)
-            if (this.notes[0].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[0].epismata[i].positionHint = MarkingPositionHints.BELOW;
-
-        // if this note has two or more (!?) morae then we just leave them be
-        // since they have already been assigned position hints.
-        if (this.notes[0].morae.length < 2) {
-            for (i = 0; i < this.notes[0].morae.length; i++) {
-                marking = this.notes[0].morae[i];
-
-                if ((this.notes[1].staffPosition - this.notes[0].staffPosition) === 1 &&
-                    Math.abs(this.notes[0].staffPosition % 2) === 1)
-                    marking.positionHint = MarkingPositionHints.BELOW;
-            }
-        }
-
-        for (i = 0; i < this.notes[1].epismata.length; i++)
-            if (this.notes[1].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[1].epismata[i].positionHint = MarkingPositionHints.ABOVE;
+        this.positionPodatusMarkings(this.notes[0], this.notes[1]);
     }
 
     performLayout(ctxt) {
@@ -806,6 +839,10 @@ export class Podatus extends Neume {
  * Porrectus
  */
 export class Porrectus extends Neume {
+
+    positionMarkings() {
+        this.positionPorrectusMarkings(this.notes[0], this.notes[1], this.notes[2]);
+    }
 
     performLayout(ctxt) {
         super.performLayout(ctxt);
@@ -836,6 +873,10 @@ export class Porrectus extends Neume {
  * PorrectusFlexus
  */
 export class PorrectusFlexus extends Neume {
+
+    positionMarkings() {
+        this.positionPorrectusFlexusMarkings(this.notes[0], this.notes[1], this.notes[2], this.notes[3]);
+    }
 
     performLayout(ctxt) {
         super.performLayout(ctxt);
@@ -871,10 +912,14 @@ export class PorrectusFlexus extends Neume {
 // of puncta inclinata, but this will be part of other composite neumes.
 export class PunctaInclinata extends Neume {
 
+    positionMarkings() {
+        this.positionInclinataMorae(this.notes);
+    }
+
     performLayout(ctxt) {
         super.performLayout(ctxt);
 
-        this.build(ctxt).withInclinati(this.notes);
+        this.build(ctxt).withInclinata(this.notes);
 
         this.finishLayout(ctxt);
     }
@@ -886,20 +931,7 @@ export class PunctaInclinata extends Neume {
 export class Punctum extends Neume {
 
     positionMarkings() {
-        var marking, i;
-        var positionHint = MarkingPositionHints.ABOVE;
-
-        // logic here is this: if first episema is default position, place it above.
-        // then place the second one (if there is one) opposite of the first.
-        for (i = 0; i < this.notes[0].epismata.length; i++) {
-            if (this.notes[0].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[0].epismata[i].positionHint = positionHint;
-            else
-                positionHint = this.notes[0].epismata[i].positionHint;
-
-            // now place the next one in the opposite position
-            positionHint = (positionHint === MarkingPositionHints.ABOVE) ? MarkingPositionHints.BELOW : MarkingPositionHints.ABOVE;
-        }
+        this.positionEpisemataAbove(this.notes[0]);
     }
 
     performLayout(ctxt) {
@@ -921,7 +953,7 @@ export class Punctum extends Neume {
 
         } else {
 
-            if (note.shapeModifiers & NoteShapeModifiers.CAVUM)
+            if (note.shapeModifiers & NoteShapeModifiers.Cavum)
                 glyph = GlyphCodes.PunctumCavum;
             else if (note.shape === NoteShapes.INCLINATUM)
                 glyph = GlyphCodes.PunctumInclinatum;
@@ -943,14 +975,10 @@ export class Punctum extends Neume {
 export class Salicus extends Neume {
 
     positionMarkings() {
-        var marking, i, j;
-
         // by default place episema below
         // fixme: is this correct?
-        for (i = 0; i < this.notes.length; i++)
-            for (j = 0; j < this.notes[i].epismata.length; j++)
-                if (this.notes[i].epismata[j].positionHint === MarkingPositionHints.DEFAULT)
-                    this.notes[i].epismata[j].positionHint = MarkingPositionHints.BELOW;
+        for (var i = 0; i < this.notes.length; i++)
+            this.positionEpisemataBelow(this.notes[i]);
     }
 
     performLayout(ctxt) {
@@ -964,7 +992,7 @@ export class Salicus extends Neume {
 
         // if the next note doesn't require a stem connector, then add a tad bit
         // of spacing here
-        if (!(second.shapeModifiers & NoteShapeModifiers.STEMMED))
+        if (!(second.shapeModifiers & NoteShapeModifiers.Stemmed))
             builder.advanceBy(ctxt.intraNeumeSpacing);
 
         // second note is always an oriscus, which may or may not be stemmed
@@ -991,14 +1019,8 @@ export class Salicus extends Neume {
 export class SalicusFlexus extends Neume {
 
     positionMarkings() {
-        var marking, i, j;
-
-        // by default place episema below
-        // fixme: is this correct?
-        for (i = 0; i < this.notes.length; i++)
-            for (j = 0; j < this.notes[i].epismata.length; j++)
-                if (this.notes[i].epismata[j].positionHint === MarkingPositionHints.DEFAULT)
-                    this.notes[i].epismata[j].positionHint = MarkingPositionHints.BELOW;
+        var hasTopEpisema = this.positionTorculusMarkings(this.notes[1], this.notes[2], this.notes[3]);
+        this.positionEpisemata(this.notes[0], hasTopEpisema? MarkingPositionHint.Above : MarkingPositionHint.Below);
     }
 
     performLayout(ctxt) {
@@ -1013,7 +1035,7 @@ export class SalicusFlexus extends Neume {
 
         // if the next note doesn't require a stem connector, then add a tad bit
         // of spacing here
-        if (!(second.shapeModifiers & NoteShapeModifiers.STEMMED))
+        if (!(second.shapeModifiers & NoteShapeModifiers.Stemmed))
             builder.advanceBy(ctxt.intraNeumeSpacing);
 
         // second note is always an oriscus, which may or may not be stemmed
@@ -1047,22 +1069,13 @@ export class SalicusFlexus extends Neume {
 export class Scandicus extends Neume {
 
     positionMarkings() {
-        var marking, i;
-
-        // by default place first note epismata below
-        for (i = 0; i < this.notes[0].epismata.length; i++)
-            if (this.notes[0].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[0].epismata[i].positionHint = MarkingPositionHints.BELOW;
-
-        var positionHint = this.notes[2].shape === NoteShapes.VIRGA ? MarkingPositionHints.ABOVE : MarkingPositionHints.BELOW;
-        for (i = 0; i < this.notes[1].epismata.length; i++)
-            if (this.notes[1].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[1].epismata[i].positionHint = positionHint;
-
-        // by default place third note epismata above
-        for (i = 0; i < this.notes[2].epismata.length; i++)
-            if (this.notes[2].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[2].epismata[i].positionHint = MarkingPositionHints.ABOVE;
+        if (this.notes[2].shape === NoteShapes.VIRGA) {
+            this.positionPodatusMarkings(this.notes[0], this.notes[1]);
+            this.positionEpisemataAbove(this.notes[2]);
+        } else {
+            this.positionEpisemataBelow(this.notes[0]);
+            this.positionPodatusMarkings(this.notes[1], this.notes[2]);
+        }
     }
 
     // if the third note shape is a virga, then the scadicus is rendered
@@ -1081,7 +1094,7 @@ export class Scandicus extends Neume {
                 .virgaAt(third);
         } else {
             this.build(ctxt)
-                .noteAt(first, GlyphCodes.PunctumQuadratum)
+                .noteAt(first, first.shape === NoteShapes.QUILISMA? GlyphCodes.Quilisma : GlyphCodes.PunctumQuadratum)
                 .withPodatus(second, third);
         }
 
@@ -1096,27 +1109,14 @@ export class Scandicus extends Neume {
 export class ScandicusFlexus extends Neume {
 
     positionMarkings() {
-        var marking, i;
-
-        // by default place first note epismata below
-        for (i = 0; i < this.notes[0].epismata.length; i++)
-            if (this.notes[0].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[0].epismata[i].positionHint = MarkingPositionHints.BELOW;
-
-        var positionHint = this.notes[2].shape === NoteShapes.VIRGA ? MarkingPositionHints.ABOVE : MarkingPositionHints.BELOW;
-        for (i = 0; i < this.notes[1].epismata.length; i++)
-            if (this.notes[1].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[1].epismata[i].positionHint = positionHint;
-
-        // by default place third note epismata above
-        for (i = 0; i < this.notes[2].epismata.length; i++)
-            if (this.notes[2].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[2].epismata[i].positionHint = MarkingPositionHints.ABOVE;
-
-        // by default place fourth note epismata above
-        for (i = 0; i < this.notes[3].epismata.length; i++)
-            if (this.notes[3].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[3].epismata[i].positionHint = MarkingPositionHints.ABOVE;
+        if (this.notes[2].shape === NoteShapes.VIRGA) {
+            this.positionPodatusMarkings(this.notes[0], this.notes[1]);
+            this.positionClivisMarkings(this.notes[2], this.notes[3]);
+        } else {
+            this.positionEpisemataBelow(this.notes[0]);
+            this.positionPodatusMarkings(this.notes[1], this.notes[2]);
+            this.positionEpisemataAbove(this.notes[3]);
+        }
     }
 
     performLayout(ctxt) {
@@ -1157,35 +1157,7 @@ export class ScandicusFlexus extends Neume {
 export class Torculus extends Neume {
 
     positionMarkings() {
-        var marking, i;
-        var hasMiddleEpisema = false;
-
-        // first do the middle note to see if we should try to move
-        // epismata on the other two lower notes
-        for (i = 0; i < this.notes[1].epismata.length; i++) {
-            marking = this.notes[1].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT) {
-                marking.positionHint = MarkingPositionHints.ABOVE;
-                hasMiddleEpisema = true;
-            }
-        }
-
-        // 1. episema on lower notes should be below, upper note above
-        // 2. morae: fixme: implement
-        for (i = 0; i < this.notes[0].epismata.length; i++) {
-            marking = this.notes[0].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = hasMiddleEpisema ? MarkingPositionHints.ABOVE : MarkingPositionHints.BELOW;
-        }
-
-        for (i = 0; i < this.notes[2].epismata.length; i++) {
-            marking = this.notes[2].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = hasMiddleEpisema ? MarkingPositionHints.ABOVE : MarkingPositionHints.BELOW;
-        }
+        this.positionTorculusMarkings(this.notes[0], this.notes[1], this.notes[2]);
     }
 
     performLayout(ctxt) {
@@ -1228,42 +1200,8 @@ export class Torculus extends Neume {
 export class TorculusResupinus extends Neume {
 
     positionMarkings() {
-        var marking, i;
-        var hasMiddleEpisema = false;
-
-        // first do the middle note to see if we should try to move
-        // epismata on the other two lower notes
-        for (i = 0; i < this.notes[1].epismata.length; i++) {
-            marking = this.notes[1].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT) {
-                marking.positionHint = MarkingPositionHints.ABOVE;
-                hasMiddleEpisema = true;
-            }
-        }
-
-        // 1. episema on lower notes should be below, upper note above
-        // 2. morae: fixme: implement
-        for (i = 0; i < this.notes[0].epismata.length; i++) {
-            marking = this.notes[0].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = hasMiddleEpisema ? MarkingPositionHints.ABOVE : MarkingPositionHints.BELOW;
-        }
-
-        for (i = 0; i < this.notes[2].epismata.length; i++) {
-            marking = this.notes[2].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = hasMiddleEpisema ? MarkingPositionHints.ABOVE : MarkingPositionHints.BELOW;
-        }
-
-        for (i = 0; i < this.notes[3].epismata.length; i++) {
-            marking = this.notes[3].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = MarkingPositionHints.ABOVE;
-        }
+        this.positionPorrectusMarkings(this.notes[1], this.notes[2], this.notes[3]);
+        this.positionClivisEpisemata(this.notes[1], this.notes[0]);
     }
 
     performLayout(ctxt) {
@@ -1305,49 +1243,8 @@ export class TorculusResupinus extends Neume {
 export class TorculusResupinusFlexus extends Neume {
 
     positionMarkings() {
-        var marking, i;
-        var hasMiddleEpisema = false;
-
-        // first do the middle note to see if we should try to move
-        // epismata on the other two lower notes
-        for (i = 0; i < this.notes[1].epismata.length; i++) {
-            marking = this.notes[1].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT) {
-                marking.positionHint = MarkingPositionHints.ABOVE;
-                hasMiddleEpisema = true;
-            }
-        }
-
-        // 1. episema on lower notes should be below, upper note above
-        // 2. morae: fixme: implement
-        for (i = 0; i < this.notes[0].epismata.length; i++) {
-            marking = this.notes[0].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = hasMiddleEpisema ? MarkingPositionHints.ABOVE : MarkingPositionHints.BELOW;
-        }
-
-        for (i = 0; i < this.notes[2].epismata.length; i++) {
-            marking = this.notes[2].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = hasMiddleEpisema ? MarkingPositionHints.ABOVE : MarkingPositionHints.BELOW;
-        }
-
-        for (i = 0; i < this.notes[3].epismata.length; i++) {
-            marking = this.notes[3].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = MarkingPositionHints.ABOVE;
-        }
-
-        for (i = 0; i < this.notes[4].epismata.length; i++) {
-            marking = this.notes[4].epismata[i];
-
-            if (marking.positionHint === MarkingPositionHints.DEFAULT)
-                marking.positionHint = MarkingPositionHints.ABOVE;
-        }
+        this.positionPorrectusFlexusMarkings(this.notes[1], this.notes[2], this.notes[3], this.notes[4]);
+        this.positionClivisEpisemata(this.notes[1], this.notes[0]);
     }
 
     performLayout(ctxt) {
@@ -1398,23 +1295,9 @@ export class TorculusResupinusFlexus extends Neume {
 export class Tristropha extends Neume {
 
     positionMarkings() {
-        var marking, i, j;
-
-        for (i = 0; i < this.notes.length; i++) {
-            var positionHint = MarkingPositionHints.ABOVE;
-
-            // logic here is this: if first episema is default position, place it above.
-            // then place the second one (if there is one) opposite of the first.
-            for (j = 0; j < this.notes[i].epismata.length; j++) {
-                if (this.notes[i].epismata[j].positionHint === MarkingPositionHints.DEFAULT)
-                    this.notes[i].epismata[j].positionHint = positionHint;
-                else
-                    positionHint = this.notes[i].epismata[j].positionHint;
-
-                // now place the next one in the opposite position
-                positionHint = (positionHint === MarkingPositionHints.ABOVE) ? MarkingPositionHints.BELOW : MarkingPositionHints.ABOVE;
-            }
-        }
+        this.positionEpisemataAbove(this.notes[0]);
+        this.positionEpisemataAbove(this.notes[1]);
+        this.positionEpisemataAbove(this.notes[2]);
     }
 
     performLayout(ctxt) {
@@ -1432,24 +1315,12 @@ export class Tristropha extends Neume {
 }
 
 /*
- * VIRGA
+ * Virga
  */
 export class Virga extends Neume {
 
     positionMarkings() {
-        var positionHint = MarkingPositionHints.ABOVE;
-
-        // logic here is this: if first episema is default position, place it above.
-        // then place the second one (if there is one) opposite of the first.
-        for (var i = 0; i < this.notes[0].epismata.length; i++) {
-            if (this.notes[0].epismata[i].positionHint === MarkingPositionHints.DEFAULT)
-                this.notes[0].epismata[i].positionHint = positionHint;
-            else
-                positionHint = this.notes[0].epismata[i].positionHint;
-
-            // now place the next one in the opposite position
-            positionHint = (positionHint === MarkingPositionHints.ABOVE) ? MarkingPositionHints.BELOW : MarkingPositionHints.ABOVE;
-        }
+        this.positionEpisemataAbove(this.notes[0]);
     }
 
     performLayout(ctxt) {

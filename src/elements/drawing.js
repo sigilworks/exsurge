@@ -1,11 +1,6 @@
 import { Point, Rect } from '../core';
 import { Glyphs } from '../glyphs.constants';
 import { QuickSvg } from 'elements/drawing.util';
-import {
-    GlyphCodes,
-    LyricTypes,
-    TextMeasuringStrategies
-} from 'elements/elements.constants';
 
 /*
  * ChantLayoutElement
@@ -23,12 +18,17 @@ export class ChantLayoutElement {
 
     // draws the element on an html5 canvas
     draw(ctxt) {
+        throw "ChantLayout Elements must implement draw(ctxt)";
+    }
 
+    // returns svg element
+    createSvgNode(ctxt) {
+        throw "ChantLayout Elements must implement createSvgNode(ctxt)";
     }
 
     // returns svg code for the element, used for printing support
     createSvgFragment(ctxt) {
-        throw 'ChantLayout Elements must implement createSvgFragment(ctxt)';
+        throw "ChantLayout Elements must implement createSvgFragment(ctxt)";
     }
 }
 
@@ -59,13 +59,21 @@ export class DividerLineVisualizer extends ChantLayoutElement {
     draw(ctxt) {
         var canvasCtxt = ctxt.canvasCtxt;
 
-        canvasCtxt.lineWidth = this.bounds.width;
-        canvasCtxt.strokeStyle = ctxt.dividerLineColor;
+        canvasCtxt.fillStyle = ctxt.dividerLineColor;
 
-        canvasCtxt.beginPath();
-        canvasCtxt.moveTo(this.bounds.x - this.origin.x, this.bounds.y);
-        canvasCtxt.lineTo(this.bounds.x - this.origin.x, this.bounds.y + this.bounds.height);
-        canvasCtxt.stroke();
+        canvasCtxt.fillRect(this.bounds.x, this.bounds.y, ctxt.dividerLineWeight, this.bounds.height);
+    }
+
+    createSvgNode(ctxt) {
+
+        return QuickSvg.createNode('rect', {
+            'x': this.bounds.x,
+            'y': this.bounds.y,
+            'width': ctxt.dividerLineWeight,
+            'height': this.bounds.height,
+            'fill': ctxt.dividerLineColor,
+            'class': 'dividerLine'
+        });
     }
 
     createSvgFragment(ctxt) {
@@ -126,19 +134,21 @@ export class NeumeLineVisualizer extends ChantLayoutElement {
     draw(ctxt) {
         var canvasCtxt = ctxt.canvasCtxt;
 
-        canvasCtxt.lineWidth = this.bounds.width;
-        canvasCtxt.strokeStyle = ctxt.neumeLineColor;
+        canvasCtxt.fillStyle = ctxt.neumeLineColor;
 
-        canvasCtxt.beginPath();
+        canvasCtxt.fillRect(this.bounds.x, this.bounds.y, ctxt.neumeLineWeight, this.bounds.height);
+    }
 
-        // since the canvas context draws strokes centered on the path
-        // and neume lines are supposed to be draw left aligned,
-        // we need to offset the line by half the line width.
-        var x = this.bounds.x + this.bounds.width / 2;
+    createSvgNode(ctxt) {
 
-        canvasCtxt.moveTo(x, this.bounds.y);
-        canvasCtxt.lineTo(x, this.bounds.y + this.bounds.height);
-        canvasCtxt.stroke();
+        return QuickSvg.createNode('rect', {
+            'x': this.bounds.x,
+            'y': this.bounds.y,
+            'width': ctxt.neumeLineWeight,
+            'height': this.bounds.height,
+            'fill': ctxt.neumeLineColor,
+            'class': 'neumeLine'
+        });
     }
 
     createSvgFragment(ctxt) {
@@ -181,13 +191,20 @@ export class VirgaLineVisualizer extends ChantLayoutElement {
     draw(ctxt) {
         var canvasCtxt = ctxt.canvasCtxt;
 
-        canvasCtxt.lineWidth = this.bounds.width;
-        canvasCtxt.strokeStyle = ctxt.neumeLineColor;
+        canvasCtxt.fillStyle = ctxt.neumeLineColor;
+        canvasCtxt.fillRect(this.bounds.x, this.bounds.y, ctxt.neumeLineWeight, this.bounds.height);
+    }
 
-        canvasCtxt.beginPath();
-        canvasCtxt.moveTo(this.bounds.x, this.bounds.y);
-        canvasCtxt.lineTo(this.bounds.x, this.bounds.y + this.bounds.height);
-        canvasCtxt.stroke();
+    createSvgNode(ctxt) {
+
+        return QuickSvg.createNode('rect', {
+            'x': this.bounds.x,
+            'y': this.bounds.y,
+            'width': ctxt.neumeLineWeight,
+            'height': this.bounds.height,
+            'fill': ctxt.neumeLineColor,
+            'class': 'neumeLine'
+        });
     }
 
     createSvgFragment(ctxt) {
@@ -218,8 +235,8 @@ export class GlyphVisualizer extends ChantLayoutElement {
         if (this.glyphCode === glyphCode)
             return;
 
-        if (typeof glyphCode === 'undefined' || glyphCode === null || glyphCode === '')
-            this.glyphCode = GlyphCodes.None;
+        if (typeof glyphCode === 'undefined' || glyphCode === null || glyphCode === "")
+            this.glyphCode = GlyphCode.None;
         else
             this.glyphCode = glyphCode;
 
@@ -227,14 +244,22 @@ export class GlyphVisualizer extends ChantLayoutElement {
 
         // if this glyph hasn't been used yet, then load it up in the defs section for sharing
         if (!ctxt.defs.hasOwnProperty(this.glyphCode)) {
-            var glyphSrc = this.glyph.svgSrc;
+            var makeDef = () => {
+                // create the ref
+                ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', {
+                    id: this.glyphCode,
+                    'class': 'glyph',
+                    transform: 'scale(' + ctxt.glyphScaling + ')'
+                }, QuickSvg.svgFragmentForGlyph(this.glyph));
 
-            // create the ref
-            ctxt.defs[this.glyphCode] = QuickSvg.createFragment('g', {
-                id: this.glyphCode,
-                'class': 'glyph',
-                transform: 'scale(' + ctxt.glyphScaling + ')'
-            }, glyphSrc);
+                ctxt.defsNode.appendChild(QuickSvg.createNode('g', {
+                    id: this.glyphCode,
+                    'class': 'glyph',
+                    transform: 'scale(' + ctxt.glyphScaling + ')'
+                }, QuickSvg.nodesForGlyph(this.glyph)));
+            };
+            makeDef();
+            ctxt.makeDefs.push(makeDef);
         }
 
         this.align = this.glyph.align;
@@ -262,7 +287,7 @@ export class GlyphVisualizer extends ChantLayoutElement {
 
         for (var i = 0; i < this.glyph.paths.length; i++) {
             var path = this.glyph.paths[i];
-            canvasCtxt.fillStyle = ctxt.neumeLineColor;
+            canvasCtxt.fillStyle = path.type === 'negative' ? '#fff' : ctxt.neumeLineColor;
             canvasCtxt.fill(new Path2D(path.data));
         }
 
@@ -270,9 +295,19 @@ export class GlyphVisualizer extends ChantLayoutElement {
         canvasCtxt.translate(-x, -y);
     }
 
-    createSvgFragment(ctxt) {
+    createSvgNode(ctxt, source) {
+        return QuickSvg.createNode('use', {
+            source: source,
+            'source-index': source.sourceIndex,
+            'xlink:href': '#' + this.glyphCode,
+            x: this.bounds.x + this.origin.x,
+            y: this.bounds.y + this.origin.y
+        });
+    }
 
+    createSvgFragment(ctxt, source) {
         return QuickSvg.createFragment('use', {
+            'source-index': source.sourceIndex,
             'xlink:href': '#' + this.glyphCode,
             x: this.bounds.x + this.origin.x,
             y: this.bounds.y + this.origin.y
@@ -293,12 +328,30 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
         }
 
         this.isAbove = isAbove;
-        this.braceHeight = ctxt.staffInterval / 2;
+        this.braceHeight = 3 * ctxt.staffInterval / 2;
 
-        this.bounds = new Rect(x1, y, x2 - x1, this.braceHeight);
+        this.bounds = new Rect(x1, isAbove ? y - this.braceHeight : y, x2 - x1, this.braceHeight);
 
         this.origin.x = 0;
         this.origin.y = 0;
+    }
+
+    createSvgNode(ctxt) {
+        var node = QuickSvg.createNode('path', {
+            'd': this.generatePathString(),
+            'stroke': ctxt.neumeLineColor,
+            'stroke-width': ctxt.staffLineWeight + 'px',
+            'fill': 'none',
+            'class': 'brace'
+        });
+
+        if (this.acuteAccent) {
+
+            return QuickSvg.createNode('g', {
+                'class': 'accentedBrace'
+            }, [node, this.acuteAccent.createSvgNode(ctxt)]);
+        } else
+            return node;
     }
 
     createSvgFragment(ctxt) {
@@ -317,7 +370,8 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
             return QuickSvg.createFragment('g', {
                 'class': 'accentedBrace'
             }, fragment);
-        } return fragment;
+        } else
+            return fragment;
     }
 
     // returns svg path d string
@@ -328,14 +382,13 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
         var width = this.bounds.width;
         var y, dx, dy;
 
+        dx = width / 6;
+        dy = this.bounds.height;
         if (this.isAbove) {
             y = this.bounds.bottom();
-            dx = width / 6;
-            dy = -width / 6;
+            dy = -dy;
         } else {
             y = this.bounds.y;
-            dx = width / 6;
-            dy = width / 6;
         }
 
         //Calculate Control Points of path,
@@ -346,10 +399,10 @@ export class RoundBraceVisualizer extends ChantLayoutElement {
         // two decimal points should be enough, but if we need more precision, we can
         // up it here.
         var dp = 2;
-        return 'M ' + x1.toFixed(dp) + ' ' + y.toFixed(dp) +
-            ' C ' + cx1.toFixed(dp) + ' ' + cy.toFixed(dp) +
-            ' ' + cx2.toFixed(dp) + ' ' + cy.toFixed(dp) +
-            ' ' + x2.toFixed(dp) + ' ' + y.toFixed(dp);
+        return "M " + x1.toFixed(dp) + " " + y.toFixed(dp) +
+            " C " + cx1.toFixed(dp) + " " + cy.toFixed(dp) +
+            " " + cx2.toFixed(dp) + " " + cy.toFixed(dp) +
+            " " + x2.toFixed(dp) + " " + y.toFixed(dp);
     }
 }
 
@@ -378,7 +431,7 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
 
         if (addAcuteAccent && isAbove) {
 
-            this.acuteAccent = new GlyphVisualizer(ctxt, GlyphCodes.AcuteAccent);
+            this.acuteAccent = new GlyphVisualizer(ctxt, GlyphCode.AcuteAccent);
             this.acuteAccent.bounds.x += bounds.x + (x2 - x1) / 2;
             this.acuteAccent.bounds.y += bounds.y - ctxt.staffInterval / 4;
 
@@ -389,6 +442,24 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
 
         this.origin.x = 0;
         this.origin.y = 0;
+    }
+
+    createSvgNode(ctxt) {
+        var node = QuickSvg.createNode('path', {
+            'd': this.generatePathString(),
+            'stroke': ctxt.neumeLineColor,
+            'stroke-width': ctxt.staffLineWeight + 'px',
+            'fill': 'none',
+            'class': 'brace'
+        });
+
+        if (this.acuteAccent) {
+
+            return QuickSvg.createNode('g', {
+                'class': 'accentedBrace'
+            }, [node, this.acuteAccent.createSvgFragment(ctxt)]);
+        } else
+            return node;
     }
 
     createSvgFragment(ctxt) {
@@ -407,7 +478,8 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
             return QuickSvg.createFragment('g', {
                 'class': 'accentedBrace'
             }, fragment);
-        } return fragment;
+        } else
+            return fragment;
     }
 
     // code below inspired by: https://gist.github.com/alexhornbake
@@ -443,68 +515,45 @@ export class CurlyBraceVisualizer extends ChantLayoutElement {
         // two decimal points should be enough, but if we need more precision, we can
         // up it here.
         var dp = 2;
-        return 'M ' + x1.toFixed(dp) + ' ' + y.toFixed(dp) +
-            ' Q ' + x1.toFixed(dp) + ' ' + qy1.toFixed(dp) + ' ' + qx2.toFixed(dp) + ' ' + qy2.toFixed(dp) +
-            ' T ' + tx1.toFixed(dp) + ' ' + ty1.toFixed(dp) +
-            ' M ' + x2.toFixed(dp) + ' ' + y.toFixed(dp) +
-            ' Q ' + x2.toFixed(dp) + ' ' + qy3.toFixed(dp) + ' ' + qx4.toFixed(dp) + ' ' + qy4.toFixed(dp) +
-            ' T ' + tx1.toFixed(dp) + ' ' + ty1.toFixed(dp);
+        return "M " + x1.toFixed(dp) + " " + y.toFixed(dp) +
+            " Q " + x1.toFixed(dp) + " " + qy1.toFixed(dp) + " " + qx2.toFixed(dp) + " " + qy2.toFixed(dp) +
+            " T " + tx1.toFixed(dp) + " " + ty1.toFixed(dp) +
+            " M " + x2.toFixed(dp) + " " + y.toFixed(dp) +
+            " Q " + x2.toFixed(dp) + " " + qy3.toFixed(dp) + " " + qx4.toFixed(dp) + " " + qy4.toFixed(dp) +
+            " T " + tx1.toFixed(dp) + " " + ty1.toFixed(dp);
     }
 }
 
 var TextSpan = function(text, properties) {
     if (typeof properties === 'undefined' || properties === null)
-        properties = '';
+        properties = {};
 
     this.text = text;
     this.properties = properties;
 };
 
-var boldMarkup = '*';
-var italicMarkup = '_';
-var redMarkup = '^';
-var smallCapsMarkup = '%';
-
-function MarkupStackFrame(symbol, startIndex, properties) {
+function MarkupStackFrame(symbol, startIndex, properties = {}) {
     this.symbol = symbol;
     this.startIndex = startIndex;
     this.properties = properties;
 }
 
-MarkupStackFrame.createStackFrame = function(symbol, startIndex) {
-
-    var properties = '';
-
-    switch (symbol) {
-        case boldMarkup:
-            properties = 'font-weight:bold;';
-            break;
-        case italicMarkup:
-            properties = 'font-style:italic;';
-            break;
-        case redMarkup:
-            properties = 'fill:#f00;'; // SVG text color is set by the fill property
-            break;
-        case smallCapsMarkup:
-            properties = 'font-variant:small-caps;font-feature-settings:"smcp";-webkit-font-feature-settings:"smcp";';
-            break;
-    }
-
-    return new MarkupStackFrame(symbol, startIndex, properties);
+MarkupStackFrame.createStackFrame = function(ctxt, symbol, startIndex) {
+    return new MarkupStackFrame(symbol, startIndex, ctxt.fontStyleDictionary[symbol]);
 };
 
 
 // for escaping html strings before they go into the svgs
 // adapted from http://stackoverflow.com/a/12034334/5720160
 var __subsForTspans = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;'
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;"
 };
 
 export class TextElement extends ChantLayoutElement {
 
-    constructor(ctxt, text, fontFamily, fontSize, textAnchor) {
+    constructor(ctxt, text, fontFamily, fontSize, textAnchor, sourceIndex) {
         super();
 
         // set these to some sane values for now...
@@ -518,6 +567,7 @@ export class TextElement extends ChantLayoutElement {
         this.fontFamily = fontFamily;
         this.fontSize = fontSize;
         this.textAnchor = textAnchor;
+        this.sourceIndex = sourceIndex;
         this.dominantBaseline = 'baseline'; // default placement
 
         this.generateSpansFromText(ctxt, text);
@@ -526,12 +576,12 @@ export class TextElement extends ChantLayoutElement {
     }
 
     generateSpansFromText(ctxt, text) {
-
-        this.text = '';
+        text = text.replace(/\s+/g, ' ');
+        this.text = "";
         this.spans = [];
 
         // save ourselves a lot of grief for a very common text:
-        if (text === '*' || text === '†') {
+        if (text === "*" || text === "†") {
             this.spans.push(new TextSpan(text));
             return;
         }
@@ -541,39 +591,39 @@ export class TextElement extends ChantLayoutElement {
 
         var filterFrames = (frame, symbol) => frame.Symbol === symbol;
 
-        var that = this;
-        var closeSpan = function(spanText, extraProperties) {
-            if (spanText === '')
+        var closeSpan = (spanText, extraProperties) => {
+            if (spanText === "" && !this.dropCap)
                 return;
 
-            that.text += spanText;
+            this.text += spanText;
 
-            var properties = '';
+            var properties = {};
             for (var i = 0; i < markupStack.length; i++)
-                properties += markupStack[i].properties;
+                Object.assign(properties, markupStack[i].properties);
 
             if (extraProperties)
-                properties = properties + extraProperties;
+                Object.assign(properties, extraProperties);
 
-            that.spans.push(new TextSpan(spanText, properties));
+            this.spans.push(new TextSpan(spanText, properties));
         };
 
-        var markupRegex = /(\*|_|\^|%|[ARVarv]\/\.)/g;
+        var markupRegex = /\\?([arv])(?:bar|\/\.)|([*_^%])(?=(?:(.+?)\2)?)/gi;
 
         var match = null;
         while ((match = markupRegex.exec(text))) {
 
-            var markupSymbol = match[0];
+            var markupSymbol = match[2];
 
             // non-matching symbols first
-            if (markupSymbol === 'A/.' || markupSymbol === 'R/.' || markupSymbol === 'V/.' ||
-                markupSymbol === 'a/.' || markupSymbol === 'r/.' || markupSymbol === 'v/.') {
-                closeSpan(text[match.index] + '.', 'font-family:"Exsurge Characters";fill:#f00;');
+            if (match[1]) {
+                closeSpan(ctxt.textBeforeSpecialChar + ctxt.specialCharText(match[1]) + ctxt.textAfterSpecialChar, ctxt.specialCharProperties);
             } else if (markupStack.length === 0) {
                 // otherwise we're dealing with matching markup delimeters
                 // if this is our first markup frame, then just create an inline for preceding text and push the stack frame
+                if (markupSymbol === '*' && !match[3]) // we are only strict with the asterisk, because there are cases when it needs to be displayed rather than count as a markup symbol
+                    continue;
                 closeSpan(text.substring(spanStartIndex, match.index));
-                markupStack.push(MarkupStackFrame.createStackFrame(markupSymbol, match.index));
+                markupStack.push(MarkupStackFrame.createStackFrame(ctxt, markupSymbol, match.index));
             } else {
 
                 if (markupStack[markupStack.length - 1].symbol === markupSymbol) {
@@ -588,13 +638,15 @@ export class TextElement extends ChantLayoutElement {
                     continue;
                 } else {
                     // group open
+                    if (markupSymbol === '*' && !match[3])
+                        continue;
                     closeSpan(text.substring(spanStartIndex, match.index));
-                    markupStack.push(MarkupStackFrame.createStackFrame(markupSymbol, match.index));
+                    markupStack.push(MarkupStackFrame.createStackFrame(ctxt, markupSymbol, match.index));
                 }
             }
 
             // advance the start index past the current markup
-            spanStartIndex = match.index + markupSymbol.length;
+            spanStartIndex = match.index + match[0].length;
         }
 
         // if we finished matches, and there is still some text left, create one final run
@@ -607,28 +659,51 @@ export class TextElement extends ChantLayoutElement {
             closeSpan(text);
     }
 
+    getCanvasFontForProperties(properties = {}) {
+        var font = '';
+        if (properties['font-style'] === 'italic') font += 'italic ';
+        if (properties['font-variant'] === 'small-caps') font += 'small-caps ';
+        if (properties['font-weight'] === 'bold') font += 'bold ';
+        font += (properties['font-size'] || `${this.fontSize * (this.resize || 1)}px`) + ' ';
+        font += properties['font-family'] || this.fontFamily;
+        return font;
+    }
+
+    // if length is undefined and this.rightAligned === true, then offsets will be marked for each newLine span
     measureSubstring(ctxt, length) {
         if (length === 0) return 0;
         if (!length) length = Infinity;
+        if (length < 0) {
+            var lines = -length;
+            length = Infinity;
+        }
         var canvasCtxt = ctxt.canvasCtxt;
-        var baseFont = this.fontSize + 'px ' + this.fontFamily;
         var width = 0;
+        var widths = [];
+        var newLineSpans = [this.spans[0]];
         var subStringLength = 0;
         for (var i = 0; i < this.spans.length; i++) {
-            var font = '',
-                span = this.spans[i],
+            var span = this.spans[i],
                 myText = span.text.slice(0, length - subStringLength);
-            if (span.properties.indexOf('font-style:italic;') >= 0) font += 'italic ';
-            if (span.properties.indexOf('font-variant:small-caps;') >= 0) font += 'small-caps ';
-            if (span.properties.indexOf('font-weight:bold;') >= 0) font += 'bold ';
-            font += baseFont;
-            canvasCtxt.font = font;
+            if (span.properties.newLine) {
+                if (!lines && this.rightAligned === true && length === Infinity) {
+                    newLineSpans[newLineSpans.length - 1].properties.xOffset = this.firstLineMaxWidth - width;
+                    newLineSpans.push(span);
+                } else if ((--lines === 0))
+                    break;
+                widths.push(width);
+                width = 0;
+            }
+            canvasCtxt.font = this.getCanvasFontForProperties(span.properties);
             var metrics = canvasCtxt.measureText(myText, this.bounds.x, this.bounds.y);
             width += metrics.width;
             subStringLength += myText.length;
             if (subStringLength === length) break;
         }
-        return width;
+        if (!lines && width && newLineSpans.length && this.rightAligned === true && length === Infinity) {
+            newLineSpans[newLineSpans.length - 1].properties.xOffset = this.firstLineMaxWidth - width;
+        }
+        return Math.max(width, ...widths);
     }
 
     recalculateMetrics(ctxt) {
@@ -636,37 +711,90 @@ export class TextElement extends ChantLayoutElement {
         this.bounds.x = 0;
         this.bounds.y = 0;
 
-        this.bounds.x = 0;
-        this.bounds.y = 0;
-
         this.origin.x = 0;
 
-        if (ctxt.textMeasuringStrategy === TextMeasuringStrategies.SVG) {
-            var xml = '<svg xmlns="http://www.w3.org/2000/svg">' + this.createSvgFragment(ctxt) + '</svg>';
-            var doc = new DOMParser().parseFromString(xml, 'application/xml');
-
+        if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
             while (ctxt.svgTextMeasurer.firstChild)
-                ctxt.svgTextMeasurer.firstChild.remove();
-
-            ctxt.svgTextMeasurer.appendChild(ctxt.svgTextMeasurer.ownerDocument.importNode(doc.documentElement, true).firstChild);
+                ctxt.svgTextMeasurer.removeChild(ctxt.svgTextMeasurer.firstChild);
+            ctxt.svgTextMeasurer.appendChild(this.createSvgNode(ctxt));
+            ctxt.svgTextMeasurer.appendChild(ctxt.createStyleNode());
 
             var bbox = ctxt.svgTextMeasurer.firstChild.getBBox();
             this.bounds.width = bbox.width;
             this.bounds.height = bbox.height;
             this.origin.y = -bbox.y; // offset to baseline from top
-        } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategies.CANVAS) {
-            this.bounds.width = this.measureSubstring(ctxt);
-            this.bounds.height = this.fontSize * 1.2;
+        } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
+            var numLines = this.spans.reduce((r, i) => (r + (i.properties.newLine ? 1 : 0)), 1);
+            this.bounds.width = this.measureSubstring(ctxt, this.rightAligned ? -1 : undefined);
+            this.bounds.height = this.fontSize * Math.min(1, numLines + 0.2);
             this.origin.y = this.fontSize;
         }
     }
 
+    setMaxWidth(ctxt, maxWidth, firstLineMaxWidth = maxWidth) {
+        if (this.spans.filter(s => s.properties.newLine).length) {
+            // first get rid of any new lines set from a previous maxWidth
+            this.recalculateMetrics(ctxt);
+        }
+        if (this.bounds.width > maxWidth) {
+            this.maxWidth = maxWidth;
+            var percentage = maxWidth / this.bounds.width;
+            if (percentage >= 0.85) {
+                this.resize = percentage;
+                console.info(percentage, this.text)
+            } else {
+                if (firstLineMaxWidth < 0) firstLineMaxWidth = maxWidth;
+                this.firstLineMaxWidth = firstLineMaxWidth;
+                var lastWidth = 0,
+                    lastMatch = null,
+                    regex = /\s+|$/g,
+                    max = firstLineMaxWidth,
+                    match;
+                while ((match = regex.exec(this.text)) && (!lastMatch || match.index > lastMatch.index)) {
+                    var width = this.measureSubstring(ctxt, match.index);
+                    if (width > max && lastMatch) {
+                        var spanIndex = 0,
+                            length = 0;
+                        while (length < lastMatch.index && spanIndex < this.spans.length) {
+                            let span = this.spans[spanIndex++];
+                            length += span.text.length + (span.properties.newLine ? 1 : 0);
+                        }
+                        if (length > lastMatch.index) {
+                            let span = this.spans[--spanIndex];
+                            length -= span.text.length;
+                        }
+                        var splitSpan = this.spans[spanIndex],
+                            textLeft = splitSpan.text.slice(0, lastMatch.index - length),
+                            textRight = splitSpan.text.slice(lastMatch.index + lastMatch[0].length - length),
+                            newSpans = [];
+                        this.rightAligned = (max === firstLineMaxWidth && firstLineMaxWidth !== maxWidth);
+                        if (textLeft) newSpans.push(new TextSpan(textLeft, splitSpan.properties));
+                        if (textRight) {
+                            newSpans.push(new TextSpan(textRight, Object.assign({}, splitSpan.properties, { newLine: true })));
+                        } else if (this.spans[spanIndex + 1]) {
+                            this.spans[spanIndex + 1].properties.newLine = true;
+                        }
+                        this.spans.splice(spanIndex, 1, ...newSpans);
+                        this.needsLayout = true;
+                        max = maxWidth;
+                        if (match.index === this.text.length || this.measureSubstring(ctxt) <= maxWidth) break;
+                        width = 0;
+                        match = lastMatch = null;
+                    }
+                    lastWidth = width;
+                    lastMatch = match;
+                }
+            }
+            this.recalculateMetrics(ctxt, false);
+        }
+    }
+
     getCssClasses() {
-        return '';
+        return "";
     }
 
     getExtraStyleProperties(ctxt) {
-        return '';
+        return {};
     }
 
     static escapeForTspan(string) {
@@ -684,51 +812,184 @@ export class TextElement extends ChantLayoutElement {
         else
             canvasCtxt.textAlign = 'start';
 
-        canvasCtxt.font = this.fontSize + 'px ' + this.fontFamily;
-
-        for (var i = 0; i < this.spans.length; i++)
-            canvasCtxt.fillText(this.spans[i].text, this.bounds.x, this.bounds.y);
+        var translateWidth = 0,
+            translateHeight = 0;
+        for (var i = 0; i < this.spans.length; i++) {
+            var span = this.spans[i];
+            var xOffset = span.properties.xOffset || 0;
+            if (span.properties.newLine) {
+                canvasCtxt.translate(translateWidth + xOffset, this.fontSize);
+                translateWidth = -xOffset;
+                translateHeight -= this.fontSize;
+            } else if (xOffset) {
+                canvasCtxt.translate(translateWidth + xOffset, 0);
+                translateWidth = -xOffset;
+            }
+            var properties = Object.assign({}, this.getExtraStyleProperties(ctxt), span.properties);
+            canvasCtxt.font = this.getCanvasFontForProperties(properties);
+            canvasCtxt.fillStyle = properties.fill || '#000';
+            canvasCtxt.fillText(span.text, this.bounds.x, this.bounds.y, span.properties.textLength || undefined);
+            var metrics = canvasCtxt.measureText(span.text, this.bounds.x, this.bounds.y);
+            translateWidth -= metrics.width;
+            canvasCtxt.translate(metrics.width, 0);
+        }
+        canvasCtxt.translate(translateWidth, translateHeight);
     }
 
-    createSvgFragment(ctxt) {
+    createSvgNode(ctxt) {
 
-        var spans = '';
+        var spans = [];
 
         for (var i = 0; i < this.spans.length; i++) {
+            var span = this.spans[i];
             var options = {};
 
-            if (this.spans[i].properties)
-                options['style'] = this.spans[i].properties;
+            options['style'] = getCssForProperties(span.properties);
+            if (span.properties.newLine) {
+                var xOffset = span.properties.xOffset || 0;
+                options.dy = '1em';
+                options.x = this.bounds.x + xOffset;
+            } else if (span.properties.xOffset) {
+                options.x = this.bounds.x + span.properties.xOffset;
+            }
+            if (span.properties.textLength) {
+                options.textLength = span.properties.textLength;
+                options.lengthAdjust = "spacingAndGlyphs";
+                options.y = this.bounds.y;
+            }
+            if (this.resize) {
+                options['font-size'] = span.properties['font-size'] || (this.fontSize * this.resize);
+            }
 
-            spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(this.spans[i].text));
+            spans.push(QuickSvg.createNode('tspan', options, span.text));
         }
 
-        var styleProperties = 'font-family:' + this.fontFamily +
-            ';font-size:' + this.fontSize + 'px' +
-            ';font-kerning:normal;' +
-            this.getExtraStyleProperties(ctxt);
+        var styleProperties = getCssForProperties(this.getExtraStyleProperties(ctxt));
 
-        return QuickSvg.createFragment('text', {
+        return QuickSvg.createNode('text', {
+            'source': this,
+            'source-index': this.sourceIndex,
             'x': this.bounds.x,
             'y': this.bounds.y,
             'class': this.getCssClasses().trim(),
             'text-anchor': this.textAnchor,
-            'dominant-baseline': this.dominantBaseline,
+            //'dominant-baseline': this.dominantBaseline, // hanging baseline doesn't work in Safari
+            'style': styleProperties
+        }, spans);
+    }
+
+    createSvgFragment(ctxt) {
+
+        var spans = "";
+
+        for (var i = 0; i < this.spans.length; i++) {
+            var span = this.spans[i];
+            var options = {};
+
+            options['style'] = getCssForProperties(span.properties);
+            if (span.properties.newLine) {
+                var xOffset = span.properties.xOffset || 0;
+                options.dy = '1em';
+                options.x = this.bounds.x + xOffset;
+            } else if (span.properties.xOffset) {
+                options.x = this.bounds.x + span.properties.xOffset;
+            }
+            if (span.properties.textLength) {
+                options.textLength = span.properties.textLength;
+                options.lengthAdjust = "spacingAndGlyphs";
+                options.y = this.bounds.y;
+            }
+            if (this.resize) {
+                options['font-size'] = span.properties['font-size'] || (this.fontSize * this.resize);
+            }
+
+            spans += QuickSvg.createFragment('tspan', options, TextElement.escapeForTspan(span.text));
+        }
+
+        var styleProperties = getCssForProperties(this.getExtraStyleProperties(ctxt));
+
+        return QuickSvg.createFragment('text', {
+            'source-index': this.sourceIndex,
+            'x': this.bounds.x,
+            'y': this.bounds.y,
+            'class': this.getCssClasses().trim(),
+            'text-anchor': this.textAnchor,
+            //'dominant-baseline': this.dominantBaseline, // hanging baseline doesn't work in Safari
             'style': styleProperties
         }, spans);
     }
 }
 
+
+export var LyricArray = {
+    getLeft: function(lyricArray) {
+        if (lyricArray.length === 0)
+            return NaN;
+
+        var x = Number.MAX_VALUE;
+        for (var i = 0; i < lyricArray.length; i++) {
+            if (lyricArray[i])
+                x = Math.min(x, lyricArray[i].notation.bounds.x + lyricArray[i].bounds.x);
+        }
+
+        return x;
+    },
+
+    getRight: function(lyricArray, presumeConnectorNeeded) {
+        if (lyricArray.length === 0)
+            return NaN;
+
+        var x = Number.MIN_VALUE;
+        for (var i = 0; i < lyricArray.length; i++) {
+            let l = lyricArray[i];
+            if (l)
+                x = Math.max(x, l.notation.bounds.x + l.bounds.x + l.bounds.width + ((presumeConnectorNeeded && l.allowsConnector() && !l.needsConnector) ? l.getConnectorWidth() : 0));
+        }
+
+        return x;
+    },
+
+    hasOnlyOneLyric: function(lyricArray) {
+        return lyricArray.filter(l => l.originalText).length === 1;
+    },
+
+    indexOfLyric: function(lyricArray) {
+        return lyricArray.indexOf(lyricArray.filter(l => l.originalText)[0]);
+    },
+
+    mergeIn: function(lyricArray, newLyrics) {
+        for (var i = 0; i < newLyrics.length; ++i) {
+            if (newLyrics[i].originalText || !lyricArray[i]) lyricArray[i] = newLyrics[i];
+        }
+    },
+
+    mergeInArray: function(lyricArray, notations) {
+        for (var i = 0; i < notations.length; ++i) {
+            this.mergeIn(lyricArray, notations[i].lyrics);
+        }
+    },
+
+    setNotation: function(lyricArray, notation) {
+        notation.lyrics = lyricArray;
+        for (var i = 0; i < lyricArray.length; ++i) {
+            lyricArray[i].notation = notation;
+        }
+    }
+};
+
 export class Lyric extends TextElement {
-    constructor(ctxt, text, lyricType) {
-        super(ctxt, text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start');
+    constructor(ctxt, text, lyricType, notation, notations, sourceIndex) {
+        super(ctxt, (ctxt.lyricTextStyle || '') + text, ctxt.lyricTextFont, ctxt.lyricTextSize, 'start', sourceIndex);
 
         // save the original text in case we need to later use the lyric
         // in a dropcap...
         this.originalText = text;
 
-        if (typeof lyricType === 'undefined' || lyricType === null || lyricType === '')
-            this.lyricType = LyricTypes.SINGLE_SYLLABLE;
+        this.notation = notation;
+        this.notations = notations;
+
+        if (typeof lyricType === 'undefined' || lyricType === null || lyricType === "")
+            this.lyricType = LyricType.SingleSyllable;
         else
             this.lyricType = lyricType;
 
@@ -744,48 +1005,88 @@ export class Lyric extends TextElement {
         // Lyrics can have their own language defined, which affects the alignment
         // of the text with the notation element
         this.language = null;
+
+        if (this.allowsConnector)
+            this.connectorSpan = new TextSpan(ctxt.syllableConnector);
     }
 
     allowsConnector() {
-        return this.lyricType === LyricTypes.BEGINNING_SYLLABLE ||
-            this.lyricType === LyricTypes.MIDDLE_SYLLABLE;
+        return this.lyricType === LyricType.BeginningSyllable ||
+            this.lyricType === LyricType.MiddleSyllable;
     }
 
-    setNeedsConnector(needs) {
-        if (needs === true) {
-            this.needsConnector = true;
-            this.bounds.width = this.widthWithConnector;
+    setForceConnector(force) {
+        this.forceConnector = force && this.allowsConnector();
+    }
 
-            if (this.spans.length > 0)
-                this.spans[this.spans.length - 1].text = this.lastSpanTextWithConnector;
+    setNeedsConnector(needs, width) {
+        if (needs === true || this.forceConnector) {
+            this.needsConnector = true;
+            if (typeof width !== 'undefined') {
+                this.setConnectorWidth(width)
+            } else {
+                this.bounds.width = this.widthWithoutConnector + this.getConnectorWidth();
+            }
+
+            if (this.spans.length > 0 && this.spans[this.spans.length - 1] !== this.connectorSpan)
+                this.spans.push(this.connectorSpan)
         } else {
+            this.connectorWidth = 0;
             this.needsConnector = false;
             this.bounds.width = this.widthWithoutConnector;
 
-            if (this.spans.length > 0)
-                this.spans[this.spans.length - 1].text = this.lastSpanText;
+            var span = this.spans.pop();
+            if (span && span !== this.connectorSpan)
+                this.spans.push(span);
         }
+    }
+
+    setConnectorWidth(width) {
+        this.connectorWidth = width;
+        this.connectorSpan.properties.textLength = width;
+        if (this.needsConnector)
+            this.bounds.width = this.widthWithoutConnector + this.getConnectorWidth();
+    }
+
+    getConnectorWidth() {
+        return this.connectorWidth || this.defaultConnectorWidth;
     }
 
     generateSpansFromText(ctxt, text) {
         super.generateSpansFromText(ctxt, text);
-
-        if (this.spans.length > 0) {
-            this.lastSpanText = this.spans[this.spans.length - 1].text;
-            this.lastSpanTextWithConnector = this.lastSpanText + ctxt.syllableConnector;
-        } else {
-            this.lastSpanText = '';
-            this.lastSpanTextWithConnector = '';
-        }
     }
 
-    recalculateMetrics(ctxt) {
+    getLeft() {
+        return this.notation.bounds.x + this.bounds.x;
+    }
+
+    getRight(index) {
+        return this.notation.bounds.x + this.bounds.x + this.bounds.width;
+    }
+
+    recalculateMetrics(ctxt, resetNewLines = true) {
+        if (resetNewLines) {
+            delete this.maxWidth;
+            delete this.firstLineMaxWidth;
+            delete this.rightAligned;
+            delete this.resize;
+            // replace newlines with spaces
+            this.spans.forEach(span => {
+                delete span.properties.xOffset;
+                if (span.properties.newLine) {
+                    delete span.properties.newLine;
+                    span.text = ' ' + span.text;
+                }
+            });
+        }
+
         super.recalculateMetrics(ctxt);
 
         this.widthWithoutConnector = this.bounds.width;
-        this.textWithConnector = this.text + ctxt.syllableConnector;
 
-        this.widthWithConnector = this.bounds.width + ctxt.hyphenWidth;
+        this.connectorWidth = 0;
+        this.defaultConnectorWidth = ctxt.hyphenWidth;
+        this.setNeedsConnector();
 
         var activeLanguage = this.language || ctxt.defaultLanguage;
 
@@ -803,14 +1104,18 @@ export class Lyric extends TextElement {
 
         if (this.text.length === 0) {
             // if we have no text to work with, then there's nothing to do!
+            // Unless it's a drop cap, in which case we center the connector:
+            if (this.dropCap && this.originalText) {
+                offset = ctxt.hyphenWidth / 2;
+            }
         } else if (this.centerStartIndex >= 0) {
             // if we have manually overriden the centering logic for this lyric,
             // then always use that.
-            if (ctxt.textMeasuringStrategy === TextMeasuringStrategies.SVG) {
+            if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
                 // svgTextMeasurer still has the current lyric in it...
                 x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, this.centerStartIndex);
                 x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, this.centerStartIndex + this.centerLength);
-            } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategies.CANVAS) {
+            } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
                 x1 = this.measureSubstring(ctxt, this.centerStartIndex);
                 x2 = this.measureSubstring(ctxt, this.centerStartIndex + this.centerLength);
             }
@@ -819,22 +1124,38 @@ export class Lyric extends TextElement {
 
             // if it's a directive with no manual centering override, then
             // just center the text.
-            if (this.lyricType !== LyricTypes.DIRECTIVE) {
+            if (this.lyricType !== LyricType.Directive) {
+
+                // only consider text content after the last space (if any)
+                var startIndex = this.text.lastIndexOf(' ') + 1;
+
+                // unless there are no text characters following the space:
+                if (startIndex > 0 && !this.text.slice(startIndex).match(/[a-záéíóúýäëïöüÿàèìòùỳāēīōūȳăĕĭŏŭ]/i)) {
+                    startIndex = 0;
+                }
 
                 // Non-directive elements are lined up to the chant notation based on vowel segments,
-                var result = activeLanguage.findVowelSegment(this.text, 0);
+                var result = activeLanguage.findVowelSegment(this.text, startIndex);
 
-                if (result.found === true) {
-                    if (ctxt.textMeasuringStrategy === TextMeasuringStrategies.SVG) {
-                        // svgTextMeasurer still has the current lyric in it...
-                        x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex);
-                        x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex + result.length);
-                    } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategies.CANVAS) {
-                        x1 = this.measureSubstring(ctxt, result.startIndex);
-                        x2 = this.measureSubstring(ctxt, result.startIndex + result.length);
+                if (result.found !== true) {
+                    var match = this.text.slice(startIndex).match(/[a-z]+/i);
+                    if (match) {
+                        result.startIndex = startIndex + match.index;
+                        result.length = match[0].length;
+                    } else {
+                        result.startIndex = startIndex;
+                        result.length = this.text.length - startIndex;
                     }
-                    offset = x1 + (x2 - x1) / 2;
                 }
+                if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Svg) {
+                    // svgTextMeasurer still has the current lyric in it...
+                    x1 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex);
+                    x2 = ctxt.svgTextMeasurer.firstChild.getSubStringLength(0, result.startIndex + result.length);
+                } else if (ctxt.textMeasuringStrategy === TextMeasuringStrategy.Canvas) {
+                    x1 = this.measureSubstring(ctxt, result.startIndex);
+                    x2 = this.measureSubstring(ctxt, result.startIndex + result.length);
+                }
+                offset = x1 + (x2 - x1) / 2;
             }
         }
 
@@ -842,36 +1163,25 @@ export class Lyric extends TextElement {
         this.bounds.y = 0;
 
         this.origin.x = offset;
-
-        this.bounds.width = this.widthWithoutConnector;
-        this.bounds.height = ctxt.lyricTextSize;
     }
 
     generateDropCap(ctxt) {
+        if (this.dropCap) return this.dropCap;
+        var dropCap = this.dropCap = new DropCap(ctxt, this.originalText.substring(0, 1), this.sourceIndex);
+        this.sourceIndex++;
 
-        var dropCap = new DropCap(ctxt, this.originalText.substring(0, 1));
-
-        // if the dropcap is a single character syllable (vowel) that is the
-        // beginning of the word, then we use a hyphen in place of the lyric text
-        // and treat it as a single syllable.
-        if (this.originalText.length === 1) {
-            this.generateSpansFromText(ctxt, ctxt.syllableConnector);
-            this.centerStartIndex = -1;
-            this.lyricType = LyricTypes.SINGLE_SYLLABLE;
-        } else {
-            this.generateSpansFromText(ctxt, this.originalText.substring(1));
-            this.centerStartIndex--; // lost a letter, so adjust centering accordingly
-        }
+        this.generateSpansFromText(ctxt, this.originalText.substring(1));
+        this.centerStartIndex--; // lost a letter, so adjust centering accordingly
 
         return dropCap;
     }
 
     getCssClasses() {
 
-        var classes = 'lyric ';
+        var classes = "lyric ";
 
-        if (this.lyricType === LyricTypes.DIRECTIVE)
-            classes += 'directive ';
+        if (this.lyricType === LyricType.Directive)
+            classes += "directive ";
 
         return classes + super.getCssClasses();
     }
@@ -879,21 +1189,57 @@ export class Lyric extends TextElement {
     getExtraStyleProperties(ctxt) {
         var props = super.getExtraStyleProperties();
 
-        if (this.lyricType === LyricTypes.DIRECTIVE && ctxt.autoColor === true)
-            props += 'fill:#f00;';
+        if (this.lyricType === LyricType.Directive && ctxt.autoColor === true)
+            props = Object.assign({}, props, { fill: ctxt.rubricColor });
 
         return props;
     }
 
-    createSvgFragment(ctxt) {
-        if (this.spans.length > 0) {
-            if (this.needsConnector)
-                this.spans[this.spans.length - 1].text = this.lastSpanTextWithConnector;
-            else
-                this.spans[this.spans.length - 1].text = this.lastSpanText;
-        }
+    createSvgNode(ctxt) {
+        return super.createSvgNode(ctxt);
+    }
 
+    createSvgFragment(ctxt) {
         return super.createSvgFragment(ctxt);
+    }
+}
+
+export class AboveLinesText extends TextElement {
+
+    /**
+     * @param {String} text
+     */
+    constructor(ctxt, text, sourceIndex) {
+        super(ctxt, (ctxt.alTextStyle || '') + text, ctxt.alTextFont, ctxt.alTextSize, 'start', sourceIndex);
+
+        this.padding = ctxt.staffInterval / 2;
+    }
+
+    getCssClasses() {
+        return "aboveLinesText " + super.getCssClasses();
+    }
+}
+
+export class TranslationText extends TextElement {
+
+    /**
+     * @param {String} text
+     */
+    constructor(ctxt, text, sourceIndex) {
+        var anchor = 'start';
+        if (text === '/') {
+            text = '';
+            anchor = 'end';
+        } else {
+            text = (ctxt.translationTextStyle || '') + text;
+        }
+        super(ctxt, text, ctxt.translationTextFont, ctxt.translationTextSize, anchor, sourceIndex);
+
+        this.padding = ctxt.staffInterval / 2;
+    }
+
+    getCssClasses() {
+        return "translation " + super.getCssClasses();
     }
 }
 
@@ -902,14 +1248,14 @@ export class DropCap extends TextElement {
     /**
      * @param {String} text
      */
-    constructor(ctxt, text) {
-        super(ctxt, text, ctxt.dropCapTextFont, ctxt.dropCapTextSize, 'middle');
+    constructor(ctxt, text, sourceIndex) {
+        super(ctxt, text, (ctxt.dropCapTextStyle || '') + ctxt.dropCapTextFont, ctxt.dropCapTextSize, 'middle', sourceIndex);
 
-        this.padding = ctxt.staffInterval * 2;
+        this.padding = ctxt.staffInterval * ctxt.dropCapPadding;
     }
 
     getCssClasses() {
-        return 'dropCap ' + super.getCssClasses();
+        return "dropCap " + super.getCssClasses();
     }
 }
 
@@ -919,13 +1265,84 @@ export class Annotation extends TextElement {
      * @param {String} text
      */
     constructor(ctxt, text) {
-        super(ctxt, text, ctxt.annotationTextFont, ctxt.annotationTextSize, 'middle');
-        this.padding = ctxt.staffInterval;
+        super(ctxt, (ctxt.annotationTextStyle || '') + text, ctxt.annotationTextFont, ctxt.annotationTextSize, 'middle');
+        this.padding = ctxt.staffInterval * ctxt.annotationPadding;
         this.dominantBaseline = 'hanging'; // so that annotations can be aligned at the top.
     }
 
     getCssClasses() {
-        return 'annotation ' + super.getCssClasses();
+        return "annotation " + super.getCssClasses();
+    }
+}
+
+export class Annotations extends ChantLayoutElement {
+    /**
+     * @param {String} text
+     */
+    constructor(ctxt, ...texts) {
+        super();
+
+        this.annotations = texts.map(function(text) {
+            return new Annotation(ctxt, text);
+        });
+        this.padding = Math.max.apply(null, this.annotations.map(function(annotation) {
+            return annotation.padding;
+        }));
+    }
+
+    updateBounds(multiplier) {
+        if (!multiplier) multiplier = 1;
+        for (var i = 0; i < this.annotations.length; ++i) {
+            var annotation = this.annotations[i];
+            annotation.bounds.x += this.bounds.x * multiplier;
+            annotation.bounds.y += this.bounds.y * multiplier;
+        }
+    }
+
+    recalculateMetrics(ctxt) {
+        this.bounds.x = 0;
+        this.bounds.y = 0;
+
+        this.bounds.width = 0;
+        this.bounds.height = 0;
+
+        this.origin.x = 0;
+        this.origin.y = 0;
+
+        for (var i = 0; i < this.annotations.length; ++i) {
+            var annotation = this.annotations[i];
+            annotation.recalculateMetrics(ctxt);
+            this.bounds.width = Math.max(this.bounds.width, annotation.bounds.width);
+            annotation.bounds.y += this.bounds.height;
+            this.bounds.height += annotation.bounds.height / 1.2;
+            this.origin.y = this.origin.y || annotation.origin.y;
+        }
+    }
+
+    draw(ctxt) {
+        this.updateBounds();
+        this.annotations.forEach(function(annotation) {
+            annotation.draw(ctxt);
+        });
+        this.updateBounds(-1);
+    }
+
+    createSvgNode(ctxt) {
+        this.updateBounds();
+        var result = this.annotations.map(function(annotation) {
+            return annotation.createSvgNode(ctxt);
+        });
+        this.updateBounds(-1);
+        return result;
+    }
+
+    createSvgFragment(ctxt) {
+        this.updateBounds();
+        var result = this.annotations.map(function(annotation) {
+            return annotation.createSvgFragment(ctxt);
+        }).join('');
+        this.updateBounds(-1);
+        return result;
     }
 }
 
@@ -952,12 +1369,8 @@ export class ChantNotationElement extends ChantLayoutElement {
     hasLyrics() {
         if (this.lyrics.length !== 0)
             return true;
-        return false;
-    }
-
-    getLyricLeft(index) {
-        // warning: no error checking on index or on whether lyric[index] is valid
-        return this.bounds.x + this.lyrics[index].bounds.x;
+        else
+            return false;
     }
 
     getAllLyricsLeft() {
@@ -971,11 +1384,6 @@ export class ChantNotationElement extends ChantLayoutElement {
         }
 
         return this.bounds.x + x;
-    }
-
-    getLyricRight(index) {
-        // warning: no error checking on index or on whether lyric[index] is valid
-        return this.bounds.x + this.lyrics[index].bounds.x + this.lyrics[index].bounds.width;
     }
 
     getAllLyricsRight() {
@@ -993,10 +1401,12 @@ export class ChantNotationElement extends ChantLayoutElement {
 
     // used by subclasses while building up the chant notations.
     addVisualizer(chantLayoutElement) {
-        if (this.bounds.isEmpty())
-            this.bounds = chantLayoutElement.bounds.clone();
-        else
-            this.bounds.union(chantLayoutElement.bounds);
+        if (!chantLayoutElement.ignoreBounds) {
+            if (this.bounds.isEmpty())
+                this.bounds = chantLayoutElement.bounds.clone();
+            else
+                this.bounds.union(chantLayoutElement.bounds);
+        }
 
         this.visualizers.push(chantLayoutElement);
     }
@@ -1020,7 +1430,7 @@ export class ChantNotationElement extends ChantLayoutElement {
     performLayout(ctxt) {
 
         if (this.trailingSpace < 0)
-            this.trailingSpace = ctxt.intraNeumeSpacing * 4;
+            this.trailingSpace = ctxt.intraNeumeSpacing * ctxt.interSyllabicMultiplier;
 
         // reset the bounds and the staff notations before doing a layout
         this.visualizers = [];
@@ -1028,6 +1438,14 @@ export class ChantNotationElement extends ChantLayoutElement {
 
         for (var i = 0; i < this.lyrics.length; i++)
             this.lyrics[i].recalculateMetrics(ctxt);
+
+        if (this.alText)
+            for (i = 0; i < this.alText.length; i++)
+                this.alText[i].recalculateMetrics(ctxt);
+
+        if (this.translationText)
+            for (i = 0; i < this.translationText.length; i++)
+                this.translationText[i].recalculateMetrics(ctxt);
     }
 
     // some subclasses have internal dependencies on other notations (for example,
@@ -1061,17 +1479,61 @@ export class ChantNotationElement extends ChantLayoutElement {
         for (i = 0; i < this.lyrics.length; i++)
             this.lyrics[i].draw(ctxt);
 
+        if (this.translationText)
+            for (i = 0; i < this.translationText.length; i++)
+                this.translationText[i].draw(ctxt);
+
+        if (this.alText)
+            for (i = 0; i < this.alText.length; i++)
+                this.alText[i].draw(ctxt);
+
         canvasCtxt.translate(-this.bounds.x, 0);
     }
 
-    createSvgFragment(ctxt) {
-        var inner = '';
+    createSvgNode(ctxt) {
+        var inner = [];
 
         for (var i = 0; i < this.visualizers.length; i++)
-            inner += this.visualizers[i].createSvgFragment(ctxt);
+            inner.push(this.visualizers[i].createSvgNode(ctxt, this));
+        if (inner.length) {
+            inner = [QuickSvg.createNode('g', { class: 'Notations' }, inner)];
+        }
+
+        for (i = 0; i < this.lyrics.length; i++)
+            inner.push(this.lyrics[i].createSvgNode(ctxt));
+
+        if (this.translationText)
+            for (i = 0; i < this.translationText.length; i++)
+                inner.push(this.translationText[i].createSvgNode(ctxt));
+
+        if (this.alText)
+            for (i = 0; i < this.alText.length; i++)
+                inner.push(this.alText[i].createSvgNode(ctxt));
+
+        return QuickSvg.createNode('g', {
+            'source': this,
+            // this.constructor.name will not be the same after being mangled by UglifyJS
+            'class': 'ChantNotationElement ' + this.constructor.name,
+            'transform': 'translate(' + this.bounds.x + ',' + 0 + ')'
+        }, inner);
+    }
+
+    createSvgFragment(ctxt) {
+        var inner = "";
+
+        for (var i = 0; i < this.visualizers.length; i++)
+            inner += this.visualizers[i].createSvgFragment(ctxt, this);
 
         for (i = 0; i < this.lyrics.length; i++)
             inner += this.lyrics[i].createSvgFragment(ctxt);
+
+        if (this.translationText)
+            for (i = 0; i < this.translationText.length; i++)
+                inner += this.translationText[i].createSvgFragment(ctxt);
+
+        if (this.alText)
+            for (i = 0; i < this.alText.length; i++)
+                inner += this.alText[i].createSvgFragment(ctxt);
 
         return QuickSvg.createFragment('g', {
             // this.constructor.name will not be the same after being mangled by UglifyJS

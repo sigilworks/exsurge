@@ -1,5 +1,5 @@
-
 export const QuickSvg = {
+
     // namespaces
     ns: 'http://www.w3.org/2000/svg',
     xmlns: 'http://www.w3.org/2000/xmlns/',
@@ -30,7 +30,7 @@ export const QuickSvg = {
                 node.removeChild(node.lastChild);
 
             node.appendChild(defs);
-        };
+        }
 
         return node;
     },
@@ -77,8 +77,63 @@ export const QuickSvg = {
     // nodeRef should be the id of the object in defs (without the #)
     use: function(nodeRef) {
         var node = document.createElementNS(this.ns, 'use');
-        node.setAttributeNS(this.xlink, 'xlink:href', '#' + nodeRef);
+        node.setAttributeNS(this.xlink, "xlink:href", '#' + nodeRef);
 
+        return node;
+    },
+
+    svgFragmentForGlyph: function(glyph) {
+        var svgSrc = '';
+        for (var i = 0; i < glyph.paths.length; ++i) {
+            var path = glyph.paths[i];
+            svgSrc += QuickSvg.createFragment(path.data ? 'path' : 'g', {
+                d: path.data || undefined,
+                fill: path.type === 'negative' ? '#fff' : undefined
+            });
+        }
+        return svgSrc;
+    },
+
+    nodesForGlyph: function(glyph) {
+        var nodes = [];
+        for (var i = 0; i < glyph.paths.length; ++i) {
+            var path = glyph.paths[i];
+            nodes.push(QuickSvg.createNode(path.data ? 'path' : 'g', {
+                d: path.data || undefined,
+                fill: path.type === 'negative' ? '#fff' : undefined
+            }));
+        }
+        return nodes;
+    },
+
+    createNode: function(name, attributes, children) {
+        var node = document.createElementNS(this.ns, name);
+        if (attributes && attributes.source) {
+            node.source = attributes.source;
+            delete attributes.source;
+        }
+        for (var attr in attributes) {
+            if (attributes.hasOwnProperty(attr) && (typeof attributes[attr] !== 'undefined')) {
+                var val = attributes[attr];
+                var match = attr.match(/^([^:]+):([^:]+)$/);
+                if (match) {
+                    node.setAttributeNS(this[match[1]], match[2], val);
+                } else {
+                    node.setAttribute(attr, val);
+                }
+            }
+        }
+        if (children) {
+            if (typeof (children) === 'string') {
+                node.textContent = children;
+            } else if (children.constructor === [].constructor) {
+                for (var i = 0; i < children.length; ++i) {
+                    node.appendChild(children[i]);
+                }
+            } else {
+                node.appendChild(children);
+            }
+        }
         return node;
     },
 
@@ -89,7 +144,7 @@ export const QuickSvg = {
         var fragment = '<' + name + ' ';
 
         for (var attr in attributes) {
-            if (attributes.hasOwnProperty(attr))
+            if (attributes.hasOwnProperty(attr) && (typeof attributes[attr] !== 'undefined'))
                 fragment += attr + '="' + attributes[attr] + '" ';
         }
 
@@ -110,11 +165,11 @@ export const QuickSvg = {
 
             // dump raw svg
             // do this to allow the browser to automatically create svg nodes?
-            well.innerHTML = '<svg>' + fragment.replace(/\n/, '').replace(/<(\w+)([^<]+?)\/>/g, '<$1$2></$1>') + '</svg>';
+            well.innerHTML = '<svg>' + fragment.replace(/\n/, '').replace(/<(\w+)([^<]+?)\/>/g, '<$1$2></$1>') + '</svg>'
 
             // transplant nodes
             for (var i = 0, il = well.firstChild.childNodes.length; i < il; i++)
-                container.appendChild(well.firstChild.firstChild);
+                container.appendChild(well.firstChild.firstChild)
 
             return container;
         }

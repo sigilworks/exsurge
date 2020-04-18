@@ -38,12 +38,19 @@ export default class ChantScore {
 
     updateNotations(ctxt) {
 
-        var i;
+        var i, j, mapping, notation;
 
         // flatten all mappings into one array for N(0) access to notations
         this.notations = [];
-        for (i = 0; i < this.mappings.length; i++)
-            this.notations = this.notations.concat(this.mappings[i].notations);
+        for (i = 0; i < this.mappings.length; i++) {
+            mapping = this.mappings[i];
+            for (j = 0; j < mapping.notations.length; j++) {
+                notation = mapping.notations[j];
+                notation.score = this;
+                notation.mapping = mapping;
+                this.notations.push(notation);
+            }
+        }
 
         // find the starting clef...
         // start with a default clef in case the notations don't provide one.
@@ -100,6 +107,8 @@ export default class ChantScore {
         if (this.needsLayout === false)
             return; // nothing to do here!
 
+        ctxt.updateHyphenWidth();
+
         // setup the context
         ctxt.activeClef = this.startingClef;
         ctxt.notations = this.notations;
@@ -112,8 +121,11 @@ export default class ChantScore {
             this.annotation.recalculateMetrics(ctxt);
 
         for (var i = 0; i < this.notations.length; i++) {
-            this.notations[i].performLayout(ctxt);
-            ctxt.currNotationIndex++;
+            var notation = this.notations[i];
+            if (notation.needsLayout) {
+                ctxt.currNotationIndex = i;
+                notation.performLayout(ctxt);
+            }
         }
 
         this.needsLayout = false;
@@ -129,6 +141,15 @@ export default class ChantScore {
                 setTimeout(() => finishedCallback(), 0);
 
             return; // nothing to do here!
+        }
+
+        // check for sane value of hyphen width:
+        ctxt.updateHyphenWidth();
+        if (ctxt.hyphenWidth / ctxt.lyricTextSize > 0.6) {
+            setTimeout(() => {
+                this.performLayoutAsync(ctxt, finishedCallback);
+            }, 100);
+            return;
         }
 
         // setup the context
@@ -209,12 +230,13 @@ export default class ChantScore {
             finishedCallback(this);
     }
 
-    draw(ctxt) {
+    draw(ctxt, scale = 1) {
 
         var canvasCtxt = ctxt.canvasCtxt;
 
         canvasCtxt.clearRect(0, 0, ctxt.canvas.width, ctxt.canvas.height);
 
+        ctxt.setCanvasSize(this.bounds.width, this.bounds.height, scale);
         canvasCtxt.translate(this.bounds.x, this.bounds.y);
 
         for (var i = 0; i < this.lines.length; i++)
@@ -223,14 +245,41 @@ export default class ChantScore {
         canvasCtxt.translate(-this.bounds.x, -this.bounds.y);
     }
 
+    createSvgNode(ctxt) {
+
+        // create defs section
+        var node = [ctxt.defsNode.cloneNode(true)];
+        node[0].appendChild(ctxt.createStyleNode());
+
+        for (var i = 0; i < this.lines.length; i++)
+            node.push(this.lines[i].createSvgNode(ctxt));
+
+        node = QuickSvg.createNode('g', {}, node);
+
+        node = QuickSvg.createNode('svg', {
+            'xmlns': 'http://www.w3.org/2000/svg',
+            'version': '1.1',
+            'class': 'ChantScore',
+            'width': this.bounds.width,
+            'height': this.bounds.height,
+            'viewBox': [0, 0, this.bounds.width, this.bounds.height].join(' ')
+        }, node);
+
+        node.source = this;
+        this.svg = node;
+
+        return node;
+    }
+
     createSvg(ctxt) {
 
-        var fragment = '';
+        var fragment = "";
 
         // create defs section
         for (var def in ctxt.defs)
             if (ctxt.defs.hasOwnProperty(def))
                 fragment += ctxt.defs[def];
+        fragment += ctxt.createStyle();
 
         fragment = QuickSvg.createFragment('defs', {}, fragment);
 
@@ -251,10 +300,65 @@ export default class ChantScore {
         return fragment;
     }
 
+    createSvgNodeForEachLine(ctxt) {
+
+        var node = [];
+
+        var top = 0;
+        for (var i = 0; i < this.lines.length; i++) {
+            var lineFragment = [ctxt.defsNode.cloneNode(true), this.lines[i].createSvgNode(ctxt, top)];
+            lineFragment[0].appendChild(ctxt.createStyleNode());
+            var height = this.lines[i].bounds.height + ctxt.staffInterval * 1.5;
+            lineFragment = QuickSvg.createNode('g', {}, lineFragment);
+            lineFragment = QuickSvg.createNode('svg', {
+                'xmlns': 'http://www.w3.org/2000/svg',
+                'version': '1.1',
+                'class': 'ChantScore',
+                'width': this.bounds.width,
+                'height': height,
+                'viewBox': [0, 0, this.bounds.width, height].join(' ')
+            }, lineFragment);
+            node.push(lineFragment);
+            top += height;
+        }
+        return node;
+    }
+
+    createSvgForEachLine(ctxt) {
+
+        var fragment = "",
+            fragmentDefs = "";
+
+        // create defs section
+        for (var def in ctxt.defs)
+            if (ctxt.defs.hasOwnProperty(def))
+                fragmentDefs += ctxt.defs[def];
+        fragmentDefs += ctxt.createStyle();
+
+        fragmentDefs = QuickSvg.createFragment('defs', {}, fragmentDefs);
+        var top = 0;
+        for (var i = 0; i < this.lines.length; i++) {
+            var lineFragment = fragmentDefs + this.lines[i].createSvgFragment(ctxt, top);
+            var height = this.lines[i].bounds.height + ctxt.staffInterval * 1.5;
+            lineFragment = QuickSvg.createFragment('g', {}, lineFragment);
+            lineFragment = QuickSvg.createFragment('svg', {
+                'xmlns': 'http://www.w3.org/2000/svg',
+                'version': '1.1',
+                'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+                'class': 'ChantScore',
+                'width': this.bounds.width,
+                'height': height
+            }, lineFragment);
+            fragment += lineFragment;
+            top += height;
+        }
+        return fragment;
+    }
+
     deserializeFromJson(data) {
         this.autoColoring = data['auto-coloring'];
 
-        if (data.annotation !== null && data.annotation !== '') {
+        if (data.annotation !== null && data.annotation !== "") {
             // create the annotation
             this.annotation = new Annotation(ctxt, data.annotation);
         } else

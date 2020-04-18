@@ -167,10 +167,10 @@ export class Rect {
                 other.y <= this.y + this.height;
         }  // better be instance of Rect
         return this.x <= other.x &&
-                this.x + this.width >= other.x + other.width &&
-                this.y <= other.y &&
-                this.y + this.height >= other.y + other.height;
-        
+            this.x + this.width >= other.x + other.width &&
+            this.y <= other.y &&
+            this.y + this.height >= other.y + other.height;
+
     }
 
     union(rect) {
@@ -261,12 +261,20 @@ var __StaffOffsetToStep = [Steps.Do, Steps.Re, Steps.Mi, Steps.Fa, Steps.So, Ste
 
 export class Pitch {
     constructor(step, octave) {
+        if (typeof octave === 'undefined') {
+            octave = Math.floor(step / 12)
+            step = step % 12;
+        }
         this.step = step;
         this.octave = octave;
     }
 
     toInt() {
         return this.octave * 12 + this.step;
+    }
+
+    transpose(step) {
+        return new Pitch(this.toInt() + step);
     }
 
     isHigherThan(pitch) {
@@ -301,4 +309,8 @@ export function generateRandomGuid() {
     }
 
     return s4() + s4();
+}
+
+export function getCssForProperties(properties) {
+    return Object.keys(properties).map(key => `${key}: ${properties[key]};`).join('');
 }
